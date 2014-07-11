@@ -1,0 +1,16 @@
+Overhead view:
+    Up, down, left, and right
+    steer Zoom those ways. The
+    space bar shoots a ray of
+    magic from Zoom's fist
+    when you have any magic
+    dust.
+
+Side view:
+    Up-left, up, up-right, and
+    down make zoom fly left,
+    up, right, and down. Left
+    and right make zoom walk
+    those ways. "B" shoots a
+    ray of magic to the left,
+    and "N", to the right.

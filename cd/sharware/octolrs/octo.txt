@@ -1,0 +1,28 @@
+             #=============================================#
+             # |~~~| |~~~~ ~~|~~ |~~~| |     |~~~\ | /~~~~ #
+             # |   | |       |   |   | |     |___/ | \___  #
+             # |   | |       |   |   | |     |   \ |     \ #
+             # |___| |____   |   |___| |____ |   | | ____/ #
+             #=============================================#
+                                         (c)1994 A-J Games
+
+    Octolris was made by the same team who brought you hits like A-J's
+ Quest and Fluffy Ralph, so don't be fooled by thinking that a game with
+ a slime octopus is strange . . .Well, it's not THAT strange. All right.
+ Stop laughing. I get your point. Anyway, if you register this (only $20!),
+ you'll get five more rounds, instead of being stuck with the lame-o --
+ whoops!  I mean, SNAZZY ending you'll recieve if you finish this version.
+ All right, let me put it another way . . .REGISTER THIS BEFORE I KILL YOU!
+ There. That's taken care of.
+    Type OCTOLRIS to start the game.  If you ever need to reconfigure the
+ game, merely type CONFIG.  The only thing you should know right off the bat
+ is that F1 is, in computer language, HELP!!!!!!!.  This not only applies to
+ this game, but to mostly any other game you'll likely find.  There.  You
+ learn something new every day.
+
+
+     The game Octolris is a copyright of A-J Games, which, in turn, is a
+ copyright of Eric-Jon Waugh.  I seriously doubt you care, but you're not 
+ supposed to be interested.  You're supposed to skip over this, you twit.
+ Go play the game!  Gad!  The people I meet around here!
+

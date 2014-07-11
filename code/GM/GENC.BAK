@@ -1,0 +1,213 @@
+/*---------------------------------------------------------------------*/
+/* genc.C  - generic graphics routines                                 */
+/* FEB 10, 1991           Programmer:  Andy Stone                      */
+/* Last edited: 6/26/93                                                */
+/*---------------------------------------------------------------------*/
+
+#include <dos.h>
+#include <alloc.h>
+#include <stdio.h>
+#include <string.h>
+#include <bios.h>
+#include <stdlib.h>
+#include <time.h>
+#include "mousefn.h"
+#include "gen.h"
+#include "graph.h"
+#include "pal.h"
+
+void swap(int *,int*);
+int scrn=0;
+unsigned int CurMode=TMODE;
+#ifdef TRANSFER
+extern char gamepath[MAXFILENAMELEN];
+#endif
+
+#ifdef MOUSE
+extern int mouinstall;
+extern int MouseMaxy,MouseMaxx;
+extern unsigned int MXlatx,MXlaty;   
+#endif
+
+int PauseTimeKey(int seconds)
+  {
+  time_t cur,start;
+
+
+  time(&start);
+  do time(&cur) while ((bioskey(1)==0)&&(cur<start+seconds));
+  if (bioskey(1)) return(bioskey(0));   // Return the key
+  return(FALSE);                        // Time out! - return FALSE
+  }
+
+
+int MakeFileName(char *out, const char *path, const char *name, const char *ext)
+  {
+  #ifdef TRANSFER
+  sprintf(out,"%s%s%s",gamepath,name,ext);
+  #else
+  sprintf(out,"%s%s%s",path,name,ext);
+  #endif
+  return(TRUE);
+  }
+
+#pragma loop_opt(off)
+
+int ParseFileName(const char *in,char *name,char *path)
+  {
+  int LastSlash=0;
+  int l=0,pathctr=0,namectr=0;
+
+  name[0]=0;
+  path[0]=0;
+  while ((in[l]!=0)&&(in[l]!='.'))
+    {
+    path[pathctr]=in[l];
+    name[namectr]=in[l];
+    if (in[l]=='\\')
+      {
+      LastSlash=pathctr;
+      namectr=-1;
+      }
+    if (in[l]=='.') break;
+    l++; 
+    pathctr++;
+    namectr++;
+    if (l>MAXFILENAMELEN) return(FALSE); 
+    }
+  path[LastSlash+1]=0;
+  name[namectr]=0;
+  return(TRUE);
+  }
+
+#pragma loop_opt(on)
+
+void GetScrn(char far *mem)
+  {
+  memcpy(mem,(void far *) 0x0A0000000, (unsigned) 64000);
+  }
+
+void RestoreScrn(char far *mem)
+  {
+  memcpy((void far *) 0xA0000000,mem,(unsigned) 64000);
+  }
+  
+#pragma loop_opt(off)
+
+int DisplayHelpFile(char *filename)
+  {
+  FILE *fp;
+  unsigned char far *addr = (unsigned char far *) 0xB8000000;
+  unsigned int l;
+  char ch;
+  int done=FALSE;
+  int mx=0,my=0,mbuts=0;
+
+  fp=fopen(filename,"rb");
+  if (fp==NULL) return(FALSE);
+  for(l=0;l<4000;l++) { ch=fgetc(fp); *(addr+l)=ch; }
+  fclose(fp);
+
+  mouclearbut();
+  while (!done)
+    { 
+    moustats(&mx,&my,&mbuts);
+    if (mbuts) done=TRUE;
+    if (bioskey(1)) done=TRUE;  
+    }
+  return(TRUE);
+  }
+  
+#pragma loop_opt(on)
+
+/*      Changes the Video mode                                          */
+
+#pragma loop_opt(on)
+
+void TextMode(void)
+  {
+  union REGS r;
+
+#ifdef MOUSE
+  int m;
+
+  if (mouinstall)
+    {
+    m=moucur(2);
+    if (m) moucur(0);
+    }
+#endif
+  r.h.ah = 0;
+  r.h.al = TMODE;
+  int86(0x10,&r,&r);
+  CurMode=TMODE;
+
+#ifdef MOUSE
+  if (mouinstall)
+    {
+    initmouse();
+    MXlatx=MouseMaxx/79;
+    if (MXlatx==0) MXlatx=1;
+    MXlaty=MouseMaxy/24;
+    if (MXlaty==0) MXlaty=1;
+    if (m) moucur(TRUE);
+    }
+#endif
+  }
+
+void GraphMode(void)
+  {
+  union REGS r;
+#ifdef MOUSE
+  int m;
+
+  if (mouinstall)
+    {
+    m=moucur(2);
+    if (m) moucur(0);
+    }
+#endif
+
+  r.h.ah = 0;
+  r.h.al = GMODE;
+  CurMode=GMODE;
+  int86(0x10,&r,&r);
+
+#ifdef MOUSE
+  if (mouinstall)
+    {
+    initmouse();
+    MXlatx= MouseMaxx/319;     //    MXlatx=2;
+    if (MXlatx==0) MXlatx=1;
+    MXlaty= MouseMaxy/199;
+    if (MXlaty==0) MXlaty=1;
+    if (m) moucur(TRUE);
+    }
+#endif
+  }
+
+int loadspecany(char *file,char *ext,char *path,unsigned int bytes, char *addr)
+  {
+  FILE *fp;
+  char result;
+  char srchfor[6];
+  char fname[51];
+  
+
+  MakeFileName(fname,path,file,ext);
+
+  if ( (fp=fopen(fname,"rb")) ==NULL) return(FALSE);
+  fread(addr,bytes,1,fp);
+  fclose(fp);
+  return(TRUE);
+  }
+
+void swap(int *v1,int *v2)
+  {
+  int v3;
+
+  v3=*v1;
+  *v1=*v2;
+  *v2=v3;
+  }
+

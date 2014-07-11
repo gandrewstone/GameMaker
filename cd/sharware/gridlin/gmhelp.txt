@@ -1,0 +1,16 @@
+   G E N E R A L   H E L P
+
+Press any key to page through.
+
+  F U N C T I O N   K E Y S
+
+F1   Displays help message
+F2   Status and inventory
+F3   Toggle Music
+F4   Toggle Sound
+F5   Saves the game
+F6   Restores a saved game
+F8   Toggle joystick
+F9   Calibrate joystick
+F10  Tell about GAME-MAKER
+ESC  End game, end help.

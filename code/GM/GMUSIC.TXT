@@ -1,0 +1,26 @@
+
+Game Make Music Interface
+
+
+int SoundCard(void);
+
+D: SoundCard initialization routine.
+
+R: Returns CARDEXIST if a supported sound card is found, FALSE if no card
+   found.
+
+
+int  InitMusic(int *Instru,char *cmffile);
+
+D: Load a CMF song from disk into memory.
+
+R: ?
+
+void StopIt(void);                                 //quit playing song
+void PlayIt(void);                                 //play song
+void ResetFM(void);                                //Reset the FM chip
+void sbfreemem(void);                              //free song from memory
+
+
+
+

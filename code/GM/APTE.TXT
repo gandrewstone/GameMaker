@@ -1,0 +1,43 @@
+The startup code does several things before going to the main()
+function.  If any one of these fails, it will abort and display
+the "Abnormal Program Termination" message; this message is
+printed whenever the function abort() is invoked.
+
+The startup code will abort if:
+
+    (1) There is not enough memory to load the program.
+
+        Workaround: Free up memory before running program.
+                    clean out system, run from DOS, not
+                    environment.
+
+    (2) There is not enough memory to expand the stack.
+
+        Workaround: As above, reduce the stack size.
+
+    (3) If environment space is bad, TC checks the environment,
+        The user may have overwritten lower memory prior to
+        trying to load program.
+
+    (4) If EMU (the floating point emulator) cannot initialize.
+        The EMU needs to take some space from the stack, and if
+        the stack isn't big enough, the program will abort.
+
+    (5) If overlay system cannot initialize. Usually memory
+        problem.
+
+    (6) If there is not enough heapspace.
+
+  Notice that in most cases, the problem is a lack of memory.
+
+One possible solution may arise if the person is working from the
+TC++/BC++ Programmers Platform.  The PP takes all of the memory
+in the system when in runs.  When you want to run one of your
+programs from inside the PP, memory is freed to the total of the
+size of the load image of your program + 64K by default.  This
+amount can be changed through Options|Debugger|Program Heap Size.
+Try setting this value to a higher value and attempt to run the
+program again.
+
+
+

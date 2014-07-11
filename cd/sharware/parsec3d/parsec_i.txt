@@ -1,0 +1,62 @@
+To control PARSEC, the hero of
+this game, use the numeric
+keypad to move him up, down,
+left, or right.  Pressing the
+space bar will fire an energy
+bolt.  Collecting blocks with
+a "P" on them gives you ammo
+for your plasma rifle.
+Pressing 'a' will fire a
+plasma bolt.  (Plasma bolts
+travel faster and further.)
+
+On gravity levels, the top
+three buttons on the control
+pad jump in the specified
+direction, while left and
+right move accordingly.  The
+firing buttons remain the
+same.  (Note:  On gravity
+levels, you can't shoot down.)
+
+Blocks that appear behind your
+character can be passed
+through, while blocks
+appearing on the same level or
+above your character are
+solid.  Take careful note of
+this, expecially on gravity
+levels.
+
+XON-1 is the only planet in
+which you'll find plasma
+blocks to give you plasma
+bolts.
+
+On the planet XON-2, spikes
+will instantly kill you, and
+beware of collapsing bridges.
+
+On XON-3, there are blocks
+that retract into the wall.
+Beware of these, as you cannot
+stand on them once they
+retract.  (You can stand on
+them while they are
+retracting, though.)
+
+On XON-4, don't worry about
+the stalagmites in the
+beginning.  They're harmless.
+
+To grab a power crystal, touch
+it.
+
+One of the power crystals
+cannot be taken unless you
+have collected the others.
+That one is THE power crystal,
+the one that you must find.
+
+           GOOD LUCK
+

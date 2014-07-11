@@ -1,0 +1,109 @@
+.MODEL LARGE
+IDEAL
+PUBLIC _MicroChannel
+PUBLIC _NewMicroKbd
+PUBLIC _NewATKbd
+EXTRN  _keydn:PTR
+EXTRN  _KeysPending:PTR,_PendCtr:WORD
+
+
+DATASEG
+
+OldKey    db      0
+InInt     db      0
+
+CODESEG
+
+MACRO EnablePICInts
+        mov     al,20h
+        out     20h,al
+ENDM
+
+MACRO   KeyInt
+	push	ax
+        push    bx
+        push    cx
+        push    ds
+
+        mov     ax,DGROUP                  ; Set up Data Seg.
+        mov     ds,ax
+
+        cmp     [byte ptr ds:InInt],1
+        je      @@EndMacro
+        mov     [byte ptr ds:InInt],1
+        mov     al,[byte ptr ds:OldKey]
+@@KeyStart:
+        mov     cl,al
+        in      al,60h                     ; Get the keypress.
+IF MICROCNL
+        cmp     al,0E0h                    ; For microchannels, if the
+        jne     short @@ValidKey           ; key is not really one, it = 0E0h
+@@GetNextKey:
+        in      al,64h                     ; Wait for next key.
+        test    al,0
+        jne     short @@GetNextKey
+        in      al,60h
+@@ValidKey:
+ENDIF
+        cmp     al,cl
+        je      @@KeyIntStop
+
+        mov     bx,[word ptr ds:_PendCtr]
+        inc     [byte ptr ds:_PendCtr]
+        mov     [byte ptr ds:_KeysPending+bx],al
+        ; mov [byte ptr ds:_KeyFlag],1    ; Needed only for RECORDER
+        mov     [byte ptr ds:OldKey],al
+        jmp     @@KeyStart
+
+@@KeyIntStop:
+        mov     [byte ptr ds:InInt],0  ; Time needs to be wasted here.
+@@EndMacro:
+                   ; Tell keyboard interrupt serviced.
+        in      al,61H                  ; get control port
+        mov     ah,AL                   ; copy for later reset
+        or      al,80H                  ; set bit to acknowledge
+        jmp     short $+2               ; wait for settle
+        out     61H,al                  ; do the acknowledge
+        jmp     short $+2               ; wait for settle
+        mov     al,ah                   ; get original setting
+        out     61H,al                  ; put it back
+        jmp     short $+2               ; wait for settle
+
+        pop     ds          ; Need to waste some time here, so
+        pop     cx          ; do all the pops we can.
+        pop     bx
+        EnablePICInts
+        pop     ax
+        iret    
+ENDM 
+
+
+Proc _NewATKbd
+     MICROCNL EQU 0
+     KeyInt
+ENDP
+
+
+PROC _NewMicroKbd
+     MICROCNL EQU 1
+     KeyInt
+ENDP
+
+
+PROC    _MicroChannel
+     push   es
+     push   bx
+     mov    ah,0C0h
+     int    15h
+     add    bx,05h
+     mov    al,[es:bx]
+     and    al,2h
+     shr    al,1
+     ; value returned in al
+     pop  bx
+     pop  es
+     ret
+ENDP _MicroChannel
+
+END
+

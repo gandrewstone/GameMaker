@@ -1,0 +1,856 @@
+                           BWCCAPI.RW
+                           ==========
+
+
+This file describes technical aspects of the Borland Windows
+Custom Controls (BWCC) and contains information that might be
+useful or of interest to the advanced resource designer. You can,
+however, successfully create or modify application resources for
+BWCC using the information contained in the file MANUAL.RW.
+
+
+1        Defining a derivative dialog class
+-------------------------------------------
+
+To create your own dialog window class (for example, if you want
+the dialog box to have its own icon), you must "derive" your
+class from the BORDLG class.
+
+To derive a class from BORDLG, do the following:
+
+1.  Specify a window class name that starts with "bordlg". Class
+    names that start with a leading underscore ("_bordlg...") and
+    "bordlg" itself are reserved for use by Borland. Thus,
+    "bordlg_foo" is a valid derived name, but "mybordlg" or
+    "_bordlg_mine" are not.
+
+2.  Your dialog window function should call BWCCDefDlgProc, not
+    the Windows standard DefDlgProc for messages that it does not
+    process.
+
+3.  The window proc must call BWCCDefDlgProc for the following
+    messages:
+
+    WM_CTLCOLOR
+    WM_NCCREATE
+    WM_CREATE
+    WM_NCDESTROY
+    WM_SETFONT
+    WM_PAINT
+    WM_ERASEBKGND
+
+
+2        Technical description of Borland Windows Custom Controls
+-----------------------------------------------------------------
+
+Section 3 through section 7 contains descriptions of each of the
+Borland Windows Custom Controls classes. Most of the subsection
+headings are self-explanatory, with the possible exception of the
+following:
+
+- "Class Name" gives the Resource Workshop name in quotation
+  marks, followed by the identifier name--C define or Pascal
+  constant.
+
+- "Window styles" include "Types" and "Options." Types dictate
+  the overall appearance and functionality of the control.
+  Options are those available to each type of control.
+
+- "Messages" include "Commands" and "Notifications." Commands are
+  messages to a control. Notifications are a special type of
+  WM_COMMAND message used by controls. The control ID of the
+  button is passed in the wParam of the message, while the lParam
+  contains both the notification type and the window handle of
+  the control. The notification type is contained in the
+  high-order word of lParam and can be extracted using the HIWORD
+  macro; the window handle is contained in the low-order word of
+  lParam and can be extracted using the LOWORD macro.
+
+
+3        BORBTN control
+-----------------------
+
+Function:          bitmapped push buttons and "splash panels"
+
+Class Name:        "borbtn" ( BUTTON_CLASS )
+
+
+3.1      Window styles
+----------------------
+
+3.1.1    Types inherited from standard Windows controls
+-------------------------------------------------------
+
+3.1.1.1  BS_DEFPUSHBUTTON and BS_PUSHBUTTON
+-------------------------------------------
+
+These types define the two standard Windows push button types:
+
+- BS_DEFPUSHBUTTON
+- BS_PUSHBUTTON
+
+The BS_DEFPUSHBUTTON option identifies the "default" push button.
+When the user presses the Enter key in a dialog box, the default
+button's ID is in the wParam of the WM_COMMAND message sent to
+the button's parent window. The Windows dialog manager sends a
+BN_CLICKED notification from that button to the dialog window.
+
+There are two exceptions:
+
+- If another button gains keyboard focus through a Tab keystroke,
+  that key temporarily becomes the default button and is
+  referenced in the BN_CLICKED notification.
+
+- If keyboard focus is in an edit control for which the
+  ES_WANTRETURN flag is set, the Enter key inserts a carriage
+  return into the text in the edit control.
+
+
+3.1.2    Types unique to BWCC
+-----------------------------
+
+3.1.2.1  BBS_BITMAP
+-------------------
+
+This type is used to display "splash panels," which are bitmaps
+the user does not interact with.
+
+
+3.1.3    Options inherited from standard Windows controls
+---------------------------------------------------------
+
+[none]
+
+
+3.1.4    Options unique to BWCC
+-------------------------------
+
+3.1.4.1  BBS_PARENTNOTIFY
+-------------------------
+
+This option causes the control to generate the following
+notification messages at run time:
+
+- BBN_SETFOCUS
+- BBN_SETFOCUSMOUSE
+- BBN_GOTATAB
+- BBN_GOTABTAB
+
+These notifications are described in section 3.2.4.
+
+
+3.1.4.2  BBS_OWNERDRAW
+----------------------
+
+This option causes the control to send WM_DRAWITEM to its parent 
+at run time, for specialized drawing.
+
+
+3.1.4.3  BBS_DLGPAINT
+---------------------
+
+The BWCC Custom Dialog Class uses this option to inform the
+button that the dialog class will paint the button. This option
+is for internal use only by BWCC.
+
+
+3.2      Messages
+-----------------
+
+3.2.1    Commands inherited from standard Windows controls
+----------------------------------------------------------
+
+3.2.1.1  BM_SETSTYLE
+--------------------
+
+The Windows dialog manager uses this message to toggle between
+the BS_DEFPUSHBUTTON and BS_PUSHBUTTON types.
+
+
+3.2.1.2  BM_SETSTATE
+--------------------
+
+This message changes the "highlight" state of a button. If the
+wParam of the message is nonzero, the button is highlighted
+(drawn as if it were pressed).
+
+
+3.2.1.3  BM_GETSTATE
+--------------------
+
+This message determines whether a button is highlighted. It
+returns a nonzero value when the button is highlighted and zero
+when the button is not highlighted.
+
+
+3.2.2    Commands unique to BWCC
+--------------------------------
+
+
+3.2.2.1  BBM_SETBITS
+--------------------
+
+The application uses this message to pass a set of bitmap handles
+to the button. Normally, the buttons use the button control ID to
+automatically load bitmaps from the user's resources. If the
+bitmaps do not exist, the button caption is drawn into a default
+bitmap by using a lighter-weight version of the dialog font.
+
+To use this message, you must first create three bitmap images of
+a single button:
+
+- the button without keyboard focus
+- the button with keyboard focus, but not pressed
+- the button when it is "pressed" (or highlighted)
+
+After creating the bitmaps, you must put the handles to these
+bitmaps into an array and pass a far pointer to this array in the
+lParam of the BM_SETBITS message.
+
+The following C and Pascal samples show how this is done:
+
+C SAMPLE
+--------
+
+    HBITMAP hBits[3];
+    HWND  hWndButton = GetDlgItem( hWnd, ID_FOO);
+
+
+    hBits[0] = MakeNormalBitmap(...);
+    hBits[1] = MakeHighlightBitmap(...);
+    hBits[2] = MakeFocusBitmap(...);
+
+
+    SendMessage( hWndButton, BBM_SETBITS, 0, (LONG) (LPSTR)
+         hBits);
+
+PASCAL SAMPLE
+-------------
+
+    procedure SetBitmaps(Wnd: HWnd);
+    var
+     Bits: array[0..2] of HBitmap;
+     WndButton: HWnd;
+    begin
+     WndButton := GetDlgItem(Wnd, id_Foo);
+     Bits[0] := MakeNormalBitmap(...);
+     Bits[1] := MakeHighlightBitmap(...);
+     Bits[2] := MakeFocusBitmap(...);
+     SendMessage(WndButton, BBM_SETBITS, 0, @@Bits);
+    end;
+
+NOTE: If a button's bitmaps are initialized in this manner, the
+application must destroy the bitmaps by calling DeleteObject
+before it terminates. The application typically makes this call
+in the WM_DESTROY message handler for the button's parent window.
+
+
+3.2.3    Notifications inherited from standard Windows controls
+---------------------------------------------------------------
+
+3.2.3.1  BN_CLICKED
+-------------------
+
+The button sends this message when it has been "pressed" by the
+user, either by clicking while the mouse pointer is within the
+button window or by either of the following keyboard actions:
+
+- The user presses the Spacebar or the Enter key when the button
+  has keyboard focus.
+
+- The user presses the button's accelerator key when keyboard
+  focus is in another control.
+
+To associate an accelerator key with a button, place an ampersand
+before the ASCII value of the key in the button's text (for
+example, "&Yes"). Note that case is not significant for button
+accelerators.
+
+
+3.2.4    Notifications unique to BWCC
+-------------------------------------
+
+The following notifications are available if you've specified the
+BBS_PARENTNOTIFY style.
+
+
+3.2.4.1  BBN_SETFOCUS
+---------------------
+
+The button sends this notification to its parent window when it
+gains keyboard focus through an action other than a mouse click.
+
+
+3.2.4.2  BBN_SETFOCUSMOUSE
+--------------------------
+
+The button sends this notification to its parent window when it
+gains keyboard focus through a mouse click.
+
+
+3.2.4.3  BBN_GOTATAB
+--------------------
+
+The button sends this notification to its parent window when the
+user presses the <Tab> key while keyboard focus is in the button.
+The parent can then intervene in the processing of the keystroke
+by returning a nonzero value.
+
+
+3.2.4.4  BBN_GOTABTAB
+---------------------
+
+The button sends this notification to its parent window when the
+user presses Shift-Tab (back-tab) while keyboard focus is in the
+button. The parent can then intervene in the processing of the
+keystroke by returning a nonzero value.
+
+
+3.2.4.5  WM_DRAWITEM
+--------------------
+
+If you specify the BBS_OWNERDRAW style for the button, it sends a
+WM_DRAWITEM message to its parent window. The lParam of the
+message contains a far pointer to a DRAWITEMSTRUCT structure.
+
+The fields of that structure are described in the Windows SDK
+documentation for this message, but with the following
+enhancement:
+
+For Windows owner-draw buttons, the itemID field of the
+DRAWITEMSTRUCT structure is unused. Borland buttons use this
+field to pass their type. If the button is a default push button,
+this field contains the value BS_DEFPUSHBUTTON. Otherwise, it
+contains the value BS_PUSHBUTTON.
+
+The other fields and the values passed in them are
+
+      CtlType      ODT_BUTTON
+
+      CtlID        The control ID of the button
+                        (GetWindowWord(hWnd, GWW_ID))
+
+      itemAction   ODA_DRAWENTIRE, unless the repaint is being
+                   caused by a focus change, in which case this
+                   field contains ODA_FOCUS
+
+      itemState    The combination of the following values,
+                   depending on the current state of the button:
+
+                   ODS_FOCUS if the button has keyboard focus
+                   ODS_DISABLED if the button is disabled
+                   ODS_SELECTED if the button is highlighted
+
+      hwndItem     The window handle of the control
+
+      hDC          A device context for the window, with all
+                   values in the default state returned by GetDC
+
+      rcItem       The client rectangle of the control
+
+
+3.3      Button resource Id numbering scheme
+--------------------------------------------
+
+The Microsoft resource compiler does not provide user-specified
+control initialization data when it parses the Windows dialog
+template data structure. Because of this, Resource Workshop uses
+the control ID field as a base from which to derive the resource
+IDs of the bitmaps required by a button. For each bitmap button,
+there are six images: three for EGA and monochrome devices, and
+three for VGA and higher-resolution devices.
+
+The bitmap resource IDs are derived from the button control using
+the following formulas:
+
+   Control ID + 1000: Normal VGA-resolution image
+   Control ID + 3000: Pressed VGA-resolution image
+   Control ID + 5000: Focused VGA-resolution image
+
+   Control ID + 2000: Normal EGA-resolution image
+   Control ID + 4000: Pressed EGA-resolution image
+   Control ID + 6000: Focused EGA-resolution image
+
+
+4        BORRADIO control
+-------------------------
+
+Function: Better-looking radio buttons
+
+Class Name: "borradio" ( RADIO_CLASS )
+
+
+4.1      Window Styles
+----------------------
+
+4.1.1    Types inherited from standard Windows controls
+-------------------------------------------------------
+
+4.1.1.1  BS_RADIOBUTTON
+-----------------------
+
+A nonautomatic radio button. The button merely informs the
+application program that it has been "checked" (pressed) via the
+BN_CLICKED notification. The application is responsible for
+calling the CheckRadioButton function to change the button's
+state and the state of the other buttons it is grouped with.
+
+
+4.1.1.2  BS_AUTORADIOBUTTON
+---------------------------
+
+An "automatic" radio button. When the user selects one of these
+buttons, it is automatically marked (with a circle or diamond),
+and the previously selected button within the group is
+deselected, without the intervention of the application program.
+
+
+4.1.2    Types unique to BWCC
+-----------------------------
+
+[none]
+
+
+4.1.3    Options inherited from standard Windows controls
+---------------------------------------------------------
+
+4.1.3.1  BS_LEFTTEXT
+--------------------
+
+This option causes the text associated with the button to be
+displayed to the left of the button, rather than to the right of
+the button.
+
+
+4.1.4    Options unique to BWCC
+-------------------------------
+
+
+4.1.4.1  BBS_PARENTNOTIFY
+-------------------------
+
+This option causes the control to generate the following
+notification messages at run time:
+
+- BBN_SETFOCUS
+- BBN_SETFOCUSMOUSE
+- BBN_GOTATAB
+- BBN_GOTABTAB
+
+These notifications are described in section 3.2.4.
+
+
+4.1.4.2  BBS_OWNERDRAW
+----------------------
+
+This option causes the control to send WM_DRAWITEM to its parent
+at run time, for specialized drawing.
+
+
+4.1.4.3  BBS_DLGPAINT
+---------------------
+
+The BWCC Custom Dialog Class uses this option to inform the
+button that the dialog class will paint the button. This option
+is for internal use only by BWCC.
+
+
+4.2      Messages
+-----------------
+
+4.2.1    Commands inherited from standard Windows controls
+----------------------------------------------------------
+
+4.2.1.1  BM_GETCHECK
+--------------------
+
+This message causes the button to return its current "check"
+state (the message names and descriptions all use check box
+imagery). If it is checked (pressed), it returns a nonzero value.
+Otherwise, it returns zero.
+
+
+4.2.1.2  BM_SETCHECK
+--------------------
+
+This message changes the check state of a button. If the wParam
+of the message is nonzero, the button is checked (filled with a
+circle or a diamond).
+
+
+4.2.1.3  BM_GETSTATE
+--------------------
+
+This message determines whether a button is "highlighted" (drawn
+with a heavy outline around the circle or diamond). It returns a
+nonzero value when the button is highlighted and zero when the
+button is not highlighted.
+
+
+4.2.1.4  BM_SETSTATE
+--------------------
+
+This message changes the highlight state of a button. If the
+wParam of the message is nonzero, the button is highlighted.
+
+
+4.2.2    Commands unique to BWCC
+--------------------------------
+
+[none]
+
+
+4.2.3    Notifications inherited from standard Windows controls
+---------------------------------------------------------------
+
+4.2.3.1  BN_CLICKED
+-------------------
+
+See the description of BN_CLICKED in section 3.2.3.1 of this
+file.
+
+
+4.2.4    Notifications unique to BWCC
+-------------------------------------
+
+The following notifications are sent to the parent window only if
+the programmer has specified the BBS_PARENTNOTIFY style.
+
+- BBN_SETFOCUS
+- BBN_SETFOCUSMOUSE
+- BBN_GOTATAB
+- BBN_GOTABTAB
+
+For a description of these notifications, see section 3.2.4 of
+this file.
+
+
+4.2.4.1  WM_DRAWITEM
+--------------------
+
+The description of this notification is identical to that
+contained in section 3.2.4.5, with the following exception:
+
+For automatic radio buttons, the itemID field of the
+DRAWITEMSTRUCT structure contains the value BS_AUTORADIOBUTTON.
+Otherwise, it contains the value BS_RADIOBUTTON.
+
+
+5        BORCHECK control
+-------------------------
+
+Function: Better-looking check boxes
+
+Class Name: "borcheck" ( CHECK_CLASS )
+
+
+5.1      Window Styles
+----------------------
+
+5.1.1    Types inherited from standard Windows controls
+-------------------------------------------------------
+
+5.1.1.1  BS_CHECKBOX
+--------------------
+
+A nonautomatic check box. Application program intervention is
+required to change its visual state after it has been "clicked."
+
+
+5.1.1.2  BS_AUTOCHECKBOX
+------------------------
+
+A check box that automatically changes its state when "clicked."
+
+
+5.1.2    Types unique to BWCC
+-----------------------------
+
+[none]
+
+
+5.1.3    Options inherited from standard Windows controls
+---------------------------------------------------------
+
+
+5.1.3.1  BS_LEFTTEXT
+--------------------
+
+This option causes the text associated with the button to be
+displayed to the left of the button, rather than to the right of
+the button.
+
+
+5.1.4    Options unique to BWCC
+-------------------------------
+
+
+5.1.4.1  BBS_PARENTNOTIFY
+-------------------------
+
+This option causes the control to generate the following
+notification messages at run time:
+
+- BBN_SETFOCUS
+- BBN_SETFOCUSMOUSE
+- BBN_GOTATAB
+- BBN_GOTABTAB
+
+
+5.1.4.2  BBS_OWNERDRAW
+----------------------
+
+This option causes the control to send WM_DRAWITEM to its parent
+at run time, for specialized drawing.
+
+
+5.1.4.3  BBS_DLGPAINT
+---------------------
+
+The BWCC Custom Dialog Class uses this option to inform the
+button that the dialog class will paint the button. This option
+is for internal use only by BWCC.
+
+
+5.2      Messages
+-----------------
+
+5.2.1    Commands inherited from standard Windows controls
+----------------------------------------------------------
+
+5.2.1.1  BM_GETCHECK
+--------------------
+
+This message causes the button to return its current "check"
+state. If it is checked, it returns a nonzero value. Otherwise,
+it returns zero.
+
+
+5.2.1.2  BM_SETCHECK
+--------------------
+
+This message changes the state of a check box. If the wParam of
+the message is a nonzero value, the check box is drawn with a
+check mark.
+
+
+5.2.1.3  BM_GETSTATE
+--------------------
+
+This message determines whether a check box is "highlighted"
+(drawn with a heavy outline). It returns a nonzero value when the
+check box is highlighted and zero when the check box is not
+highlighted.
+
+
+5.2.1.4  BM_SETSTATE
+--------------------
+
+This message changes the highlight state of a check box. If the
+wParam of the message is a nonzero value, the check box is
+highlighted.
+
+
+5.2.2    Commands unique to BWCC
+--------------------------------
+
+[none]
+
+
+5.2.3    Notifications inherited from standard Windows controls
+---------------------------------------------------------------
+
+
+5.2.3.1  BN_CLICKED
+-------------------
+
+See the description of BN_CLICKED in section 3.2.3.1 of this
+file.
+
+
+5.2.4    Notifications unique to BWCC
+-------------------------------------
+
+The following notifications are sent to the parent window only if
+the programmer has specified the BBS_PARENTNOTIFY style:
+
+- BBN_SETFOCUS
+- BBN_SETFOCUSMOUSE
+- BBN_GOTATAB
+- BBN_GOTABTAB
+
+For a description of these notifications, see section 3.2.4 of
+this file.
+
+
+5.2.4.1  WM_DRAWITEM
+--------------------
+
+The description of this notification is identical to that
+contained in section 3.2.4.5, with the following exception:
+
+For automatic check boxes, the itemID field of the DRAWITEMSTRUCT
+structure contains the value BS_AUTOCHECKBOX. Otherwise, it
+contains the value BS_CHECKBOX.
+
+
+6        BORSHADE control
+-------------------------
+
+Function: panels and dividers
+
+Class Name: "borshade" ( SHADE_CLASS )
+
+
+6.1      Window styles
+----------------------
+
+6.1.1    Types inherited from standard Windows controls
+-------------------------------------------------------
+
+[none]
+
+
+6.1.2    Types unique to BWCC
+-----------------------------
+
+
+6.1.2.1  BSS_GROUP
+------------------
+
+This style draws a "chiseled" gray box.
+
+
+6.1.2.2  BSS_HDIP
+-----------------
+
+This style draws a horizontal dividing line that can be used to
+separate sections of a dialog box.
+
+
+6.1.2.3  BSS_VDIP
+-----------------
+
+This style draws a vertical dividing line that can be used to
+separate sections of a dialog box.
+
+
+6.1.2.4  BSS_HBUMP
+------------------
+
+This style draws a horizontal dividing line that can be used to
+separate sections of a gray group shade (BSS_GROUP).
+
+
+6.1.2.5  BSS_VBUMP
+------------------
+
+This style draws a vertical dividing line that can be used to
+separate sections of a gray group shade (BSS_GROUP).
+
+
+6.2      Messages
+-----------------
+
+[none]
+
+
+7        BORDLG dialog class
+----------------------------
+
+Function: "Turbo" fast dialog box drawing
+
+Class Name: "bordlg" ( BORDLGCLASS )
+
+This custom dialog window class implements the "turbo painting"
+of Borland custom controls by eliminating unnecessary static
+control windows, keeping its own private list of controls within
+a dialog box, and painting those controls itself. It also
+automatically provides a patterned background on VGA and
+higher-resolution displays. If you want your dialogs to have the
+"Borland look," you must specify this dialog class in your dialog
+box template.
+
+
+7.1      Window Styles
+----------------------
+
+7.1.1    Types inherited from standard Windows controls
+-------------------------------------------------------
+
+All valid styles for a standard Windows dialog box.
+
+
+7.1.2    Types unique to BWCC
+-----------------------------
+
+[none]
+
+
+8        Using BWCC controls in nondialog windows
+-------------------------------------------------
+
+If you want your nondialog windows to look like the BorDlg
+windows (with the steel-gray background and light gray background
+for static controls), BWCC.DLL provides two functions that
+replace the Windows standard "Def" window functions and that
+should be called in place of them:
+
+- For MDI child windows, call BWCCDefMDIChildProc instead of the
+  Windows standard function DefMDIChildProc.
+
+- For all other windows, call BWCCDefWindowProc instead of the
+  Windows standard function DefWindowProc.
+
+As described earlier for BWCCDefDlgProc, your window proc must
+call either BWCCDefMDIChildProc or BWCCDefWindowProc for the
+following messages:
+
+- WM_CTLCOLOR
+- WM_NCCREATE
+- WM_CREATE
+- WM_NCDESTROY
+- WM_SETFONT
+- WM_PAINT
+- WM_ERASEBKGND
+
+Note: BWCC does not provide a replacement function for
+DefFrameProc.
+
+
+9        Miscellaneous functions
+--------------------------------
+
+BWCC.DLL exports three additional functions that you might find
+useful.
+
+
+9.1      BWCCGetVersion
+-----------------------
+
+This function, which takes no parameters, returns the current
+version of BWCC.DLL. The value it returns is defined in BWCC.H as
+BWCCVERSION.
+
+
+9.2      BWCCGetPattern
+-----------------------
+
+This function, which takes no parameters, returns a handle to the
+brush used to paint the background of BorDlg class dialogs. Since
+this brush could be a patterned brush, you must align it by
+calling UnrealizeObject and SetBrushOrg before selecting it into
+a device context. Do not delete this brush by calling
+DeleteObject!
+
+
+9.3      BWCCMessageBox
+-----------------------
+
+This function, which is call-compatible with the Windows standard
+function MessageBox, displays a message box that is consistent
+with the Borland dialog box style.
+
+
+           ========= END OF FILE BWCCAPI.RW =========
+

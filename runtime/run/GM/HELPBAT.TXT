@@ -1,0 +1,25 @@
+
+    
+        
+    
+    WELCOME TO GAME-MAKER
+    
+    Game-Maker is a software system that lets you  create  and  play full
+    color professional  quality  computer  games.  Game-Maker's state-of-
+    the-art Compter Aided  Design  tools  totally  eliminate  the need to
+    write software programs when making games.
+    
+    GETTING STARTED
+    
+    We suggest that you start by  playing  a few of the sample games that
+    have been included with Game-Maker.  Next,  read  the  Owner's Manual
+    and follow the advice on which tools to try first.  Use your mouse or
+    the right and left arrow keys and the ENTER  key to select items from
+    the  menus.    Select  "Play"  to  select a game, "Design"  to  start
+    designing games, and "Utilities" for housekeeping tasks.
+    
+    This software is copyrighted.  Select "About" to see how to  order  a
+    copy  of  Game-Maker,  Game-Maker  updates,  and  Game-Maker  related
+    Shareware.
+    
+    

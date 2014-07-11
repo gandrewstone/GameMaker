@@ -1,0 +1,786 @@
+Online document
+___________________________________________________________________________
+
+                                       ObjectWindows dynamic link libraries
+
+
+
+
+
+
+
+CONTENTS
+___________________________________________________________________________
+
+
+
+
+
+           ObjectWindows dynamic             Macro expansion . . . . . .  7
+           link libraries          1         Pointers and typedefs . . .  7
+C++ DLLs . . . . . . . . . . . . . 1       Building a shared class in a
+  Writing DLL functions  . . . . . 1       DLL . . . . . . . . . . . . . 10
+    LibMain and WEP  . . . . . . . 2       Using a shared class  . . . . 10
+    DLL-specific functions . . . . 3     Calling an ObjectWindows DLL from
+  Exporting DLL functions  . . . . 3     outside ObjectWindows . . . . . 11
+  Calling DLL functions  . . . . . 4   Using ObjectWindows as a DLL  . . 12
+  ObjectWindows DLLs . . . . . . . 4
+    The module object  . . . . . . 5
+  Shared classes . . . . . . . . . 6
+    Declaring and defining a shared
+    class  . . . . . . . . . . . . 6
+
+
+
+
+
+
+                    A dynamic-link library (DLL) is a library of functions
+                    whose references are resolved at run time rather than
+                    at compile time. DLL functions are dynamically linked
+                    to a calling application.
+
+                    Each application using statically linked code has its
+                    own copy of the code. The code for functions defined in
+                    a DLL is shared by all calling applications; only one
+                    copy is placed in memory. Defining code shared by a
+                    group of applications in a DLL therefore reduces the
+                    size of the .EXEs of the calling applications.
+
+                    You might want to define complex windowing behavior,
+                    shared by a group of your applications, in an Object-
+                    Windows DLL. In this chapter, you'll learn how to write
+                    and use an ObjectWindows DLL. You'll also learn how to
+                    use the ObjectWindows dynamic-link library (OWL31.DLL).
+
+
+
+===========================================================================
+C++ DLLs
+===========================================================================
+
+                    DLLs can contain ordinary functions or a combination of
+                    functions and exported C++ classes. First, we'll
+                    examine DLLs in the context of a library of ordinary
+                    functions. This section contains an overview of Borland
+                    C++ DLLs; you'll learn how to write, export, and call a
+                    DLL function using Borland C++.
+
+
+       Writing DLL
+         functions  =======================================================
+
+                    Windows requires that two functions be defined in every
+                    DLL: LibMain and WEP (Windows Exit Procedure).
+
+
+
+
+
+
+                                   - 1 -
+
+
+
+
+
+
+------------------  You must supply the LibMain function, which is the main
+   LibMain and WEP  entry point for a Windows DLL. Windows calls LibMain
+                    once, when the library is first loaded. LibMain
+------------------  initializes the DLL; this initialization depends almost
+                    entirely on the particular DLL's function, but might
+                    include the following tasks:
+
+                    o unlocking the data segment with UnlockData, if it has
+                      been declared as MOVEABLE
+
+                    o setting up global variables for the DLL, if it uses
+                      any
+
+              Note  The DLL startup code C0Dx.OBJ initializes the local
+                    heap automatically.
+
+                    The following parameters are passed to LibMain:
+
+                      int PASCAL LibMain(HANDLE hInstance, WORD wDataSeg,
+                                         WORD cbHeapSize, LPSTR lpCmdLine)
+
+ HANDLE, WORD, and  o hInstance is the instance handle of the DLL.
+ LPSTR are defined
+     in windows.h.  o wDataSeg is the value of the data segment (DS)
+                      register.
+
+                    o cbHeapSize is the size of the local heap specified in
+                      the module definition file for the DLL.
+
+                    o lpCmdLine is a far pointer to the command line
+                      specified when the DLL was loaded. This is almost
+                      always null, because typically DLLs are loaded
+                      automatically without parameters. It is possible,
+                      however, to supply a command line to a DLL when it is
+                      loaded explicitly.
+
+                    The return value for LibMain is either 1 (successful
+                    initialization) or 0 (unsuccessful initialization).
+                    Windows will unload the DLL from memory if the value is
+                    0.
+
+                    WEP is the exit point of a DLL; Windows calls it prior
+                    to unloading the DLL. This function is not necessary in
+                    a DLL (because the Borland C++ run-time libraries
+                    provide a default one), but can be supplied by the
+                    writer of a DLL to perform any cleanup of the DLL
+                    before it is unloaded from memory.
+
+                    Under Borland C++, WEP does not need to be exported.
+                    This is the prototype for WEP:
+
+                      int FAR PASCAL WEP (int nParameter)
+
+
+
+
+
+                                   - 2 -
+
+
+
+
+
+
+                    o nParameter is either WEP_SYSTEMEXIT (all of Windows
+                      shuts down) or WEP_FREE_DLL (just this DLL is
+                      unloaded).
+
+                    WEP returns 1 to indicate success. Note that Windows
+                    currently doesn't use this return value.
+
+
+                    The additional functions defined in your DLL depend on
+------------------  the services your DLL provides. When writing functions
+      DLL-specific  that will be called from an application, you need to
+         functions  keep these things in mind:
+
+------------------  o Make calls to DLL functions far calls, and make
+                      pointers specified as parameters and return values
+                      far pointers. This is because a DLL has different
+                      code and data segments than the calling application.
+
+                    o Static data defined in a DLL is global to all calling
+                      applications. Global data set by one caller can be
+                      accessed by another. If you need data to be private
+                      for a given caller, you need to dynamically allocate
+                      and manage the data yourself.
+
+
+     Exporting DLL
+         functions  =======================================================
+
+                    After writing your DLL functions, you must export the
+                    functions that you want available to a calling
+                    application. There are two steps involved: compiling
+                    your DLL functions as exportable functions and
+                    exporting them. You can do this in the following ways:
+
+                    o If you flag a function with the _export keyword, it's
+                      compiled as exportable and is then exported.
+
+                    o If you don't flag a function with _export and you use
+                      the -WD command-line switch or the Windows DLL All
+                      Functions Exportable IDE option when compiling, the
+                      function is compiled as exportable. However, the
+                      function only gets exported if you also list it in
+                      the EXPORTS section of the module definition (.DEF)
+                      file.
+
+                    o If you add the _export keyword to a class
+                      declaration, the entire class (data and function
+                      members) will be compiled as exportable and exported.
+
+
+
+
+
+
+
+
+
+                                   - 3 -
+
+
+
+
+
+
+       Calling DLL  =======================================================
+         functions
+                    You call a DLL function within an application just as
+                    you would call a function defined in the application
+                    itself. However, you must import the DLL functions that
+                    your application calls.
+
+                    There are two ways to import a DLL function:
+
+                    1. You can add an IMPORTS section to the calling
+                       application's module definition (.DEF) file and list
+                       the DLL function as an import.
+
+                    2. You can link an import library that contains import
+                       information for the DLL function to the calling
+                       application. (Use IMPLIB to make the import
+                       library.)
+
+                    When your application is executed, the .DLL files for
+                    the DLLs that it calls must be in the current
+                    directory, on the path, or in the Windows or Windows
+                    system directory; otherwise, your application won't
+                    load.
+
+
+ObjectWindows DLLs
+                    =======================================================
+
+                    ObjectWindows DLLs differ from ordinary DLLs in that,
+                    with ObjectWindows DLLs, you export classes derived
+                    from ObjectWindows classes as well as your own classes.
+                    This makes those classes and their member functions
+                    available to all .EXEs that dynamically link with your
+                    DLL.
+
+                    If you find that complex window behavior is shared by a
+                    group of your applications, you can define this
+                    behavior in an ObjectWindows DLL. For example, you
+                    might build a DLL that defines
+
+                    o a complex window used by related applications
+
+                    o useful dialogs
+
+                    o reusable custom controls
+
+                    o common drawable controls
+
+
+
+
+
+
+
+
+
+
+                                   - 4 -
+
+
+
+
+
+
+------------------  An instance of TModule acts as an object-oriented
+ The module object  replacement for an ObjectWindows DLL. TModule member
+                    functions provide support for window and memory
+------------------  management and process errors.
+
+                    Construct a module object in the LibMain function of
+                    your DLL:
+
+                      PTModule TheModule;
+
+                      int FAR PASCAL LibMain(HANDLE hInstance, WORD,
+                                             WORD cbHeapSize, LPSTR
+                                             lpCmdLine)
+                      {
+                        int TheStatus;
+
+                        TheModule = new TModule("LibName", hInstance,
+                      lpCmdLine);
+                        TheStatus = TheModule->Status;
+                        if (TheStatus != 0)
+                        {
+                          TheModule->Error(TheStatus);
+                          delete TheModule;
+                          TheModule = NULL;
+                        }
+
+                        return (TheStatus == 0);
+                      }
+
+                    In this example LibMain, an instance of TModule is
+                    constructed. The hInstance and lpCmdLine parameters
+                    received from Windows are passed to the TModule
+                    constructor to initialize data members of the same
+                    name.
+
+                    After the module object is constructed, its Status data
+                    member is used to determine the success or failure of
+                    module initialization. If the Status member contains a
+                    nonzero value, the initialization of the module object
+                    is unsuccessful. At this point, you should delete the
+                    module object in LibMain; zero will be returned to
+                    Windows to indicate that an error occurred (as shown
+                    previously in LibMain). Set Status to an error that you
+                    define (a nonzero value) if your DLL cannot be
+                    successfully initialized.
+
+                    In WEP, the module object is deleted:
+
+                      int FAR PASCAL WEP(int)
+                      {
+                        delete TheModule;
+                        return 1;
+
+
+
+
+
+                                   - 5 -
+
+
+
+
+
+
+                      }
+
+                    As noted, Windows does not use WEP's return value.
+
+                    Usually, your DLL will require additional
+                    initialization and cleanup. You could perform this
+                    processing in your LibMain and WEP functions; better
+                    yet, derive a class from TModule. Perform the required
+                    initialization and cleanup in its constructor and
+                    destructor, and define data members for data global to
+                    your DLL.
+
+
+    Shared classes
+                    =======================================================
+
+                    You can share code that defines the behavior of a
+                    general-use dialog box by defining a dialog class in a
+                    DLL (a shared class). For example, a group of graphics
+                    applications might use a color dialog defined in a DLL
+                    to retrieve an RGB value from the user. To do so,
+                    you'll need to export the class from the DLL and import
+                    the class into your applications.
+
+
+                    You'll need to do the following in order to
+------------------  successfully define and declare a shared class.
+     Declaring and
+ defining a shared  o pass an additional PTModule parameter to window
+             class    constructors (in certain situations).
+
+------------------  o conditionally declare your class as either _export or
+                      huge.
+
+                    o use far pointers and far references in your
+                      declarations.
+
+                    If you declare a shared class in an include file that
+                    is included by both the DLL and an application using
+                    the DLL, the class must be declared _export when
+                    compiling the DLL and huge when compiling the
+                    application. You can do this with the _EXPORT macro,
+                    which is set to _export or huge as needed when building
+                    a DLL or using an .EXE with a DLL.
+
+                      class _EXPORT TColorControl : public TControl
+                      {
+
+                      protected:
+                      ...
+
+                      public:
+                      ...
+                      };
+
+
+
+                                   - 6 -
+
+
+
+
+
+
+                 Macro expansion
+                 =========================================
+
+                    The _EXPORT macro expands into _export if _ _DLL_ _ is
+                    defined. Borland C++ defines _ _DLL_ _ automatically
+                    when you supply the -WD or -WDE options to the
+                    command-line compiler, or when you specify that you are
+                    building a DLL in the IDE. If you are not building a
+                    DLL, then _EXPORT expands to _CLASSTYPE. _CLASSTYPE is
+                    a macro that expands into "huge", "far", or "near".
+
+                    For _CLASSTYPE to expand into "huge" (which is required
+                    for classes shared between an application and DLLs), a
+                    third macro is used: _CLASSDLL. You must define
+                    _CLASSDLL on either the compiler command line or by
+                    including it in the "Defines" edit field in the
+                    compiler options dialog box of the Borland C++ IDE.
+                    When defined, _CLASSDLL communicates to both the
+                    compiler and to the _CLASSTYPE macro your intention to
+                    use the classes being compiled as shared classes.
+
+                    In summary, declare your shared classes with _EXPORT as
+                    in the example above. Compile your DLLs with the
+                    appropriate compiler directives and your classes will
+                    be exported. Compile your .EXE with the _CLASSDLL macro
+                    defined, and your classes will be compiled as huge and
+                    will therefore be suitable for sharing with DLLs.
+
+
+                 Pointers and typedefs
+                 =========================================
+
+                    You must also declare the pointers and references in
+                    the header file of your shared class as far pointers.
+                    You can explicitly set the pointers to far, or you can
+                    use the _FAR macro to do this. _FAR is set to far only
+                    when _CLASSDLL is defined.
+
+                    ObjectWindows defines data type specifiers for each
+                    ObjectWindows class using the _FAR macro. The PTDialog
+                    typedef is shown here:
+
+                      typedef TDialog _FAR *PTDialog;
+
+                    ObjectWindows defines similar type specifiers for each
+                    ObjectWindows class. Using these ObjectWindows typedefs
+                    will help improve the readability of your code.
+
+                    When referring to a pointer to an ObjectWindows class,
+                    use a type whose name is P followed by the name of a
+                    class. Similarly, for a reference to a class, use an R
+                    followed by the name of the class. For example, a
+                    pointer to a TWindow is a PTWindow. A reference to a
+                    TDialog is an RTDialog.
+
+
+
+                                   - 7 -
+
+
+
+
+
+
+                    All ObjectWindows classes automatically define those
+                    and other typedefs that make use of the _FAR macro. To
+                    automatically get those typedefs defined for your own
+                    classes, use the _CLASSDEF macro at the top of your
+                    header file for each class you define. For example,
+                    this code
+
+                      _CLASSDEF(TMyWindow)
+                      class _EXPORT TMyWindow:public TWindow
+                      {
+                      ...
+                      };
+
+                    will cause PTMyWindow, RTMyWindow, and other typedefs
+                    to be defined. See the documentation on _CLASSDEF in
+                    Chapter 18 for details of the typedefs automatically
+                    defined.
+
+                    Due to the way the Borland C++ compiler treats classes
+                    and structures, if your shared classes contain, as data
+                    members, pointers to structures or other classes, you
+                    may have to declare any referenced structures and
+                    classes with the _CLASSTYPE macro. For example,
+
+                      struct _CLASSTYPE TMyStruct
+                      {
+                      };
+                      typedef TMyStruct _FAR * PTMyStruct;
+
+                      class _EXPORT TMyClass
+                      {
+                         PTMyStruct ptms;
+                      };
+
+                    In the above example, TMyStruct may need to be declared
+                    with _CLASSTYPE (as shown), since pointers to it are
+                    contained in the huge class TMyClass. (_EXPORT implies
+                    "huge" when you are compiling a DLL or compiling an
+                    .EXE with the _CLASSDLL macro defined).
+
+                    The declaration of a TColorDialog shared class and the
+                    TColorControl class that it uses are shown next.
+
+        This class    _CLASSDEF(TColorControl)
+definition is from
+       colordlg.h.    class _EXPORT TColorControl : public TControl
+                      {
+                      public:
+                        COLORREF Color;
+
+                        TColorControl(PTWindowsObject AParent, int
+                                      ResourceId, COLORREF AColor, PTModule
+                                      AModule = NULL);
+
+
+
+
+                                   - 8 -
+
+
+
+
+
+
+                      protected:
+                        virtual LPSTR GetClassName();
+                        virtual void GetWindowClass(WNDCLASS _FAR &
+                      AWndClass);
+                        virtual void Paint(HDC, PAINTSTRUCT _FAR & PS);
+                        virtual WORD Transfer(Pvoid DataPtr, WORD
+                      TransferFlag);
+                        virtual void WMLButtonDown(RTMessage Msg) =
+                                     [WM_FIRST + WM_LBUTTONDOWN];
+                        virtual void WMLButtonDblClk(RTMessage Msg) =
+                                     [WM_FIRST + WM_LBUTTONDBLCLK];
+
+                      public:
+                        virtual void SetColor(COLORREF AColor);
+                      };
+
+                      _CLASSDEF(TColorDialog)
+
+                      class _EXPORT TColorDialog : public TDialog
+                      {
+                      protected:
+                        PTScrollBar ColorBar1;
+                        PTScrollBar ColorBar2;
+                        PTScrollBar ColorBar3;
+                        PTColorControl SelColor;
+
+                      public:
+                        TColorDialog(PTWindowsObject AParent, COLORREF _FAR
+                                     & TheColor, PTModule TheModule =
+                                     NULL);
+
+                      protected:
+                        virtual void DefChildProc(RTMessage Msg);
+                        virtual void SetupWindow();
+                        virtual void TransferData(WORD TransferFlag);
+                        virtual void UpdateBars(COLORREF AColor);
+                      };
+
+                    An RTMessage typedef is used in these declarations to
+                    improve code readability and to ensure the reference is
+                    a far reference when the class is used as a shared
+                    class. ObjectWindows defines it as follows:
+
+                      typedef TMessage _FAR & RTMessage;
+
+                    Various other macros that use the _FAR macro are
+                    defined by ObjectWindows in _defs.h.
+
+                    After you've properly declared your shared class, you
+                    can define its implementation in your DLL as you would
+                    in an ObjectWindows application.
+
+
+
+
+
+
+                                   - 9 -
+
+
+
+
+
+
+------------------  After declaring and defining your shared class, you
+ Building a shared  need to
+    class in a DLL
+                    o write LibMain and WEP functions
+------------------
+                    o compile your DLL
+
+                    You can copy the LibMain and WEP functions previously
+                    shown to your DLL's .CPP source file, or you can use
+                    your customized versions.
+
+                    To compile your DLL, simply follow the normal
+                    procedures for generating DLLs. For the command-line
+                    compiler, specify either the -WDE or -WD options. For
+                    the IDE, ensure you are building a DLL by checking both
+                    the Options|Compiler|Entry/Exit Code and Options|Linker
+                    dialog boxes for the correct DLL options. See your
+                    Borland C++ documentation for general information about
+                    building DLLs.
+
+                    After you have compiled and linked your DLL, use IMPLIB
+                    to generate an import library for your DLL. This import
+                    library will list all exported member functions from
+                    your shared classes as well as any ordinary functions
+                    which you've exported.
+
+
+                    To use a shared class from a DLL in your application,
+------------------  you need to compile your application defining the
+    Using a shared  _CLASSDLL macro (as discussed earlier). Then link your
+             class  application with the import library you created for
+                    your DLL. Then you can use the class defined in the DLL
+------------------  as if the class had been defined by your application.
+
+                    In the following example code, TColorDialog is executed
+                    when a Color menu item is selected from TTestWindow's
+                    menu:
+
+                      void TTestWindow::CMColor(RTMessage) {
+                        COLORREF TheColor;
+
+                      ...
+                        if (GetApplication()->ExecDialog(new
+                                                         TColorDialog(this,
+                                                         TheColor,
+                                                         GetModule())) ==
+                                                         IDOK)
+                      ...
+                      }
+
+                    this is specified as the parent window object to the
+                    constructor of the TColorDialog.
+
+
+
+
+
+                                  - 10 -
+
+
+
+
+
+
+                    You could share code that defines the behavior of a
+                    window (perhaps, a complex help window) or of a control
+                    (perhaps a custom or drawable control). The procedure
+                    outlined here applies to the definition of any Object-
+                    Windows shared class.
+
+                    You can use an ObjectWindows shared class as a base
+                    class for a class that is defined in an ObjectWindows
+                    application, or in another ObjectWindows DLL.
+
+
+Calling an Object-
+  Windows DLL from  =======================================================
+   outside Object-
+           Windows  Up to this point, we've assumed that the applications
+                    calling your DLL were written using ObjectWindows. You
+                    can also call an ObjectWindows DLL from a non-Object-
+                    Windows application.
+
+                    An ObjectWindows child window requires some support
+                    from a parent window object. When a child window is
+                    created in a DLL and the parent window is created by
+                    the calling application, the parent-child relationship
+                    must be simulated in the DLL. This is done by
+                    constructing a window object in the ObjectWindows DLL
+                    that's associated with the parent window whose handle
+                    is specified on a DLL call. This object will be deleted
+                    by ObjectWindows when the window in the calling
+                    application is destroyed.
+
+                    Note that incoming messages for the parent window are
+                    first dispatched to its associated ObjectWindows
+                    object. The associated object only responds to those
+                    messages that support its child windows. All messages
+                    are passed on to the window in the calling application.
+
+                    In the following code, the exported function
+                    CreateDLLWindow is in an ObjectWindows DLL. It is
+                    assumed to be called by a non-ObjectWindows .EXE
+                    (although it will work from an ObjectWindows .EXE as
+                    well).
+
+                      BOOL _far _export CreateDLLWindow(HWND ParentHWnd)
+                      {
+                        PTWindowsObject AParentAlias;
+                        PTWindow TheWindow;
+
+                        AParentAlias =
+                      DLLHelloLib->GetParentObject(ParentHWnd);
+                        TheWindow = new TWindow(AParentAlias, "Hello from a
+                                                DLL!", DLLHelloLib);
+                        TheWindow->Attr.Style |= WS_POPUPWINDOW |
+                                                 WS_CAPTION | WS_THICKFRAME
+
+
+
+
+                                  - 11 -
+
+
+
+
+
+
+                                                 | WS_MINIMIZEBOX |
+                                                 WS_MAXIMIZEBOX;
+                        TheWindow->Attr.X = 100;
+                        TheWindow->Attr.Y = 100;
+                        TheWindow->Attr.W = 300;
+                        TheWindow->Attr.H = 300;
+                        return (DLLHelloLib->MakeWindow(TheWindow) ==
+                      TheWindow);
+                      }
+
+                    CreateDLLWindow is passed the handle to a window that
+                    potentially might not correspond with an ObjectWindows
+                    window. The call to GetParentObject returns an Object-
+                    Windows object which is either the actual ObjectWindows
+                    TWindowsObject (if there is one) or a surrogate object
+                    created on the fly. You can use this TWindowsObject
+                    instance just as though you had created it in the DLL.
+
+                    In the above example, a child window of the supplied
+                    ParentHWnd is created as a popup window.
+
+                    Note that the DLL's module pointer, DLLHelloLib, is
+                    supplied as the last parameter to TWindow's constructor
+                    to provide an owning TModule for the window.
+
+
+
+===========================================================================
+Using ObjectWindows as a DLL
+===========================================================================
+
+                    To enable your ObjectWindows applications to share a
+                    single copy of the ObjectWindows library, you can
+                    dynamically link them to the ObjectWindows DLL. To do
+                    this, you'll need to be sure of the following:
+
+                    o When compiling, be sure to define the macro _CLASSDLL
+                      on the compiler command line or in the IDE.
+
+                    o If using any model other than large, ensure that all
+                      pointers and references in class data members,
+                      argument lists, and return values use the _FAR macro
+                      to force far addresses.
+
+                    o Instead of specifying the static link ObjectWindows
+                      library when linking (that is, OWLWS.LIB, OWLWM.LIB,
+                      or OWLWL.LIB), specify the ObjectWindows DLL import
+                      library (OWL.LIB).
+
+
+
+
+
+
+
+
+
+                                  - 12 -
+

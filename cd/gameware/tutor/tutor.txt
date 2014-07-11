@@ -1,0 +1,66 @@
+
+TUTOR is  not a game.  It is a
+demonstration of some of Game-
+Maker's features.  
+ 
+Move  the character around the
+scene  with  the  arrow  keys.
+You  will be able  to  observe
+and  experience  the following
+Game-Maker capabilities.   
+
+* Scrolling and scrolling con-
+trol.  TUTOR has scrolling set
+to permit horizontal scrolling
+only.
+
+*  Solid blocks stop the char-
+acter.
+
+*  One way doors.  Blocks with
+one  solid  side  prevent  the
+character  from  entering  the
+block from one side, but allow
+it  to move through the  block
+from the other sides.
+
+*  Shooting.  Press the  space
+key to try it out.
+
+*  Blocks can change upon con-
+tact  with the character  into
+other blocks.
+
+*  The  character  can  change
+into another  character as you
+travel from level to level.
+
+*  Blocks  can  change after a
+set time has elapsed.  You can
+use  this  feature  to  create
+background animation by having
+blocks    change   into  other
+blocks in rapid succession.
+
+* Blocks can change on contact
+and  on  time.   TUTOR shows a
+case where  block  "1" changes
+to "2" and  block  "3"  to "4"
+and  then  back to  the  first
+blocks based on time.  But "1"
+also changes to "3" and "4" to
+"1"  upon   contact  with  the
+character.   You  can  set  up
+some  tricky  stuff with  this
+arrangement.
+
+*  Gravity.  It pulls you this
+way and that.
+
+*  Keys and Doors. You can set
+up  'special  counters'   that
+force  you to contact  one  or
+more  blocks, such as pictures
+of  keys, before another block
+will change,  such  as  a door
+changing to an open door.   

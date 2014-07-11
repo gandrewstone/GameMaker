@@ -1,0 +1,47 @@
+
+    BARRACUDA INSTRUCTIONS
+
+[F1]  Help
+[F2]  Status/Inventory
+[F4]  Toggle Sound
+[F5]  Save Game
+[F6]  Restore Game
+[F8]  Turn On/Off Joystick
+[F9]  Calibrate Joystick
+[F10] About Game-Maker
+
+
+
+
+
+
+
+ARROW KEYS move character
+JOYSTICK moves character
+
+[SPACE] fires sub torpedo
+JOYSTICK BUTTON 1 fires
+      sub torpedo 
+
+[P]   Pick Up Items. Or...
+JOYSTICK DOWN + BUTTON 1
+
+[D]   Drop Items.  Or...
+JOYSTICK DOWN + BUTTON 2
+
+
+Barracuda!  Be sure to  'pick'
+up  ANYTHING  you  can, and be
+sure to  search  the surround-
+ings.    You  must  find  four
+items to stop the bomb!
+------------------------------
+Find  these  items:   
+  CONTROL PANEL 
+  GUIDANCE SYSTEM
+  ROCKET BOOSTER  
+  NUCLEAR WARHEAD
+------------------------------
+Good  Luck  and remember,  you
+have to beat the IRAQIS! 
+ 

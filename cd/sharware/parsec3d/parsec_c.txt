@@ -1,0 +1,17 @@
+         PARSEC MAN 3D
+
+
+Created by.........Mark Hadley
+Edited by..........Mark Hadley
+Idea by............Mark Hadley
+Graphics by........Mark Hadley
+
+
+ This program was created with
+          the help of
+
+          GAME-MAKER
+
+              by
+ Recreational Software Designs
+

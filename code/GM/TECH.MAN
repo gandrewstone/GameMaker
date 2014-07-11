@@ -1,0 +1,81 @@
+
+blk[].effect = 0 if not used.
+
+
+Character Stuff
+Defined Character sequences     
+        0 = idle
+        1 = die
+
+Playgame Character Stuff
+
+        Hitpoints               ci[0].hitpts
+        Lives left              ci[0].lives
+        Score                   long int score
+        Money                   chr[0].meter[3]        
+        elapsed time            clock/18.2
+
+        current position chr[0].x[0],chr[0].y[0]
+
+
+jstk_mov   Up                  = 1
+           Up-right            = 2
+           Right               = 3
+           Down-right          = 4
+           Down                = 5
+           Down-left           = 6
+           Left                = 7
+           Up-Left             = 8
+           Any Direction       = 9
+           No Joystick         = 0
+
+
+jstk_but   Button 1            = 1
+           Button 2            = 2
+           Both Buttons        = 3
+           No Buttons          = 4
+           Doesn't matter      = 0
+
+
+
+Monster Stuff
+        Attack sequence  
+        mon[].activate
+                    No attack seq = FALSE
+                         constant = 1
+               Relative to player = 2        
+
+Defined Meters
+        0 = Initial Hit Points
+        1 = # of lives
+
+
+Information held in .orient byte:
+
+        1-4 rotate in the 4 compass directions
+        bit 3 set = flip over
+
+
+Playgame 
+
+        char soundon=TRUE   
+                    =FALSE;
+
+
+
+Saving a game  
+
+        ci[MAXPLAY]   cinfo data structure.
+        chr[MAXPLAY]  chrstruct
+        Save clock
+        mi[LASTMM] minfo data structure 
+          - *save must be NULL
+            PicDrawn = FALSE (no picture on the screen)
+        mm[LASTMM] monmapstruct 
+        blkmap[LASTBL]  (translation betw blocks in map and to be drawn)
+         
+
+        save playscene local variables
+           doscene 
+           prevscene 
+           linkin

@@ -1,0 +1,24 @@
+
+                     G A M E - M A K E R    Version 3.0
+    
+                      by Recreational Software Desgins
+                         BOX 1163, Amherst, NH 03031
+    
+    Game-Maker software, documentation,  and  data  files  are  furnished
+    under a license agreement,  and may be copied only in accordance with
+    the terms of the license  agreement.  Good News!  This license allows
+    distribution of games to up to  ten  friends  free of royalties.  You
+    may also distribute games as Shareware without  needing  to  obtain a
+    formal  license.    Game-Maker  provides  a  software utility  called
+    "Transfer"  that packages the games you design onto diskettes,  ready
+    for  distribution.    For commercial distribution of games, check the
+    Owner's manual  to  read  about  the standard royalty terms.  Contact
+    Recreational Software Designs if you need special commercial terms.
+    
+    ORDER GAME-MAKER, GAME-MAKER UPDATES, AND GAME-MAKER SHAREWARE FROM:
+                KD Software  1-603-332-8164, FAX 603-332-8125
+                Great Falls Avenue, Box 448 
+                Rochester, NH, USA, 03867
+                Call for the latest prices.
+    
+    

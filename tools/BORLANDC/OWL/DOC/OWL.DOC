@@ -1,0 +1,405 @@
+===========================================================================
+ObjectWindows for C++
+===========================================================================
+
+                    This file contains important information about
+                    ObjectWindows for C++, an application framework that
+                    will ease the development of applications for Windows.
+                    For the latest information about ObjectWindows for C++,
+                    the accompanying example programs, and documentation,
+                    read this entire file.
+
+              Note  There are many changes and enhancements to
+                    ObjectWindows in this release, to better support
+                    Windows 3.1. For more details, see OWL31.DOC.
+
+
+          Features  =======================================================
+
+                    ObjectWindows for C++ includes the following important
+                    features:
+
+
+------------------  DDVTs provide a simple alternative to the traditional
+  Dynamic Dispatch  method of writing a window procedure to responding to
+    Virtual Tables  Windows messages. Typically, a window procedure
+           (DDVTs)  consists of a lengthy switch statement with a case for
+------------------  every Windows message to which you require a response.
+                    By using DDVTs, you respond to a Windows message by
+                    writing a member function of the C++ class associated
+                    with your window. Using DDVTs, your derived classes
+                    will not be encumbered with virtual table entries for
+                    all windows messages handled by the derived class and
+                    all base classes. DDVTs encode only the changed virtual
+                    member functions to keep virtual tables small.
+
+
+------------------  ObjectWindows includes support for streamable
+       Support for  (persistent) objects. The stream manager lets you save
+streamable objects  objects either in memory or file streams so that they
+------------------  persist beyond their normal lifespan.
+
+
+------------------  The Borland Windows Custom Control Library (BWCC.DLL)
+    Borland custom  provided with this release allows you to build your own
+          controls  Windows programs using the fancy dialog boxes and
+------------------  controls provided with such Borland Windows products as
+                    the Resource Workshop, Turbo Pascal for Windows, Turbo
+                    C++ for Windows, and Borland C++ for Windows.
+
+
+------------------  ObjectWindows provides the ability to produce your own
+      Dynamic-link  ObjectWindows DLLs and use classes and functions from
+  libraries (DLLs)  these DLLs in your ObjectWindows applications.
+------------------
+                    In addition to OWL31.DLL, this version includes dynamic
+                    link library versions of BWCC (Borland Windows Custom
+                    Controls), and BC30RTL (the Borland C++ run-time
+                    libraries within a DLL). More information on these
+                    appears below.
+
+
+------------------  We provide Help files containing reference information
+       Online Help  on the ObjectWindows and Streamable classes. The Help
+------------------  files are provided in two formats: one that is
+                    compatible with THELP and the DOS IDE and one that is
+                    compatible with the Windows Help engine (WINHELP).
+
+
+------------------  To significantly improve the performance of dynamic
+       Global heap  heap allocations under Windows, the BC RTL provides new
+     suballocation  versions of the farmalloc, farfree, farrealloc, and
+------------------  farcalloc functions which suballocate Windows global
+                    heap blocks. To take advantage of these functions, you
+                    need only use 'new' and 'delete' as usual.
+
+
+         Important  =======================================================
+       information
+
+
+------------------  The User's Guide includes a step-by-step tutorial that
+     ObjectWindows  quickly introduces readers to many of the important
+      User's Guide  features of ObjectWindows and gets them off to a good
+------------------  start in ObjectWindows programming.
+
+                    In OWL\DOC, you will also find a file, OWLDLL.DOC, that
+                    contains a new chapter on using and building dynamic
+                    link libraries.
+
+                    The BWCC-OWL.DOC file in OWL\DOC, and BWCCAPI.RW and
+                    BWCCSTYL.RW files in BORLANDC\DOC contain information
+                    on using the Borland Custom Controls with
+                    ObjectWindows.
+
+                    If you have any questions that are not answered in the
+                    manuals, check out this file and the HELPME!.DOC
+                    file, which discuss questions and problems that
+                    ObjectWindows programmers may encounter.
+
+
+------------------  The Borland Windows Custom Control Library (BWCC.DLL)
+    Borland custom  is provided with this release, along with its import
+          controls  library (BWCC.LIB). To use BWCC, you must specify the
+------------------  Windows class name of any control you want to use in
+                    your resource files.
+
+                    Whether you use BWCC from an ObjectWindows program or
+                    not, you will have to ensure that BWCC.DLL is
+                    dynamically loaded along with your program. The
+                    suggested way to do this is to update your program to
+                    make a call to BWCCGetVersion (defined in
+                    BORLANDC\INCLUDE\BWCC.H) from somewhere within your
+                    program. This will cause an imported reference to
+                    BWCC.DLL which will, in turn, cause the Windows loader
+                    to load BWCC.DLL along with your program (if it is not
+                    already loaded).
+
+                    The CHECKERS and TTT (TicTacToe) games in the
+                    OWL\EXAMPLES directory use the Borland Windows Custom
+                    Controls.
+
+                    See the files BWCC-OWL.DOC in the OWL\DOC subdirectory
+                    and BWCCAPI.RW and BWCCSTYL.RW files in BORLANDC\DOC
+                    for more information on using the Borland Custom
+                    Controls.
+
+
+------------------  If you use DLLs, remember that they must be located in
+       DLL support  a directory in your path (eg, C:\BORLANDC\BIN or
+------------------  C:\WINDOWS) or in the directory of the .EXE which
+                    invokes them.
+
+                    By default, the INSTALL program will place OWL31.DLL,
+                    BC30RTL.DLL, and TCLASS31.DLL in your BORLANDC\BIN
+                    directory and BWCC.DLL in your WINDOWS\SYSTEM
+                    directory.
+
+                    If you want to build the example programs to use the
+                    statically linked libraries rather than OWL31.DLL (the
+                    default for the makefile in OWL\EXAMPLES), you should
+                    define the USESTATIC macro on the make command line:
+
+                         make -DUSESTATIC
+
+                    If you are using OWL31.DLL, or any ObjectWindows DLL
+                    that you have built, you must use large model for both
+                    the DLLs and the EXEs that use them. Also, if you link
+                    your program to you use OWL31.DLL, then it should also
+                    be linked to use BC30RTL.DLL and TCLASS31.DLL;
+                    CRTLDLL.LIB and TCLASDLL.LIB are their import
+                    libraries.
+
+                    If you want to build your own DLLs with ObjectWindows,
+                    we recommend that you check out the USECDLL and CALLDLL
+                    example programs.
+
+                    The USECDLL example program demonstrates the use of a
+                    cooperating ObjectWindows EXE and DLL using an object
+                    interface (that is, shared classes). The CALLDLL
+                    example program shows an ObjectWindows EXE making a
+                    call into an ObjectWindows DLL using a functional
+                    interface. The USECDLL2 shows a non-OWL EXE calling
+                    into an ObjectWindows DLL.
+
+                    If you want to define your own shared classes, define
+                    the _CLASSDLL macro in the Defines text box of the
+                    Options|Compiler|Code Generation dialog box or on the
+                    compiler command line to signify that the module being
+                    compiled will use classes in a DLL or will pass classes
+                    into a DLL. Other macros, notably _CLASSTYPE, _EXPORT,
+                    and _FAR, will check to see if _CLASSDLL has been
+                    defined.
+
+                    Use the _EXPORT macro (defined in
+                    OWL\INCLUDE\OWLDEFS.H) in the definitions of your
+                    shared classes. It will expand into either '_CLASSTYPE'
+                    (when compiling an .EXE file) or '_export' (when
+                    compiling a .DLL module). Typical usage might be:
+
+                         _CLASSDEF(TMyClass)
+                         class _EXPORT TMyClass
+                         {
+                              // whatever...
+                         };
+
+                    The _CLASSTYPE macro (defined in
+                    BORLANDC\INCLUDE\_DEFS.H) expands into either "huge",
+                    "far", or "near" as appropriate. If the __DLL__ or
+                    _CLASSDLL macro is defined, _CLASSTYPE expands into
+                    "huge", since huge classes are required when classes
+                    are passed between an EXE and a DLL or between two DLLs
+                    (a huge class is a class which has a far 'this' pointer
+                    and a far virtual table pointer).
+
+                    External functions that are exported from a library
+                    when it is built as a DLL should be declared with
+                    _EXPFUNC. This macro is defined in OWLDEFS.H and
+                    expands into '_export' when the source it appears in is
+                    compiled for a DLL(-WDE or -WD would be used if built
+                    with the command line compiler); otherwise, _EXPFUNC is
+                    replaced with the null string. For example, the
+                    following declaration appears in the APPLICAT.H header
+                    file:
+
+                         extern PTApplication _EXPFUNC
+                                GetApplicationObject();
+
+
+                    Note that ObjectWindows DLLs may only be built in large
+                    model.
+
+                    Also note that, if you build an ObjectWindows
+                    application (.EXE) that uses one or more ObjectWindows
+                    DLLs, you must dynamically link your EXE with
+                    OWL31.DLL, TCLASS31.DLL, and BC30RTL.DLL. You cannot
+                    statically link your EXE with the OWLWx.LIB static link
+                    libraries.
+
+                    More information on DLLs appears in the OWLDLL.DOC file
+                    in OWL\DOC.
+
+
+------------------  We provide the complete source code and makefiles
+       Source code  needed for building the ObjectWindows (static and
+------------------  dynamic link) libraries. When building the
+                    ObjectWindows libraries yourself, the .OBJ files
+                    produced will be placed in appropriate subdirectories
+                    of OWL\OBJECT by the makefile.
+
+                    For example, the .OBJ files for the small memory model
+                    will be put in OWL\OBJECT\WS, while those for large
+                    model DLL will be placed in in OWL\OBJECT\DL.
+
+------------------  The OWL\EXAMPLES subdirectory contains many sample
+   Sample programs  programs that will help you get started in writing
+------------------  ObjectWindows programs. The 'test' apps are typically
+                    short programs providing code samples that demonstrate
+                    various ObjectWindows classes and their features; these
+                    often correspond to discussions in the User's Guide.
+
+                    The longer, more useful and interesting apps include
+                    MFILEAPP (an MDI editor), SWAT (a game), and PROGTALK
+                    (a DDE client that can add items and groups to the
+                    Windows program manager (a DDE server)). The TTT
+                    (TicTacToe) and CHECKERS examples make use of the
+                    Borland Windows Custom Controls. Using a dialog as a
+                    main window of a program is demonstrated in the SYSINFO
+                    (system information), CALC (calculator), and CURSOR
+                    (window information) examples.
+
+                    We provide a MAKEFILE for building the examples. You
+                    may want to use this as a template for writing your own
+                    makefiles. The MAKEFILE uses a make include file,
+                    MAKEFILE.INC, which defines the macros used by the
+                    makefiles in OWL\EXAMPLES and its subdirectories. If
+                    you installed ObjectWindows under your BORLANDC
+                    directory (the default), and if your BORLANDC
+                    subdirectories use the default names (BIN, INCLUDE,
+                    LIB, CLASSLIB), then you will only have to redefine the
+                    BCROOT macro within MAKEFILE.INC to use these
+                    makefiles.
+
+                    The OWL\EXAMPLES subdirectory also contains project
+                    (.PRJ) files for building the sample programs with the
+                    IDE. If you didn't use the standard directories when
+                    you installed Borland C++ or ObjectWindows, and you
+                    want to build example programs that come with .PRJ
+                    files, you may have to change the .PRJ file to reflect
+                    your actual directory setup. Do this from in the IDE
+                    with the Options|Directories dialog box.
+
+
+------------------  The OWL directory contains a batch file BUILDOWL.BAT
+      Building the  which you can use to build both the class libraries and
+     libraries and  the ObjectWindows libraries. This batch file invokes
+       sample code  the makefile in the OWL\SOURCE directory.
+------------------
+                    If you installed Borland C++ in a directory other than
+                    the default (C:\BORLANDC), you will need to change the
+                    macro definition
+
+                         BCROOT=c:\borlandc
+
+                    in the makefiles to use that other directory.
+
+                    The install program installs ObjectWindows, by default,
+                    in C:\BORLANDC\OWL. The makefiles are currently set up
+                    to assume ObjectWindows was installed in the directory
+                    OWL under your Borland C++ directory (the macro
+                    BCROOT). You will need to update the OWLROOT macro
+                    (which defaults to $(BCROOT)\OWL) in all the makefiles
+                    to read:
+
+                         OWLROOT=d:\owl
+
+                    (or wherever) if you told INSTALL to place
+                    ObjectWindows somewhere else.
+
+                    These changes are necessary to enable the makefile and
+                    the compiler to find the appropriate include files and
+                    libraries that are needed to build your ObjectWindows
+                    programs. If you do not want to edit the makefile to
+                    make this change, you can redefine these on the make
+                    command line; for example,
+
+                         make -DBCROOT=d:\borlandc -DOWLROOT=d:\owl
+
+                    would change the definitions of the BCROOT and OWLROOT
+                    make macros to he example programs each have a project
+                    file. After you have opened a project in the IDE, you
+                    should check the Options|Directories dialog; you may
+                    have to change part of the INCLUDE and LIB selections
+                    if C:\BORLANDC is not the directory in which you
+                    installed Borland C++.
+
+                    If you are in a directory containing source or sample
+                    code, you can build it by simply running
+
+                         make
+
+                    To build the programs using the static link libraries
+                    for a specific memory model, use
+
+                         make -DUSESSTATIC -DMODEL=x
+
+                    where x is one of s, m, or l. The makefiles in the
+                    OWL\EXAMPLES directory default to small model when the
+                    ObjectWindows static libraries are used and to large
+                    model when the ObjectWindows DLL is used.
+
+                    To build the examples using OWL31.DLL, use
+
+                         make -DMODEL=l -DUSEDLL
+
+                    or simply,
+
+                         make
+
+                    (the USEDLL macro is defined by default; if USEDLL is
+                    defined, MODEL is defined to be l).
+
+                    Note that only large model can be used with
+                    ObjectWindows DLLs (including OWL31.DLL).
+
+                    To build the code with debug information turned on, use
+
+                         make -DDEBUG
+
+                    Building with debug information can be very useful. If
+                    you have built the libraries with debug info, you will
+                    learn a great deal about how the class hierarchy works
+                    and interacts if you step through your programs in TDW.
+
+                    To build the ObjectWindows DLL (OWL31.DLL), use the
+                    following command line in your BORLANDC\OWL\SOURCE
+                    directory:
+
+                         make -DMODEL=l -DDLL
+
+
+                    For faster compilations, we recommend that you use the
+                    precompiled headers option. You can add this to a
+                    makefile, by adding
+
+                         -H
+
+                    to the CFLAGS macro in the makefile.
+
+   Other important  =======================================================
+             notes
+                    o You should always use the & and | operators (or &=
+                      and |= operators) when modifying Attr.Style for your
+                      window objects. Windows relies on certain values to
+                      always be present in Attr.Style for certain controls
+                      and ObjectWindows will automatically set the proper
+                      styles; if you override the values that ObjectWindows
+                      puts there, you might be setting an invalid value.
+                      For example, the following code is illegal:
+
+TMyListBox::TMyListBox(PTWindowsObject AParent, int AnId,
+                       int X, int Y, int W, int H, PTModule AModule)
+             :TControl(AParent, AnId, NULL, X, Y, W, H, AModule)
+{
+  Attr.Style = LBS_NOTIFY;
+}
+
+                      It should be:
+
+TMyListBox::TMyListBox(PTWindowsObject AParent, int AnId,
+                       int X, int Y, int W, int H, PTModule AModule)
+             :TControl(AParent, AnId, NULL, X, Y, W, H, AModule)
+{
+  Attr.Style |= LBS_NOTIFY;
+}
+
+                    o Note that correct usage of the transfer mechanism for
+                      TComboBox and TListBox differs somewhat from transfer
+                      buffer usage for otherwindow objects. The
+                      CBXTTEST.CPP and LBXTTEST.CPP example programs
+                      demonstrate the correct usage of the transfer
+                      mechanism with TComboBoxData and TListBoxData.
+
+                    o The TListBox members functions for single-selection
+                      list boxes are inherited by TComboBox and can also be
+                      used by combo boxes.

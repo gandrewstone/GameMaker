@@ -1,0 +1,61 @@
+assume cs:PLAYGAME_TEXT
+@DrawSurf$qiiii proc far
+push bp
+mov bp,sp
+sub	sp,8
+push	si
+push	di
+push	4
+mov	ax,word ptr [bp+8]
+add	ax,word ptr [bp+12]
+push	ax
+mov	ax,word ptr [bp+6]
+add	ax,word ptr [bp+10]
+push	ax
+push	word ptr [bp+8]
+push	word ptr [bp+6]
+call	far ptr _BoxFill
+add	sp,10
+
+mov si,3
+mov ax,1
+mov byte ptr [bp-1],al
+mov di,word ptr [bp+8]
+add di,word ptr [bp+12]
+add di,3
+mov ax,word ptr [bp+6]
+add ax,word ptr [bp+10]
+add ax,3
+mov word ptr [bp-4],ax
+mov ax,word ptr [bp+8]
+sub ax,3
+mov word ptr [bp-6],ax
+mov ax,word ptr [bp+6]
+sub ax,3
+mov word ptr [bp-8],ax
+jmp short @88@282
+@88@86:
+mov al,byte ptr [bp-1]
+push ax
+push di
+push word ptr [bp-4]
+push word ptr [bp-6]
+push word ptr [bp-8]
+call far ptr @Box$qiiiiuc
+add sp,10
+dec byte ptr [bp-1]
+dec di
+dec word ptr [bp-4]
+dec word ptr [bp-6]
+dec word ptr [bp-8]
+dec si
+@88@282:
+or si,si
+jg short @88@86
+
+pop di
+pop si
+leave
+ret
+@DrawSurf$qiiii	endp
+

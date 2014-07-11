@@ -1,0 +1,12 @@
+
+    D I R E C T I O N S
+
+
+Up: Jump Up
+Up-Left: Jump Left 
+Up-Right: Jump right
+Left, Right: Roll Those Ways
+<SPACE>: Shoot Normal Shot
+B: Shoot Weak-But-Fast Shot
+N: Shoot Slow-But Strong Shot
+

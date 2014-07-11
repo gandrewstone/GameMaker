@@ -1,0 +1,329 @@
+                           BWCCSTYL.RW
+                           ===========
+
+
+This guide presents style considerations you can follow when
+designing Borland Windows Custom Control (BWCC) dialog boxes for
+your Windows-based software.
+
+
+1        Layout issues
+----------------------
+
+Before you begin designing your dialogs, you should be aware of
+some basic design considerations.
+
+
+1.1      Panels
+---------------
+
+Each dialog box has two panels: a Main panel and an Action panel.
+The Main panel contains all the elements that are read or
+modified when the dialog box is open. The Action panel contains
+the push buttons, usually OK, Cancel, and Help.
+
+
+1.2      Fonts
+--------------
+
+Borland dialogs use 8 point Helvetica Bold. The BWCC dialog
+controls look best when you use this font. An 8 point font is
+small; using it keeps the size of the your dialogs from growing
+too big. Of course, you can use other fonts for other custom
+controls.
+
+
+1.3      Group Boxes
+--------------------
+
+Collect all options that appear in the Main panel into BWCC group
+boxes. For example, place a group of related check boxes in a
+group box. You should place each single control, such as a file
+name text box or combo box, in a group box also. You won't have
+to do this with a Borland list box because a list box draws its
+own group box.
+
+
+1.4      Push buttons
+---------------------
+
+The following are style considerations for push buttons:
+
+- Borland's push buttons use glyphs (small bitmapped images). For
+  example, a question-mark glyph is used on the Help push button.
+  Place the glyph inside the button on the left side.
+
+- Use Helvetica (normal, not bold) for the button's text and
+  justify it to the right.
+
+- Make each push button 39 pixels high for VGA resolution and 30
+  pixels high for EGA resolution.
+
+- Most push buttons are 63 pixels wide in both VGA and EGA
+  resolution. Although you can make a button wider to prevent the
+  text and image from overlapping or looking too crowded, you
+  should try to restrict the width to 63 pixels if possible.
+
+
+2        Dimension and alignment guidelines
+-------------------------------------------
+
+The following sections present guidelines for laying out the
+controls in a BWCC dialog box.
+
+
+2.1      Arranging the panels
+-----------------------------
+
+The Main panel of your dialog should be as large as necessary to
+contain all the required controls. The Action panel should be
+just big enough to contain the push buttons; you can place it
+either at the bottom or the right side of the dialog.
+
+Your finished dialog should be relatively square. If the Main
+panel is wider than it is tall, put the Action panel along the
+bottom of your dialog. If the Main panel is taller than it is
+wide, put the Action panel on the right side.
+
+
+2.2      Main panel
+-------------------
+
+You may arrange the group boxes on the Main panel in either a
+single column or row, or in an array. Here are some guidelines to
+arranging group boxes on the Main panel. You should treat group
+titles as part of the group boxes.
+
+- Space group boxes 8 dialog units apart, both vertically and
+  horizontally.
+
+- Leave a margin of 8 dialog units from all edges of the dialog
+  to the nearest group box.
+
+- In a column of group boxes, make all group boxes the same
+  width. The width should accommodate the widest item or title.
+  Widen the other group boxes to match.
+
+- In a row of group boxes, you may vary the group box heights.
+  Align the tops of the group boxes and let the bottoms of the
+  group boxes vary.
+
+- If some of the group boxes you want to align in a row have
+  titles and some don't, align the top of the recessed group
+  boxes with each other, not with the title rectangles. For these
+  mixed groups of boxes, the margin above group boxes without
+  titles should include the space for a title.
+
+- If some of the group boxes you want to align in a row are
+  taller than others, compute the bottom margin using the tallest
+  group box.
+
+
+2.3      Horizontal action panel
+--------------------------------
+
+An Action panel that appears at the bottom of a dialog is a
+horizontal Action panel. It extends the full width of the dialog.
+Here are the guidelines:
+
+- Make the Action panel tall enough to contain the push buttons
+  while leaving a margin of 8 dialog units above and 8 dialog
+  units below the push buttons.
+
+- Distribute the push buttons evenly along the Action panel,
+  leaving a minimum of 8 dialog units between the buttons
+  themselves and between the buttons and the left and right edges
+  of the dialog.
+
+  Try to use the same number of dialog units between each button
+  and between the buttons and the left and right edges of the
+  dialog. You may put more space between the buttons than between
+  the buttons and the edges of the dialog, if necessary, but the
+  two margin spaces should be equal and the spaces between the
+  buttons should be equal.
+
+
+2.4      Vertical action panel
+------------------------------
+
+An Action panel that appears at the right side of a dialog is a
+vertical Action panel. It extends the full height of the dialog.
+Here are the guidelines:
+
+- Make the Action panel wide enough to contain the push buttons
+  while leaving a margin of 8 dialog units to right and 8 dialog
+  units to the left of the push buttons.
+
+- Distribute the push buttons evenly along the Action panel,
+  leaving a minimum of 8 dialog units between the buttons
+  themselves and between the buttons and the top and bottom edges
+  of the dialog.
+
+  Try to use the same number of dialog units between each button
+  and between the buttons and the top and bottom edges of the
+  dialog. You may put more space between the buttons than between
+  the buttons and the edges of the dialog, if necessary, but the
+  two margin spaces must be equal and the spaces between the
+  buttons must be equal.
+
+
+2.5      Group box titles
+-------------------------
+
+A group box title identifies what a group box contains. By
+default, a group box title in a Borland dialog has a gray
+background. The following are the guidelines for group boxes:
+
+- If a group box contains multiple controls, place the group box
+  title just above and touching the top edge of the group box.
+
+- If a group box contains a single check box, place the group box
+  title just above and touching the top edge of the group box.
+
+- If a group box contains a single text box or combo box control,
+  either put the title to the left of the control and 4 units
+  from the edge of the group box or put it above the control,
+  whichever you prefer.
+
+- If a group box contains two or more editable text fields or
+  combo boxes or both, precede each with a short label.
+
+- Align group box titles above the recessed group boxes.
+
+- Make all group box titles 9 units high.
+
+- Make the titles the same width as the group boxes, including
+  the beveled sides.
+
+
+2.6      Group box elements
+---------------------------
+
+These suggestions will help you arrange the elements within a
+group box:
+
+- Distribute controls within a group box vertically every 13
+  units from the bottom of one line of text to the bottom of the
+  next.
+
+- Justify the controls to the left.
+
+- Make the left and right margins between the edges of the group
+  box and the widest control within it all 4 dialog units wide.
+
+- Make the margin between the top of the group box and the first
+  control in the group 4 dialog units.
+
+- Make the margin between the bottom of the group box and the
+  last control in the group 4 dialog units.
+
+- If a group box contains two or more editable text fields or
+  combo boxes or both, make them the same width. Space them so
+  that the bottom of one is 13 units apart from the bottom of the
+  next one. Right-justify these controls in the group box 4 units
+  from the right edge. Left-justify the titles, leaving a 4 unit
+  margin. Make the group box wide enough to leave 4 units between
+  the longest title and its control.
+
+
+2.7      Message boxes
+----------------------
+
+Like dialog boxes, messages boxes have two panels: a Main panel
+and an Action panel.
+
+The Main panel of the message box is filled with a single group
+box. The group box contains a message glyph and a text region.
+
+Here are the guidelines for designing a message box:
+
+- Put the glyph on the left side of the group box.
+
+- Leave a margin of 8 dialog units on all four sides of the group
+  box.
+
+- Space the message glyph and the text region 8 dialog units
+  apart.
+
+- Center the text region vertically, leaving at least 8 dialog
+  units between the top and bottom of the text region and the top
+  and bottom edges of the dialog.
+
+- Place the Action panel at the bottom of your dialog.
+
+- Test this layout using your longest message string. If
+  necessary, resize the text region accordingly.
+
+
+2.8      Examining your dialog
+------------------------------
+
+When Windows calculates dialog units, it rounds the computation.
+Rounding errors may affect the appearance of your dialog. Examine
+your dialog carefully. These problems have been noted:
+
+- A crack between the title text and the top of a gray group box
+
+- Obvious uneven spacing in a vertical group of radio buttons or
+  check boxes
+
+- An inconsistent border width in exposed panel areas
+
+Usually, making an adjustment of 1 dialog unit will fix these
+problems. Occasionally in a large group of repeating controls,
+two or more rounding errors can occur. Sometimes making an
+adjustment can improve the layout of your dialog; at other times
+you may decide not to make any changes. Use your best judgment.
+
+You can't tell how text in controls will appear when you are
+designing your dialog. Editable text, large static text fields,
+and combo boxes fall into this category. You may have to modify
+your original design to be sure text appears correctly without
+being clipped at run time.
+
+
+2.9      Using standard push buttons
+------------------------------------
+
+The Action panel push buttons usually indicate the end of a
+user's work with a dialog, but can also serve as a major
+departure from the function of the dialog, such as bringing up
+Help with the Help button.
+
+An application can also have push buttons that don't result in
+closure. With these buttons, the user wants to perform specific
+actions but continue working with the dialog. Groups of these
+buttons often have related functions.
+
+For example, a Search dialog box could have Action panel buttons
+for Find Next and Replace.
+
+The guidelines for standard buttons are as follows:
+
+- Put these push buttons on the Main panel rather than the Action
+  panel.
+
+- Don't put these push buttons in a group box. Place them
+  directly on the surface of the Main panel.
+
+- Make all push buttons in a group the same width. They should be
+  just wide enough to accommodate the widest text string.
+
+- Make the buttons 14 dialog units in height.
+
+- Try to restrict text to 20 characters or less.
+
+- Lay the buttons out in either a row or a column, depending on
+  what looks best in your dialog.
+
+- Leave 8 dialog units to the left and right of a column of push
+  buttons. The vertical space between the buttons and any other
+  controls or borders above or below the buttons should be equal.
+
+- Leave 8 dialog units above and below a row of push buttons. The
+  horizontal space between the buttons and any other controls or
+  borders to the left or right of them should be equal.
+
+
+           ========= END OF FILE BWCCSTYL.RW =========
+

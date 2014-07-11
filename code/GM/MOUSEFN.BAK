@@ -1,0 +1,17 @@
+/* mousefn.c header file   by Andy Stone   DEC 26,1990  */
+
+// Define MOUSE if using the OLD mouse routines.
+//#define MOUSE
+
+int initmouse(void);        /* 1 if installed, 0 if not */
+int moucur(int a);           /* TRUE (1) = show  FALSE(0) = hide */
+int moustats(int far *x,int far *y,int far *butstats);
+int setmoupos(int x,int y);
+int moucurbox(int x,int y,int x1,int y1);
+int getmoubox(int far *x,int far *y,int far *x1, int far *y1);
+/* int mousetcur(int hotx,int hoty, char *buffer); */
+void mouclearbut(void);
+
+/* End of header file         */
+
+

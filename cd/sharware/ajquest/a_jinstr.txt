@@ -1,0 +1,47 @@
+
+  (USE THE  NUMERICAL KEYPAD
+      WITH NUM LOCK OFF)
+
+
+      7: JUMP LEFT
+      8: JUMP UP
+      9: JUMP RIGHT
+      4: WALK LEFT
+      6: WALK RIGHT
+<SPACE>: ATTACK
+      P: PICK UP
+      D: DROP
+
+
+
+
+
+
+You automatically use the most
+powerful weapon you have.   In
+order  of strength (from weak-
+est), they are:  YO-YO, SWORD,
+SLINGSHOT, FRIZBEE.   The last
+two  weapons  have  a  limited
+supply  of  ammunition and you
+need to get refills.
+
+
+
+
+
+
+
+HINTS:
+
+
+There are  some  special invi-
+sible places to which A-J Bear
+can jump.
+
+Collect crowns.
+
+A-J must try very hard to jump
+to some  perches.   Don't give
+up too soon.
+

@@ -1,0 +1,1313 @@
+/*--------------------------------------------------------------------*/
+/* grator.c             Programmer: Andy Stone   Created: 7/12/91     */
+/* Program that combines all of the maps in a game into a cohesive    */
+/* Whole.                                                             */
+/*                                                                    */
+/*--------------------------------------------------------------------*/
+
+#include <dos.h>
+#include <bios.h>
+#include <stdio.h>
+#include <conio.h>
+#include <alloc.h>
+#include <process.h>
+#include <string.h>
+#include <stdlib.h>
+#include "scrnrout.h"
+#include "gen.h"
+#include "mousefn.h"
+#include "windio.h"
+#include "pal.h"
+#include "mon.h"
+#include "grator.h"
+#include "jstick.h"
+#include "graph.h"
+#include "facelift.h"
+#include "tranmous.hpp"
+
+#define TRANSCOL 255     /* The value that is transparent in _pic fns  */
+#define BCOL     100     /* Default color # */
+#define NOTUSED  -1       /* Number in a scene variable when scene not used */
+
+#define BACKLINK   20
+//#define DIVIDER    195
+#define MENUX      10
+#define MENUY      3
+#define HELPX      50
+#define HELPY      3
+#define SELECTX    MENUX
+#define SELECTY    15
+#define DELETEX    HELPX
+#define DELETEY    15
+#define WORLDTOP   29
+#define WORLDCOL   FaceCols[GREY2]
+#define WX         5
+#define WLEN       310
+#define WWID       165
+#define SELDESCY   5
+#define NORMDESCY  (SELDESCY+12)
+#define TEXTX      200
+#define IN(x1,y1,x2,y2) ((x>x1)&&(x<x2)&&(y>y1)&&(y<y2))
+        /* IN() is true if the mouse is in the box of (x1...y2) */
+
+
+/*********************************************************************/
+/*                        F U N C T I O N S                          */
+/*********************************************************************/
+static void initalldata(void);  /* Sets all structures to initial values  */
+static void edit(void);         /* Called from Main Menu - edit the world */
+static void cleanup(void);      /*   Called automatically when prog.      */
+                                /* uninitializes variables & int vects.   */ 
+
+//static void helpb(int x,int y,unsigned char *col);
+//static void menub(int x,int y,unsigned char *col);
+static void seleb(int x,int y,unsigned char *col);
+static void deleb(int x,int y,unsigned char *col);
+
+static int unpress(int bnum);   /* Pop a button (SELECT,DELETE,etc.) up and set relevant variables */
+static int domouse(int x,int y,int buts,int fn);  /* Handles all mouse fns in graphical graph screen */
+
+// LINK FUNCTIONS
+static int  createlink   (int from,int to);    // Creates a link from scene to another
+static void deletelink   (int scene,int link); // Delete a link
+static int  retlink      (int x,int y);        // Returns index of link which is in the current scene and located under x,y
+static void drawlink     (int from,int to, unsigned char col);
+static void drawalllinks (int scene,int color);// Draws all links from a scene
+int expandlink (int scene,int link); // Link map to map defined in Gramap.c
+
+// SCENE FUNSTIONS
+static int  createscene (int x,int y);  // Creates a scene at (x,y)
+static void erasescene  (int scene);    // Deletes scene and all links to and from it
+static int  retscene    (int x,int y);  // Returns index of scene which is located at x,y
+static void drawscene   (int scene,unsigned char col);   /* Draw scene in col
+static void expandscene (int scene);    // Text scrn - allows entry of file names
+static void expandadv   (int scene);    // Allows user to enter in FILE NAMES
+static void expandstart (int scene);
+static void expandend   (int scene);
+static void movescene   (int scnum);    // reposition a scene in the world map
+//static void drawdesc(int y,int col,char *str); // Writes the scene description in the right spot in right box
+
+static void drawall    (void); // Draws background stuff (buttons,boxes,etc)
+static void DrawWorld  (void); // Draws everything in left box (scenes, links,etc.)
+static void ConvWorld  (void); // Squeeze world into current world box
+
+static void DoScroll(int scnum);
+static void ScrollChange(unsigned char *sinfo);
+static void MakeScrollDir(char *out, const char *prefix, int scroll);
+static void ScrollChange(unsigned char *sinfo);
+static int ForgetChanges(void);
+
+
+/*********************************************************************/
+/*               G L O B A L      V A R I A B L E S                  */
+/*********************************************************************/
+
+extern unsigned _stklen=10000U;  // Set the stack to 10000 bytes, not 4096
+
+integratorstruct scns[MAXSCENES];
+
+extern int lastbl;
+extern int xor;
+int ispal=FALSE;
+int acol   =BCOL;               // Accent color (yellow)  (FaceCols[GREEN])
+int bcol   =BCOL+1;             // Background color (blue) (FaceCols[RED1])
+int speccol=BCOL+2;             // Special color (green) - used for start and end scenes  (FaceCols[GREY3])
+//static unsigned char butcols[2][4] = { 0,30,25,20, 0,27,22,17 }; 
+//                              /* Button Colors - [][0]= up [][1]=pressed */
+int mx=0,my=0,blocy=0,mony=LASTMON+1;
+int mlist=0,blist=0;
+int zoom;
+int curworld=NOTUSED;
+int curlink=0;
+
+extern char curfile[31];
+static char          saved=TRUE;
+extern unsigned char FaceCols[MAXFACECOL];      //Screen colors
+extern char          *FontPtr;
+extern unsigned char HiCols[4];
+RGBdata              colors[256];
+
+/*********************************************************************/
+/*                            C O D E                                */
+/*********************************************************************/
+static int ForgetChanges(void)
+  {
+  char choice;
+  choice = errorbox("Forget unsaved changes?","  (Y)es  (N)o")&0x00FF;
+  if ( (choice!='Y') && (choice!='y') ) return(FALSE);
+  saved=TRUE;
+  return(TRUE);
+  }
+
+QuitCodes main(int argc,char *argv[])
+  {
+  int attr=0;
+  char done=FALSE;
+  char w[730];
+  int choice=1;
+
+#ifdef DEBUG
+  printf("Initialization finished.\n");
+  NewAbortMSG("GM:ATE in main procedure.\n");
+#endif
+#ifdef CHKREG
+  if ((argc < 2) || (strcmp(argv[1],OKMSG)!=0))
+    {
+    writestr(19,20,14,"This program must be run under Game-Maker!");
+    return(quit);
+    }
+#endif
+  atexit(cleanup);
+  FontPtr=GetROMFont();
+
+  /*--Quit if no mouse */
+  if (initmouse()==FALSE)
+    { errorbox("This application requires a Microsoft","compatible mouse! (Q)uit");
+      return(quit); }
+  initalldata();
+
+  do
+    {
+    moucur(FALSE);
+    if ((choice==4)||(choice==1))
+      {
+#ifndef DEBUG
+      Palette(5,10,10,10);
+      Palette(7,16,16,16);
+#endif
+      writestr(0,0,79,GMTOPBAR);
+      writestr(0,1,31,"  Palette  Block  Monster  Map  Character  Image  Sound  Integrator  Main  Help ");
+      attr = openmenu(50,3,22,11,w);
+      writestr(51,3,attr+4,  "     INTEGRATOR");
+      writestr(51,4,attr+4,  "    Version "GMVER);
+      writestr(51,5,attr+15, "  By Gregory Stone ");
+      writestr(51,6,attr+15, " Copyright (C) 1991");
+      writestr(51,8,attr+14, "Choose a game");
+      writestr(51,9,attr+14, "New game");
+      writestr(51,10,attr+14,"Edit the chosen game");
+      writestr(51,11,attr+14,"Save the chosen game");
+      writestr(51,12,attr+14,"Delete a game");
+      writestr(51,13,attr+14,"Quit");
+      }
+    mouclearbut();
+    choice=vertmenu(50,8,22,6,choice);
+    switch (choice)
+      {
+      case 1:
+        if ((saved)||(ForgetChanges()))
+          {
+          initalldata();
+          loadany("Enter game to load: ",".gam","gam\\",sizeof(integratorstruct)*MAXSCENES,(char *)&scns,1);
+          ConvWorld();
+          choice=3;
+          }
+        break;
+      case 2:
+        if ((saved)||(ForgetChanges()))
+          {
+          initalldata();
+          curfile[0]=0;
+          errorbox("New game created!","(C)ontinue",2);
+          choice=3;
+          }
+        break;
+      case 3:
+        closemenu(50,3,22,11,w);
+        GraphMode(); edit(); TextMode();
+        choice=4;
+        break;
+      case 4:
+        choice=3;
+        if (saveany("Save game as: ",".gam","gam\\",sizeof(integratorstruct)*MAXSCENES,(char *)&scns))
+          { saved=TRUE; choice=6; }          
+        break;
+      case 5:
+        delany("Delete which game: ",".gam","gam\\");
+        break;
+      case 0:
+      case 6:
+        if ((saved)||(ForgetChanges())) done=TRUE;
+        break;
+      }
+    } while (!done);
+  closemenu(50,3,22,11,w);
+  return(menu);
+  }
+
+  /* Allows a user to make scenes, connections, and jump to either the */
+  /* map screen, or the screen where one specifies the files in a scene */
+static void edit (void)
+  {
+  int done=FALSE,changed=FALSE;  
+  int mx,my,mbuts,ox=MENUX+20,oy=MENUY,obuts=0;
+
+  mouclearbut();       /* Wait until mouse button is released */
+  domouse(mx,my,mbuts,1); /* Reset static variables! - mx,my,mbuts not used*/
+  drawall();           /* Set up the screen */
+  setmoupos(ox,oy);  /* Position the mouse on the menu button as if it was just pressed */
+  moucur(TRUE);        /* Turn on mouse */
+
+  while (!done)
+    {
+    changed=FALSE;     /* not False if user has changed an input device */ 
+    while(!changed)
+      {
+      if (bioskey(1)) changed=1;
+      moustats(&mx,&my,&mbuts);
+      if ((mx!=ox)|(my!=oy)) changed |= 2;
+      if (mbuts!=obuts) changed |=4;
+      if (mbuts>0) changed |=8;
+      } 
+    if ((mbuts>0)|((changed&2)==2)|((changed&4)==4)) 
+      done=domouse(mx,my,mbuts,0);
+    if ((changed&1)==1) bioskey(0);
+    ox=mx;oy=my;obuts=mbuts;
+    } 
+  }
+
+  /* Domouse is where all functions in the graphical screen which are mouse */
+  /* controlled are implemented.  This includes creating and erasing scenes, */
+  /* choosing menu items, selecting scenes, and drawing links. */
+static int domouse(int x,int y,int buts,int fn)
+  {
+  register int lo;
+  static int line=NOTUSED;      // Link being created flag - TRUE = set to the scene # which is the start of the link
+  static int ox=0,oy=0,obuts=0;
+  static int ognum=MAXSCENES,olink=MAXLINK;  
+  static int buttonpress=FALSE; // which button on left (SELECT, DELETE, etc.) is pressed
+  static int unselscene=NOTUSED;
+  int inbox=FALSE;
+  char str[15];
+  
+  if (fn==1)
+    {
+    line=NOTUSED; /* Link being created flag - TRUE = set to the scene # which is the start of the link */  
+    ox=oy=obuts=0;
+    ognum=MAXSCENES;
+    olink=MAXLINK;  
+    buttonpress=FALSE; /* which button on left (SELECT, DELETE, etc.) is pressed */
+    unselscene=NOTUSED;
+    return(TRUE);
+    }
+
+  if (line!=NOTUSED)   /* if a Link between 2 worlds is being created */
+    {
+    inbox=TRUE;
+//    if (y>199)      { setmoupos(x,199); y=199; } 
+                /* Don't allow off of screen */
+
+    if ((x!=ox)|(y!=oy)|(buts!=obuts))  
+      { /* If mouse has changed position or status, redraw line */      
+      xor=1;  /* xor is a global var, which, when 1 will cause graphics to be logically XORed to the scrn */
+      Line (scns[line].x+2,scns[line].y+2,ox,oy,acol);
+              /* erase old line (xor on same color = black) */
+      xor=0;
+      if (buts>0) /* if Link still being moved (or mouse button still pressed)*/
+        {
+        xor=1;
+        Line (scns[line].x+2,scns[line].y+2,x,y,acol); /* Draw link */
+        xor=0;
+        ox=x; oy=y; obuts=buts;
+        lo=retscene(x,y); /* returns the scene at x,y if there is one */
+        if (lo!=MAXSCENES)
+          {
+          sprintf(str,"%-14s",scns[lo].desc);
+          BoxWithText(TEXTX,NORMDESCY,str,FaceCols);
+          }
+        }  
+      else     /* Link ready to be placed - connect with a world */
+        {
+        lo=retscene(x,y); /* returns the scene at x,y if there is one */
+           
+        if ((lo!=MAXSCENES)&&(lo!=line)) 
+          {  /* If there is a scene under the cursor, and it is not the scene
+                from which the link originated (in variable 'line')... */
+          if (createlink(line,lo)<MAXLINK) /* Create the link - return MAXLINK if failed */
+            drawlink (line,lo,bcol);
+          } 
+        line=NOTUSED;  /* Link placed, so unset link being drawn pointer (line) */
+        moucurbox(0,0,SIZEX-5,SIZEY-5);
+        moucur(TRUE);
+        }
+      }
+    } /* Link betw 2 worlds functions done */
+  
+
+  if ( (line==NOTUSED)&&IN(WX,WORLDTOP,WX+WLEN,WORLDTOP+WWID) )   
+    {  /* if no links currently being created */
+
+    if ((lo=retscene(x,y))!=MAXSCENES) 
+      {   /* If the mouse is in a scene box select, delete or expand the scene */
+          /* sets variable 'lo' to the scene box.        */  
+      inbox=TRUE;
+      if ((ognum!=lo)|(obuts!=buts))   /* If scene has not already had something done to it. */
+        {
+                                            // SELECT SCENE
+                                            
+        if ((buttonpress==1)&&(buts>0)&&(curworld==NOTUSED))    
+          {   /* SELECT this scene if SELECT (1) down, and mouse button being pushed, and nothing is currently selected */ 
+          drawalllinks(lo,bcol); /* redraw links in blue color */
+          drawscene(lo,acol);    /* redraw scene in accent color (yellow) */ 
+          sprintf(str,"%-14s",scns[lo].desc);
+          BoxWithText(TEXTX,SELDESCY,str,FaceCols);
+          curworld=lo;                          // set current world flag
+          }
+                                           // DELETE SCENE
+        else if ((buttonpress==2)&&(buts>0)) 
+          {  /* ERASE the world DELETE button (2) down, and mouse button being pushed */ 
+          buttonpress=unpress(buttonpress);  /* delete button pops up every time a scene is deleted */ 
+          erasescene(lo); 
+          if (curworld==lo) curworld=NOTUSED; 
+          DrawWorld();
+          mouclearbut();
+          }
+                                               // MOVE SCENE
+                                                  
+        else if (buts==2)
+          { movescene(lo); }
+                                              // EXPAND SCENE
+        else if ((buts>0)&&(obuts==0)) 
+          { expandscene(lo); setmoupos(x,y); }
+                     // if mouse button not pressed, draw the scene title
+        sprintf(str,"%-14s",scns[lo].desc);
+        BoxWithText(TEXTX,NORMDESCY,str,FaceCols);
+        unselscene=lo;
+        }  
+      }                             // End of all scene functions
+      
+                                                // LINKS
+    else                        //  Mouse not in a scene - must be a link
+      {
+      if ( (lo=retlink(x,y))!=MAXLINK) /* Return link if there's one under mouse */
+        {
+        if (buts>0) 
+          { 
+          if (buttonpress==2) 
+            {
+            deletelink(curworld, lo);   /* Delete a link */
+            lo=MAXLINK; olink=lo;
+            DrawWorld();
+            }
+          else  /* allow user to set exactly where in the two scenes the link goes from and to */
+            {
+            saved=TRUE;
+            expandlink(curworld,lo); 
+            drawall();
+            setmoupos(x,y);
+            } 
+          } 
+        else if (olink!=lo) /* Only let this code execute once per time in link */
+          {   /* User must leave link and come back for olink to be different */
+          drawlink(curworld,scns[curworld].links[lo].tnum,acol); /* highlight the link */
+          olink=lo; /* Set current link so prog will only highlight link once per time in the link*/
+          }
+        }
+/* CREATE LINK */
+      else if ( (buts>0)&&IN(WX,WORLDTOP,WX+WLEN,WORLDTOP+WWID)
+              &&(curworld != NOTUSED) )
+        {     // if Mouse button pressed, in world box, and a scene is selected
+        moucur(FALSE);
+        inbox=TRUE; 
+        line=curworld;    /* Origin of new link is always selected world */
+        moucurbox(WX,WORLDTOP,WX+WLEN,WORLDTOP+WWID);
+        xor=1;
+        Line (scns[line].x+2,scns[line].y+2,x,y,acol); /* draw line */
+        xor=0;
+        ox=x;oy=y; /* Set up previous variables so line can be erased */
+        }
+      if ((lo==MAXLINK)&(olink!=MAXLINK))  /* If a link was selected, but cursor has moved away change its color back to bcol */
+        {
+        drawlink(curworld,scns[curworld].links[olink].tnum,bcol);
+        olink=MAXLINK;
+        }
+      }
+    ognum=lo; 
+    /* Reset (or set) ognum to insure that some link code is only 'done' once per time selected */
+    }
+
+/* DESCRIPTION - edit selected box's (yellow) description */  
+  if ( (buts>0)&&(curworld!=NOTUSED)&&IN(TEXTX,SELDESCY,315,SELDESCY+9))
+    {
+    if (unselscene>NOTUSED) 
+      {
+      moucur(FALSE);
+      GGet(TEXTX+1,SELDESCY+1,FaceCols[BLACK],FaceCols[GREEN],scns[curworld].desc,14);
+      if (curworld==unselscene)
+        {
+        sprintf(str,"%-14s",scns[unselscene].desc);
+        BoxWithText(TEXTX,NORMDESCY,str,FaceCols);
+        }
+      moucur(TRUE);
+      }
+    }
+
+/* DESCRIPTION - edit unselected box's (blue) description */  
+  if ( (buts>0)&&IN(TEXTX,NORMDESCY,315,NORMDESCY+9))
+    {
+    if (unselscene>NOTUSED) 
+      {
+      moucur(FALSE);
+      GGet(TEXTX+1,NORMDESCY+1,FaceCols[BLACK],FaceCols[GREEN],scns[unselscene].desc,14);
+      if (curworld==unselscene)
+        {
+        sprintf(str,"%-14s",scns[curworld].desc);
+        BoxWithText(TEXTX,SELDESCY,str,FaceCols);
+        }
+      moucur(TRUE);
+      }
+    }
+/* SELECT-    Choose or unchoose select button */
+  if ((obuts==0)&(buts>0)&IN(SELECTX,SELECTY,SELECTX+36,SELECTY+10))
+    {
+    unpress(buttonpress);
+    if (buttonpress !=1)
+      {
+      moucur(FALSE);
+      seleb(SELECTX,SELECTY+1,HiCols);
+      moucur(TRUE);
+      buttonpress=1;
+      }
+    else buttonpress=FALSE;
+    }
+
+/* DELETE       button */
+  if ((obuts==0)&(buts>0)&IN(DELETEX,DELETEY,DELETEX+36,DELETEY+9))
+    {
+    if (buttonpress !=2)
+      {
+      moucur(FALSE);
+      deleb(DELETEX,DELETEY+1,HiCols);
+      moucur(TRUE); 
+      buttonpress=2;
+      }
+    else { unpress(buttonpress); buttonpress=FALSE; }
+    }
+
+/* MENU      button */
+  if (IN(MENUX,MENUY,MENUX+30,MENUY+9)) 
+    {
+    if ((buts>0)&(obuts==0))   /* press button */
+      {
+      moucur(FALSE);
+      unpress(buttonpress);
+      menub(MENUX,MENUY+1,HiCols);
+      moucur(TRUE);
+      }
+    if ((buts==0)&(obuts!=0))              /* goto menu when released */
+      { 
+      ognum=NOTUSED; 
+      buttonpress=FALSE; 
+      return (TRUE);
+      }
+    }
+
+  if (IN(HELPX,HELPY,HELPX+30,HELPY+9))              /* HELP Button */
+    {
+    if ((buts>0)&(obuts==0))  /* press button */
+      {
+      moucur(FALSE);
+      unpress(buttonpress);
+      helpb(HELPX,HELPY+1,HiCols);
+      moucur(TRUE);
+      }
+    if ((buts==0)&(obuts !=0))  /* Redraw screen */
+      {
+      moucur(FALSE);
+      TextMode();
+      DisplayHelpFile("grat.hlp");
+      moucur(FALSE);
+      drawall();
+      mouclearbut();
+      setmoupos(HELPX+20,HELPY+5);
+      moucur(TRUE);
+      }
+    }
+
+  // Drop a little blue box if button pushed on nothing with no scene selected
+  if ( (buttonpress==0)&&IN(WX+2,WORLDTOP+2,WX+WLEN-3,WORLDTOP+WWID-3)
+     &&(olink==MAXLINK)&&(inbox==FALSE)&&(buts>0)&&(obuts==0) )
+    {
+    createscene(x,y);
+    mouclearbut();
+    }  
+
+  ox=x;oy=y;obuts=buts;
+  return (FALSE);  /* do NOT go back to menu */
+  }
+
+static void ConvWorld(void)
+  {
+  register int lo;
+  char flag=0;
+
+  do {
+    flag=0;
+    for (lo=0;lo<MAXSCENES;lo++)
+      if (scns[lo].gametype!=NOSCENE)
+        {
+        if ( (scns[lo].y<=WORLDTOP)||(scns[lo].y+5>=WORLDTOP+WWID) )
+          { flag=1; saved=0; }
+        }
+    if (flag)
+      {
+      for (lo=0;lo<MAXSCENES;lo++)
+        if (scns[lo].gametype!=NOSCENE)
+          {
+          if (scns[lo].y<WORLDTOP+WWID/2) scns[lo].y++;
+          else scns[lo].y--;
+          }
+      }
+    } while(flag);
+  }
+
+static void DrawWorld(void)
+  {
+  int lo;
+  int m;
+  char str[15];
+
+  m=moucur(2);
+
+  if (m) moucur(FALSE);
+
+  Line(WX-1,WORLDTOP,WX-1,WORLDTOP+WWID,FaceCols[GREY3]);  // Erase the World screen
+  Line(WX-1,WORLDTOP-1,WX+WLEN,WORLDTOP-1,FaceCols[GREY4]);  // Erase the World screen
+  BoxFill(WX,WORLDTOP,WX+WLEN,WORLDTOP+WWID,WORLDCOL);  // Erase the World screen
+  for (lo=0;lo<MAXSCENES;lo++)                          /* Draw grey links */
+    if (scns[lo].gametype!=NOSCENE) drawalllinks(lo,BACKLINK);
+  for (lo=0;lo<MAXSCENES;lo++)                          /* Draw scene boxes */
+    switch(scns[lo].gametype)
+      {
+      case NOSCENE:                                     /* Don't draw scene */
+        break;
+      case STARTTYPE:                                   /* Color specially  */
+        drawscene(lo,speccol);
+        break;
+      case ENDTYPE:                                     /* Color specially  */
+        drawscene(lo,speccol);
+        break;
+      case ADVTYPE:                                     /* generic coloring */
+        drawscene(lo,bcol);
+      }
+
+                                   /* Draw selected world and info */
+  if ((curworld!=NOTUSED )&&(scns[curworld].gametype!=NOSCENE))
+    {
+    drawalllinks(curworld,bcol);
+    BoxFill(scns[curworld].x,scns[curworld].y,scns[curworld].x+5,scns[curworld].y+5,acol);
+    sprintf(str,"%-14s",scns[curworld].desc);
+    BoxWithText(TEXTX,SELDESCY,str,FaceCols);
+    seleb(SELECTX,SELECTY+1,HiCols);
+    }
+  else seleb(SELECTX,SELECTY,FaceCols);
+
+  if (m) moucur(TRUE);
+  }
+
+static void drawall(void)
+  {
+  int lo;
+  int m;
+  m=moucur(2);
+  if (m) moucur(FALSE);
+  GraphMode();
+  InitStartCols(colors);
+  SetCols(colors,FaceCols);
+  SetAllPalTo(&colors[BKGCOL]);
+  bcol=FaceCols[RED1];
+  acol=FaceCols[GREEN];
+  speccol=FaceCols[GREY4];
+
+//  Gwritestr(8,0,bcol,"THE WORLD",9);
+//  Box(0,WORLDTOP,DIVIDER,199,bcol);
+//  Box(DIVIDER+1,0,319,199,acol);
+  drawsurface(WX-3,WORLDTOP-27,WLEN+6,WWID+30,FaceCols);
+  moucurbox(2,1,318,198);
+  BoxWithText(TEXTX,NORMDESCY,"              ",FaceCols);
+  BoxWithText(TEXTX,SELDESCY,"              ",FaceCols);
+  BoxFill(TEXTX,NORMDESCY,TEXTX+112,NORMDESCY+8,FaceCols[GREY2]);
+  BoxFill(TEXTX,SELDESCY,TEXTX+112,SELDESCY+8,FaceCols[GREY2]);
+  GWrite(TEXTX-99,SELDESCY+1,FaceCols[RED1],"  Selected  ");
+  GWrite(TEXTX-99,NORMDESCY+1,FaceCols[RED1],"Last Touched");
+  DrawWorld();
+
+  menub(MENUX,MENUY,FaceCols);
+  helpb(HELPX,HELPY,FaceCols);
+  deleb(DELETEX,DELETEY,FaceCols);  
+  setmoupos(MENUX+20,MENUY+5);
+  FadeTo(colors);
+  if (m) moucur(TRUE);
+  }
+
+static void deletelink(int scene,int link)
+  {
+  scns[scene].links[link].tnum=MAXSCENES;
+  scns[scene].links[link].tx=0;
+  scns[scene].links[link].ty=0;
+  scns[scene].links[link].fx=0;
+  scns[scene].links[link].fy=0;
+  saved=FALSE;
+  }
+  
+static int createlink(int from,int to)
+  {
+  register int lo;
+  
+  if ((scns[from].gametype==ENDTYPE)||(scns[to].gametype==STARTTYPE)) return(MAXLINK);
+
+  saved=FALSE;
+  for (lo=0;lo<MAXLINK;lo++)
+    {
+    if (scns[from].links[lo].tnum==MAXSCENES)
+      {
+      scns[from].links[lo].tnum=to;
+      return(lo);
+      }
+    }
+  return(MAXLINK); 
+  }
+  
+static void drawlink(int from,int to,unsigned char col) 
+  {
+  int m=FALSE;
+  unsigned char col1,col2;
+  
+  if (moucur(2)) { m=TRUE; moucur(FALSE);}
+  col1=GetCol(scns[from].x,scns[from].y);
+  col2=GetCol(scns[to].x,scns[to].y);
+  if (from<to)
+    Line(scns[from].x+2,scns[from].y+2,scns[to].x+2,scns[to].y+2,col);
+  else
+    Line(scns[to].x+2,scns[to].y+2,scns[from].x+2,scns[from].y+2,col);
+  BoxFill(scns[from].x,scns[from].y,scns[from].x+5,scns[from].y+5,col1);
+  BoxFill(scns[to].x,scns[to].y,scns[to].x+5,scns[to].y+5,col2);
+  if (m) moucur(TRUE);
+  }
+
+
+static int createscene(int x,int y)                 /* make a scene */
+  {
+  register int lo;
+
+  saved=FALSE;
+  for (lo=0;lo<MAXSCENES;lo++)
+    {
+    if (scns[lo].gametype==NOSCENE) 
+      {
+      scns[lo].gametype=ADVTYPE;
+      scns[lo].x=x-2; scns[lo].y=y-2;
+      moucur(FALSE);
+      BoxFill(x-2,y-2,x+3,y+3,bcol);
+      moucur(TRUE);
+      return(lo); 
+      }
+    }
+  return(MAXSCENES);    
+  }
+
+static void movescene(int scnum)
+  {
+  int x,y,buts,ox,oy,x2,y2,linkto;
+  register int lo,ll;
+    
+  moucurbox(WX+3,WORLDTOP+3,WX+WLEN-4,WORLDTOP+WWID-4);
+  ox=(x2=scns[scnum].x)+2; oy=(y2=scns[scnum].y)+2;
+  setmoupos(ox,oy);
+  moustats(&x,&y,&buts);
+  scns[scnum].x=x-2;  scns[scnum].y=y-2;
+  while (buts==2)
+    {
+    if ( (x!=ox)||(y!=oy) )
+      {
+      moucur(0);
+      for (ll=0;ll<MAXSCENES;ll++)
+        if (scns[ll].gametype!=NOSCENE)
+          {
+          if (scnum<ll)
+             Line(scns[scnum].x+2,scns[scnum].y+2,scns[ll].x+2,scns[ll].y+2,WORLDCOL);
+          if (scnum>ll)
+             Line(scns[ll].x+2,scns[ll].y+2,scns[scnum].x+2,scns[scnum].y+2,WORLDCOL);
+          }
+      BoxFill(ox-2,oy-2,ox+3,oy+3,WORLDCOL);            
+      scns[scnum].x=x-2;  scns[scnum].y=y-2;
+      for (ll=0;ll<MAXSCENES;ll++)
+        if ( (scns[ll].gametype!=NOSCENE)&&(ll!=curworld) )
+          {
+          for (lo=0;lo<MAXLINK;lo++)
+            if ((linkto=scns[ll].links[lo].tnum)!=MAXSCENES) /* link active - draw it. */
+              {
+              if (ll<linkto)
+                Line(scns[ll].x+2,scns[ll].y+2,scns[linkto].x+2,scns[linkto].y+2,BACKLINK);
+              if (ll>linkto)
+                Line(scns[linkto].x+2,scns[linkto].y+2,scns[ll].x+2,scns[ll].y+2,BACKLINK);
+              }
+          }
+      if ((curworld!=NOTUSED )&&(scns[curworld].gametype!=NOSCENE))
+        {
+        for (lo=0;lo<MAXLINK;lo++)
+          if ((linkto=scns[curworld].links[lo].tnum)!=MAXSCENES) /* link active - draw it. */
+            {
+            if (curworld<linkto)
+              Line(scns[curworld].x+2,scns[curworld].y+2,scns[linkto].x+2,scns[linkto].y+2,bcol);
+            if (scnum>linkto)
+              Line(scns[linkto].x+2,scns[linkto].y+2,scns[curworld].x+2,scns[curworld].y+2,bcol);
+            }
+        }
+      for (ll=0;ll<MAXSCENES;ll++)
+        if (scns[ll].gametype!=NOSCENE)
+          BoxFill(scns[ll].x,scns[ll].y,scns[ll].x+5,scns[ll].y+5,( (ll==curworld) ? acol : ((scns[ll].gametype==ADVTYPE) ? bcol : speccol) ) );
+      moucur(1);
+//      DrawWorld();
+      ox=x; oy=y;
+      }    
+    moustats(&x,&y,&buts);
+    }
+  scns[scnum].x=SIZEX;  scns[scnum].y=SIZEY;   // Temporarily remove from map
+  if (retscene(x,y)==MAXSCENES)
+    { scns[scnum].x=x-2; scns[scnum].y=y-2; saved=0; }
+  else
+    { scns[scnum].x=x2; scns[scnum].y=y2; }
+  DrawWorld();
+  moucurbox(0,0,SIZEX-1,SIZEY-1);
+  }
+
+static void expandscene(int scnum)
+  {
+  switch(scns[scnum].gametype)
+    {
+    case NOSCENE:
+      break;
+    case STARTTYPE:
+      expandstart(scnum);
+      break;
+    case ENDTYPE:
+      expandend(scnum);
+      break;
+    case ADVTYPE:
+      expandadv(scnum);
+      break;
+    default:
+      printf("NO KNOWN SCENE!");
+      break;
+    }
+  GraphMode();
+  drawall();
+  setmoupos(mx,my);
+  moucur(TRUE);
+  }
+
+static void expandstart(int scnum)  // Allows user to enter in FILE NAMES
+  {
+  register int l;
+  static int choice=1;
+  int mx,my,mbuts;
+  int attr;
+  char ans[21];
+  int len;
+  char w[4000];    /* Window Save Buffer */
+
+  char qs[][41] = {"Enter Title Backdrop:","Enter Storyline Text:",
+                   "Enter Game Instruction Text:","Enter Credits Text:","Enter Title Song:"};
+  char exts[][5] = { ".bkd",".txt",".txt",".txt",".cmf" };
+  char fpaths[][5]={ "gif\\","gam\\","gam\\","gam\\","snd\\" };
+ 
+  for (l=0;l<21;l++) ans[l]=0;   // initalize answer to nothing
+
+  moucur(FALSE);
+  moustats(&mx,&my,&mbuts);
+  TextMode();
+  attr=openmenu(2,5,30,8,w);
+  writestr(2,5,attr+4,scns[scnum].desc);
+  writestr(2,7,attr+15,"Title Backdrop");  
+  writestr(2,8,attr+15,"Storyline");
+  writestr(2,9,attr+15,"Game Instruction");
+  writestr(2,10,attr+15,"Beginning Credits");
+  writestr(2,11,attr+15,"Title Song");
+  writestr(2,12,attr+15,"Back To Edit Screen");
+  do
+    {
+    for (l=0;l<5;l++)
+      {
+      writestr(23,7+l,attr+15,"        ");
+      writestr(23,7+l,attr+15,scns[scnum].fnames[l]);
+      }
+  
+    choice=vertmenu(2,7,30,6,choice);
+    
+    if (choice==0) choice=6;
+    if (choice<6)
+      {
+      saved=FALSE;
+      strcpy(ans,fpaths[choice-1]);
+      if(getfname(10,10,qs[choice-1],exts[choice-1],ans)==0)
+        { ans[0]=0; len=-1; } // No file chosen so clear buffer
+      else for (len=strlen(ans);len>=0;len--) // No path names in scene files
+             if (ans[len]=='\\') break;
+      for(l=0;l<9;l++)
+        {
+        if ((ans[l+len+1] == '.')|(ans[l+len+1] == 0)) { scns[scnum].fnames[choice-1][l]=0; l=9; }
+        else scns[scnum].fnames[choice-1][l]=ans[l+len+1];
+        }
+      }
+    choice++;
+    } while (choice!=7);
+  
+  closemenu(2,5,30,8,w);
+  }
+
+static void expandend(int scnum)  /* Allows user to enter in FILE NAMES */
+  {
+  register int l;
+  static int choice=1;
+  int mx,my,mbuts;
+  int attr;
+  char ans[21];
+  int len;
+  char w[4000];    /* Window Save Buffer */
+
+  char qs[][41] = {"Enter End-Game Backdrop:","Enter Epilogue:",
+                   "Enter End-Game Credits:","Enter End-Game Song:"};
+  char exts[][5] = { ".bkd",".txt",".txt",".cmf" };
+  char fpaths[][5]={ "gif\\","gam\\","gam\\","snd\\" };
+ 
+  for (l=0;l<31;l++) ans[l]=0;   // initalize answer to nothing
+
+  moucur(FALSE);
+  moustats(&mx,&my,&mbuts);
+  TextMode();
+  attr=openmenu(2,5,30,7,w);
+  writestr(2,5,attr+4,scns[scnum].desc);
+  writestr(2,7,attr+15,"End-Game Backdrop");
+  writestr(2,8,attr+15,"Epilogue Text");
+  writestr(2,9,attr+15,"End-Game Credits");
+  writestr(2,10,attr+15,"End-Game Song");
+  writestr(2,11,attr+15,"Back To Edit Screen  ");
+  do
+    {
+    for (l=0;l<4;l++)
+      {
+      writestr(23,7+l,attr+15,"        ");
+      writestr(23,7+l,attr+15,scns[scnum].fnames[l]);
+      }
+    choice=vertmenu(2,7,30,5,choice);
+
+    if (choice==0) choice=5;
+    if (choice<5)
+      {
+      saved=FALSE;
+      strcpy(ans,fpaths[choice-1]);
+      if (getfname(10,10,qs[choice-1],exts[choice-1],ans)==0)
+        { ans[0]=0; len=-1; }
+      else for(len=strlen(ans);len>=0;len--) /* Don't allow any specific path names in scene files */
+             if (ans[len]=='\\') break;
+      for(l=0;l<9;l++)
+        {
+        if ((ans[l+len+1] == '.')|(ans[l+len+1] == 0)) { scns[scnum].fnames[choice-1][l]=0; l=9; }
+        else scns[scnum].fnames[choice-1][l]=ans[l+len+1];
+        }
+      }
+    choice++;
+    } while (choice!=6);
+
+  closemenu(2,5,30,7,w);
+  }
+
+static void expandadv(int scnum) /* Allows user to enter in FILE NAMES */
+  {
+  register int l;
+  static int choice=1;
+  int mx,my,mbuts;
+  int attr;
+  char ans[MAXFILENAMELEN];
+  int len;
+  char w[1500];    /* Window Save Buffer */
+
+  char qs[][41] = { "Enter Palette:","Enter Map Name","Enter Background Block Set:",
+                   "Enter Monster File:","Enter Monster Block Set:", "Enter Character Set:",
+                   "Enter Character Block Set:","Enter Sound Set:","Enter SB Music Title:" }; 
+  char exts[][5] = { ".pal",".map",".bbl",".mon",".mbl",".chr",".cbl",".snd",".cmf"};
+  char fpaths[][5]={ "pal\\","map\\","blk\\","mon\\","blk\\","chr\\","blk\\","snd\\","snd\\"};
+ 
+  for (l=0;l<MAXFILENAMELEN;l++) ans[l]=0;   /* initalize answer to nothing */
+
+  moucur(FALSE);
+  moustats(&mx,&my,&mbuts);
+  TextMode();
+  attr=openmenu(2,5,40,13,w);
+  writestr(2,5,attr+4,scns[scnum].desc);
+  writestr(2,7,attr+15,"Palette");  
+  writestr(2,8,attr+15,"Map");
+  writestr(2,9,attr+15,"Background Block Set");
+  writestr(2,10,attr+15,"Monster");
+  writestr(2,11,attr+15,"Monster Block Set");
+  writestr(2,12,attr+15,"Character");
+  writestr(2,13,attr+15,"Character Block Set");
+  writestr(2,14,attr+15,"Sound Set");
+  writestr(2,15,attr+15,"Sound Blaster Music");
+  writestr(2,16,attr+15,"Change Scrolling Info");
+  writestr(2,17,attr+15,"Back To Edit Screen");
+  do
+    {
+    for (l=0;l<9;l++)
+      {
+      writestr(30,7+l,attr+15,"        ");
+      writestr(30,7+l,attr+15,scns[scnum].fnames[l]);
+      }
+    choice=vertmenu(2,7,40,11,choice);
+    if (choice==0) choice=11;
+    if (choice<11)
+      {
+      saved=FALSE;
+      if (choice==10) DoScroll(scnum);
+      else
+        {
+        strcpy(ans,fpaths[choice-1]);
+        if (getfname(10,10,qs[choice-1],exts[choice-1],ans)==0)
+          { ans[0]=0; len=-1; }
+        else for(len=strlen(ans);len>=0;len--) // Cut path names in scene files
+            if (ans[len]=='\\') break;
+        for(l=0;l<9;l++)  // Copy them over to the array
+          {
+          if ((ans[l+len+1] == '.')|(ans[l+len+1] == 0)) { scns[scnum].fnames[choice-1][l]=0; l=9; }
+          else scns[scnum].fnames[choice-1][l]=ans[l+len+1];
+          }
+        }
+      }
+    choice++;
+    } while (choice!=12);
+
+  closemenu(2,5,40,13,w);
+  }
+
+static void MakeScrollDir(char *out, const char *prefix, int scroll)
+  {
+  if (scroll==0)          sprintf(out,"%sdisabled!                         ",prefix);
+  else if (scroll==0xFF)  sprintf(out,"%swhen the character is at the edge.",prefix);
+  //else if (scroll<20)     sprintf(out,"%s%d pixels per second.               ",prefix,scroll);
+  }
+
+static void DoScroll(int scnum)
+  {
+  int choice=1;
+  unsigned char tempc;
+  char attr=0;
+  char w[2000];
+  char temp[61];
+
+  attr=openmenu(10,7,50,7,w);
+ 
+  writestr (11,8,attr+14,"Scrolling");
+  writestr (11,13,attr+7,"Done");
+    
+  do
+    {
+    MakeScrollDir(temp,"   UP    :",scns[scnum].ssup); 
+    writestr (10,9,attr+7,temp);
+    MakeScrollDir(temp,"   DOWN  :",scns[scnum].ssdown); 
+    writestr (10,10,attr+7,temp);
+    MakeScrollDir(temp,"   LEFT  :",scns[scnum].ssleft); 
+    writestr (10,11,attr+7,temp);
+    MakeScrollDir(temp,"   RIGHT :",scns[scnum].ssright); 
+    writestr (10,12,attr+7,temp);
+  
+    choice=vertmenu(10,9,50,5,choice);
+    if (choice==0) choice=5;
+    if (choice<5)
+      {
+      switch (choice)
+        {
+        case 1:
+          ScrollChange(&scns[scnum].ssup);
+          break;
+        case 2:
+          ScrollChange(&scns[scnum].ssdown);
+          break;
+        case 3:
+          ScrollChange(&scns[scnum].ssleft);
+          break;
+        case 4:
+          ScrollChange(&scns[scnum].ssright);
+          break;
+        }
+      }
+    choice++;
+    } while (choice!=6);
+  closemenu(10,7,50,7,w);
+  }
+
+static void ScrollChange(unsigned char *sinfo)
+  {
+  int choice=1;
+  //int tempc=0;
+  //char temp[]={0,0,0,0,0};
+  char attr=0;
+  char w[1500];
+
+  attr=openmenu(15,17,50,2,w);
+ 
+  writestr (15,17,attr+7,"Character at edge of screen.");
+  writestr (15,18,attr+7,"Scrolling in this direction not allowed.");
+  //writestr (15,19,attr+7,"Scroll at 1 to 20 pixels per second.");
+
+  choice=vertmenu(15,17,50,2,choice);
+
+  switch (choice)
+    {
+    case 1:
+      *sinfo=0xFF;
+      break;
+    case 2:
+      *sinfo=0;
+      break;
+/*  case 3:
+      if (qwindow(16,12,2,"Enter number of pixels to scroll per second: ",temp))
+        {
+        sscanf(temp,"%d",&tempc);
+        if ((tempc<=20)&&(tempc>1)) *sinfo=tempc; 
+        }
+      break;
+*/
+    }
+  closemenu(15,17,50,2,w);
+  }
+   
+static void drawalllinks(int gnum,int col)
+  { 
+  register int lo;
+  int tnum=0,m=0;  
+  
+  m=moucur(2);
+  if (m) moucur(FALSE);
+
+  for (lo=0;lo<MAXLINK;lo++) /* Draw new lines */
+    {
+    if (scns[gnum].links[lo].tnum!=MAXSCENES) /* link active - draw it. */
+      {
+      tnum=scns[gnum].links[lo].tnum;
+      drawlink(gnum,tnum,col);
+      }
+    }
+  if (m) moucur(TRUE);
+  }
+
+static void drawscene(int scene, unsigned char col)
+  {
+  int m;
+  m=moucur(2);
+  if (m) moucur(FALSE);
+  BoxFill(scns[scene].x,scns[scene].y,scns[scene].x+5,scns[scene].y+5,col);
+  if (m) moucur(TRUE);
+  }
+
+static int unpress(int butnum)
+  {
+  int m;
+
+  m=moucur(2);
+  if (m) moucur(FALSE);
+
+  if (butnum==2)                                    /* unpress Delete button */
+    deleb(DELETEX,DELETEY,FaceCols);
+  if (butnum==1)
+    {
+    if (curworld!=NOTUSED)
+      {
+      BoxFill(scns[curworld].x,scns[curworld].y,scns[curworld].x+5,scns[curworld].y+5,bcol);
+      BoxFill(TEXTX,SELDESCY,TEXTX+112,SELDESCY+8,WORLDCOL);
+      drawalllinks(curworld,BACKLINK);
+      if (curworld>1) drawscene(curworld,bcol);   /* User defined scene */
+      else drawscene(curworld,speccol); /* special start or end scene */
+      }
+    curworld=NOTUSED;
+    seleb(SELECTX,SELECTY,FaceCols);
+    }
+
+  if (m) moucur(TRUE);
+
+  return(FALSE);
+  }
+
+static void erasescene(int scene)
+  {
+  register int lnum,snum; 
+
+  if ( (scene!=NOTUSED)&&(scns[scene].gametype>=ADVTYPE))
+    {
+    for (snum=0;snum<MAXSCENES;snum++)
+      {
+      for (lnum=0;lnum<MAXLINK;lnum++)
+        {
+        if ((scns[snum].links[lnum].tnum == scene)||(snum==scene)) 
+          { /* Del all links to and from this scene */
+          scns[snum].links[lnum].fx=0;
+          scns[snum].links[lnum].fy=0;
+          scns[snum].links[lnum].tx=0;
+          scns[snum].links[lnum].ty=0;
+          scns[snum].links[lnum].tnum=MAXSCENES;
+          }
+        }
+      }
+    saved=FALSE;
+    strcpy(scns[scene].desc,"UnTitled");
+    scns[scene].gametype=    NOSCENE;  
+    scns[scene].x       =    NOTUSED;  /* make this integrator record unused */
+    scns[scene].y       =    NOTUSED;
+    scns[scene].red     =    0;
+    scns[scene].green   =    0;
+    scns[scene].blue    =    0;
+    scns[scene].ssup    = 0xFF;
+    scns[scene].ssdown  = 0xFF;
+    scns[scene].ssleft  = 0xFF;
+    scns[scene].ssright = 0xFF;
+
+    for (lnum=0;lnum<LASTFNAME*9;lnum++) *(scns[scene].fnames[0]+lnum)=0;
+    if (curworld==scene) curworld=NOTUSED;
+    }
+  }
+/*
+static void drawdesc(int y,int col,char *str)
+  {
+  Line(DIVIDER+2,y*8,DIVIDER+2,(y+1)*8-1,col);
+  BoxWithText(TEXTX,y,str,FaceCols);
+  }
+*/
+
+static int retscene(int x,int y)
+  {
+  register int lo;
+  
+  for (lo=0;lo<MAXSCENES;lo++) 
+    if ( (scns[lo].gametype !=NOSCENE)&(IN(scns[lo].x-2,scns[lo].y-2,scns[lo].x+7,scns[lo].y+7)) ) return (lo);
+  return(MAXSCENES);
+  }
+
+static int retlink(int x, int y)
+  {
+  register int lo;
+  float slope=0;
+  int ow=0;
+  int liney=0,cury=0;
+  int dx=0,dy=0;
+  int yerr;
+
+  if (curworld!=NOTUSED)  /* Only looking for links in currently selected scene */ 
+    {
+    for (lo=0;lo<MAXLINK;lo++)  /* Check every link */
+      {
+      ow=scns[curworld].links[lo].tnum;
+      if (ow!=MAXSCENES)  /* If link is in use, check to see if mouse is pointing at it */
+        {
+        dx=scns[curworld].x-scns[ow].x;
+        dy=scns[curworld].y-scns[ow].y;
+        if (((dx>0)&(x<=scns[curworld].x+2)&(x>=scns[ow].x+2))|
+            ((dx<0)&(x>=scns[curworld].x+2)&(x<=scns[ow].x+2)))
+          {
+          slope= (float) dy/dx;
+          liney=(int) (slope*((float)(scns[curworld].x+2-x)));
+          cury = (scns[curworld].y+2)-y;
+          if (slope>0) yerr= ((int) slope)+1;
+          else yerr= ( (int) (slope*(-1)))+1;          
+
+          if (abs(liney-cury)<yerr)
+            return (lo);
+          }
+        if (dx==0)          /* vertical line */
+          {
+          if (x==scns[ow].x)  /* if x is correct... */
+            {                /* and y is between the two, then return it */
+            if ((dy>0)&(y<scns[curworld].y+2)&(y>scns[ow].y+2)) return(lo);
+            if ((dy<0)&(y>scns[curworld].y+2)&(y<scns[ow].y+2)) return(lo);
+            }
+          }
+        }
+      }
+    }
+  return(MAXLINK);
+  }
+
+  /* Cleanup is executed when the program ends in any way other then an abort */
+static void cleanup(void) 
+  {
+  Time.TurnOff();
+  }
+
+static void initalldata(void)
+  {
+  unsigned register int lx,ly;
+
+  for (lx=0;lx<MAXSCENES;lx++)
+    {
+    scns[lx].gametype=NOSCENE;  
+    scns[lx].x=NOTUSED;     /* make this integrator record unused */
+    scns[lx].y=NOTUSED;
+    strcpy(scns[lx].desc,"UnTitled");
+    for (ly=0;ly<MAXLINK;ly++) 
+      {
+      scns[lx].links[ly].tx=0;   /* I like keeping my records clean */
+      scns[lx].links[ly].ty=0;   /* even if it doesn't really matter */
+      scns[lx].links[ly].fx=0;
+      scns[lx].links[ly].fy=0;
+      scns[lx].links[ly].tnum=MAXSCENES;             /* make record unused */
+      } 
+    scns[lx].red=0;
+    scns[lx].green=0;
+    scns[lx].blue=0;
+    scns[lx].ssup    = 0xFF;
+    scns[lx].ssdown  = 0xFF;
+    scns[lx].ssleft  = 0xFF;
+    scns[lx].ssright = 0xFF;
+    for (ly=0;ly<LASTFNAME*9;ly++) *(scns[lx].fnames[0]+ly)=0;
+    }
+
+  scns[0].x=(WLEN/2)+WX-3;
+  scns[0].y=WORLDTOP+7;
+  scns[0].gametype=STARTTYPE;  
+  strcpy(scns[0].desc,"Title Screen");
+  scns[1].x=(WLEN/2)+WX-3;
+  scns[1].y=WORLDTOP+WWID-10;
+  scns[1].gametype=ENDTYPE;
+  strcpy(scns[1].desc,"Game Won");
+
+  blocy= 0;
+  zoom = TRUE;
+  saved= TRUE;
+  }
+
+/*
+static void menub(int x,int y, unsigned char col[4])
+  {
+  static char array[]= " UUUUUUU@Zªªªªªª•j««¿î»®ªPjªûî«îëª¤Zª¾ûúûºê©Vª®îê»îºªQª««º®û®ªZªêïû®¾ª”jªªªªªªT UUUUUUP ";
+  draw4dat(x,y,array,36,9,col);
+  }
+
+static void helpb(int x,int y, unsigned char col[4])
+  {
+  static char array[]= " UUUUUUU@Zªªªªªª•j«®ÿº¯êªPjªëº®«®ª¤Zª¿ï«ªëª©Vª®»ªê¿ªªQª«®êº®ªªZªë¿ïûªª”jªªªªªªT UUUUUUP ";
+  draw4dat(x,y,array,36,9,col);
+  }
+
+void selectb(int x,int y, unsigned char col[4])
+  {
+  static char array[]= " UUUUUUUUUU@Zªªªªªªªªª•jªúÿº¯úúÿêªPjªëº®«ªë«ªª¤Zª®¯ëªþºªêª©Vªªëªêº®ªºªªQª«®êº®«®®ªªZª¾¿ïûþ¾«ªª”jªªªªªªªªªT UUUUUUUUUP ";
+  draw4dat(x,y,array,48,9,col);
+  }
+
+void deleteb(int x,int y, unsigned char col[4])
+  {
+  static char array[]= {" UUUUUUUUUU@Zªªªªªªªªª•j«úÿº¯ûÿ¿êªPjªëº®«ª®®ªª¤Zªºïëªþ««úª©Vª®»ªêºªêêªªQª«®êº®ªººªªZªþ¿ïûþ®¯úª”jªªªªªªªªªT UUUUUUUUUP "};
+  draw4dat(x,y,array,48,9,col);
+  }
+*/
+
+static void deleb(int x,int y, unsigned char col[4])
+  {
+  static char delar[] = "         UUUUUUU@UUUUUUUTõÿu_÷ÿÔW]Õu]UuuUW]ýu_ÕuUW]Õu]UuuU—õÿßõuÖUUUUUUUT)UUUUUUUhªªªªªªª€";
+  draw4dat(x,y,delar,35,10,col);
+  }
+
+static void seleb(int x,int y, unsigned char col[4])
+  {
+  static char selar[] = "         UUUUUUU@UUUUUUUTõÿu_õõÿÔWUÕu]W]]UUõýu_×U]UU]Õu]W]]U—õÿßõõ]VUUUUUUUT)UUUUUUUhªªªªªªª€";
+  draw4dat(x,y,selar,35,10,col);
+  }
+

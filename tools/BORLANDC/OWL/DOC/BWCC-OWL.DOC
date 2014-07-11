@@ -1,0 +1,951 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             Borland Windows Custom Controls
+                             _________________________________________
+
+
+
+                             ObjectWindows for C++
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                Borland Windows Custom Controls
+
+
+
+            The Borland Windows Custom Controls (BWCC) is a collection of
+            stylish custom controls that implement the look and feel of
+            Borland-style Windows dialog boxes, such as the dialog boxes in
+            Resource Workshop and Turbo Pascal for Windows.
+
+
+
+            =================================================================
+            BWCC custom controls
+            =================================================================
+
+            o Bitmapped push buttons
+
+              These controls use bitmaps to implement the behavior of
+              standard windows push buttons. They also implement two
+              enhancements over Windows standard buttons.
+
+            o Static bitmaps
+
+              These controls implement a "non-pushable" bitmap style for
+              displaying "splash" images.
+
+            o Radio buttons
+
+              These radio buttons implement the behavior of standard Windows
+              radio buttons and auto-radio buttons but are in a more
+              attractive style than standard Windows radio buttons.
+
+            o Check boxes
+
+              These check boxes implement the behavior of standard Windows
+              check boxes and auto-check boxes but are in a more attractive
+              style than standard Windows check boxes.
+
+
+
+
+
+            Page 1
+
+
+
+            o Group boxes
+
+              These controls provide areas that appear to be cut into the
+              "chiseled steel" background. Other controls can be placed on
+              these areas. Gray panels themselves are "static" controls,
+              meaning that the user does not interact with them at run time.
+
+            o Dips and bumps
+
+              These thin lines act as vertical and horizontal dividers within
+              a dialog.
+
+              - Dips (derivation: speed dip) separate areas within a dialog.
+                (Borland uses them to separate push buttons from the rest of
+                the dialog's controls.)
+
+              - Bumps (derivation: speed bump) separate areas within a group
+                box.
+
+            o Custom dialog class
+
+              The Borland custom dialog class does two things:
+
+              - It paints the dialog window background with a brush
+                appropriate to the display device--speckled (chiseled steel)
+                for monitors with VGA capabilities and higher, white for EGA
+                and monochrome.
+
+              - It optimizes dialog drawing by taking over from the custom
+                controls and drawing them directly on the surface of the
+                dialog window. This "turbo painting" allows Borland's dialogs
+                to implement a sophisticated look without a sluggish feel.
+
+
+
+            =================================================================
+            Using BWCC or Custom Buttons in a program
+            =================================================================
+
+            Using BWCC in an ObjectWindows program is easy.
+
+            1. In your C++ source files use the ObjectWindows BWCC "TB"
+               classes (presented later) in place of their plain "T" analogs.
+               Be sure to include the requisite BWCC header files.
+
+            2. In resource files, edit dialog entries to specify Windows
+               class "BORDLG".
+
+            3. To ensure that BWCC.DLL will be dynamically loaded along with
+               your program, include a call to BWCCGetVersion (defined in
+               INCLUDE\BWCC.H) somwhere in your application. By
+
+
+
+
+            Page 2
+
+
+
+               convention, the call to BWCCGetVersion is in your application
+               class's InitMainWindow member function.
+
+            4. Link your program with the import library LIB\BWCC.LIB.
+               You must link BWCC.LIB with your program before you link
+               IMPORT.LIB.
+
+            5. Make the dynamic link library BWCC.DLL available to your
+               application to use at run time (in addition to OWL31.DLL). For
+               Windows to find it, it must be in one of the following places:
+
+               o The same directory as your application's .EXE file
+
+               o The Windows startup directory
+
+               o The Windows system directory
+
+               o A directory on your PATH
+
+
+
+            =================================================================
+            Using Borland dialogs
+            =================================================================
+
+            Borland dialogs must have their resource's Windows class set to
+            "BORDLG". Such a dialog may be referred to by a conventional
+            ObjectWindows TDialog class. Note that there is no TBDialog
+            class.
+
+
+
+
+            =================================================================
+            TBButton                                                BBUTTON.H
+            =================================================================
+
+            Derived from TButton.
+
+            TBButton is an interface class that represents a BWCC bitmap push
+            button interface element. You must use a TBButton to create a
+            button control in a parent TWindow. You can also use a TBButton
+            to facilitate communication between your application and the
+            button controls of a TDialog.
+
+            There are two types of push buttons. A regular button appears
+            with a thin border. A default button appears with a thick border
+            and represents the default action of the window (if user presses
+            Enter). There can only be one default push button in a window.
+
+
+
+
+
+
+            Page 3
+            TBButton
+
+
+                 Member
+              functions
+            constructor
+
+            TBButton(PTWindowsObject AParent, int AnId, LPSTR AText, int X,
+                     int Y, int W, int H, BOOL IsDefault, PTModule AModule =
+                     NULL);
+
+            Constructs a button object with the supplied parent window
+            (AParent), control ID (AnId), associated text (AText), position
+            (X, Y) relative to the origin of the parent window's client area,
+            width (W), and height (H). Invokes TButton's constructor with
+            similar parameters. Adds BS_DEFPUSHBUTTON to the default styles
+            set for the TBButton (in Attr.Style), if IsDefault is TRUE.
+            Otherwise, it adds BS_PUSHBUTTON.
+
+            See also: TButton::TButton
+
+            constructor
+
+            TBButton(PTWindowsObject AParent, int ResourceId,
+                     PTModule AModule = NULL);
+
+            Constructs a TBButton object to be associated with a button
+            control of a TDialog. Invokes the TButton constructor with
+            identical parameters; the TButton constructor calls
+            DisableTransfer to exclude the button from the transfer mechanism
+            because they have no data to be transferred.
+
+            The ResourceId parameter must correspond to a button resource
+            that you define.
+
+            See also: TButton::TButton, TWindowsObject::DisableTransfer
+
+            constructor
+
+            TBButton(StreamableInit);                               protected
+
+            TBButton stream constructor. Invokes TButton's stream
+            constructor. Called when a TBButton is instantiated using data
+            from an input stream.
+
+            See also: TButton::TButton
+
+            build
+
+            static PTStreamable build();
+
+            Invokes the TBButton(StreamableInit) constructor. Constructs an
+            object of the type TBButton prior to reading in its data members
+            from a stream.
+
+
+
+
+            Page 4
+                                                              TBButton
+
+
+            GetClassName
+
+            virtual LPSTR GetClassName();                           protected
+
+            Returns the name of TBButton's Windows registration class,
+            "BORBTN".
+
+            See also: TWindowsObject::GetWindowClass
+
+
+
+            =================================================================
+            TBCheckBox                                              BCHKBOX.H
+            =================================================================
+
+            Derived from TCheckBox.
+
+            TBCheckBox is an interface object that represents a BWCC check
+            box interface element in Windows. You must use a TBCheckBox to
+            create a BWCC check box control in a parent TWindow. You can use
+            a TBCheckBox to facilitate communication between your application
+            and the check box controls of a TDialog.
+
+            Check boxes have two states: checked and unchecked. Three-state
+            check boxes have an additional grayed state. TBCheckBox member
+            functions are concerned primarily with managing the check box's
+            state. Optionally, a check box can be part of a group (TGroupBox)
+            that visually and functionally groups its controls.
+
+
+                 Member
+              functions
+            TBCheckBox(PTWindowsObject AParent, int AnId, LPSTR ATitle, int
+                       X, int Y, int W, int H, PTGroupBox AGroup,
+                       PTModule AModule = NULL);
+
+            Constructs a check box object with the specified parent window
+            (AParent), control ID (AnId), associated text (ATitle), position
+            (X, Y) relative to the origin of the parent window's client area,
+            width (W), height (H), and associated group box (AGroup).
+            TBCheckBox::TBCheckBox invokes a TCheckbox constructor which sets
+            the check box's Attr.Style data member to WS_CHILD | WS_VISIBLE |
+            WS_TABSTOP | BS_AUTOCHECKBOX.
+
+            See also: TCheckBox::TCheckBox
+
+            constructor
+
+            TBCheckBox(PTWindowsObject AParent, int ResourceId, PTGroupBox
+                       AGroup, PTModule AModule = NULL);
+
+
+
+
+
+            Page 5
+            TBCheckBox
+
+
+            Constructs a TBCheckBox object to be associated with a check box
+            control of a TDialog. ResourceId must correspond to a check box
+            resource in the resource file. Invokes a TCheckBox constructor
+            which sets Group to AGroup, and enables the data transfer
+            mechanism by calling EnableTransfer.
+
+            See also: TCheckBox::TCheckBox, TWindowsObject::EnableTransfer
+
+            constructor
+
+            TBCheckBox(StreamableInit);                             protected
+
+            TBCheckBox stream constructor. Invokes TCheckBox's stream
+            constructor. Called when a TBCheckBox is instantiated using data
+            from an input stream.
+
+            See also: TCheckBox::TCheckBox
+
+            build
+
+            static PTStreamable build();
+
+            Invokes the TBCheckBox(StreamableInit) constructor. Constructs an
+            object of the type TBCheckBox prior to reading in its data
+            members from a stream.
+
+            GetClassName
+                                                                    protected
+            virtual LPSTR GetClassName();
+
+            Returns the name of TBCheckBox's Windows registration class,
+            "BORCHECK".
+
+
+
+            =================================================================
+            TBDivider                                              BDIVIDER.H
+            =================================================================
+
+            Derived from TControl.
+
+            A TBDivider is an interface object that represents a static BWCC
+            divider. Dividers come in two flavors: dips and bumps. Dips
+            separate areas within a dialog. Bumps separate areas within a
+            group box.
+
+
+
+
+
+
+
+
+
+
+            Page 6
+                                                             TBDivider
+
+
+                 Member
+              functions
+            TBDivider(PTWindowsObject AParent, int AnId, LPSTR AText, int X,
+                      int Y, int W, int H, BOOL IsVertical, BOOL IsBump,
+                      PTModule AModule = NULL);
+
+            Constructs a static control object with the supplied parent
+            window (AParent), control ID (AnId), text (ATitle), position (X,
+            Y) relative to the origin of the parent window's client area,
+            width (W) and height (H). By default, the static control is
+            visible upon creation. Adds one of BSS_VBUMP, BSS_VDIP,
+            BSS_HBUMP, or BSS_HDIP to Attr.Style depending on the values of
+            IsVertical and IsBump. Invokes a TControl constructor which sets
+            Attr.Style to WS_CHILD | WS_VISIBLE | WS_GROUP | WS_TABSTOP.
+
+            See also: TControl::TControl
+
+            constructor
+
+            TBDivider(PTWindowsObject AParent, int ResourceId,
+                      PTModule AModule = NULL);
+
+            Constructs a TBDivider object to be associated with a static
+            control interface control of a TDialog. Invokes the TControl
+            constructor with similar parameters. Disables the data transfer
+            mechanism by calling DisableTransfer.
+
+            The ResourceId parameter must correspond to a static control
+            resource that you define.
+
+            See also: TControl::TControl
+
+            constructor
+
+            TBDivider(StreamableInit);                              protected
+
+            TBDivider stream constructor. Invokes TControl's stream
+            constructor. Called when a TBDivider is instantiated using data
+            from an input stream.
+
+            See also: TControl::TControl
+
+            build
+
+            static PTStreamable build();
+
+            Invokes the TBDivider(StreamableInit) constructor. Constructs an
+            object of the type TBDivider prior to reading in its data members
+            from a stream.
+
+
+
+
+
+
+            Page 7
+            TBDivider
+
+
+            GetClassName
+
+            virtual LPSTR GetClassName();                           protected
+
+            Returns the name of TBDivider's Windows registration class,
+            "BORSHADE".
+
+
+
+            =================================================================
+            TBGroupBox                                              BGRPBOX.H
+            =================================================================
+
+            Derived from TGroupBox.
+
+            An instance of a TBGroupBox is an interface object that
+            represents a corresponding gray BWCC group box element.
+
+            Group boxes don't serve an active purpose onscreen. They visually
+            unify a group of selection boxes (check boxes and radio buttons)
+            or other controls. Behind the scenes they can take an important
+            role in handling state changes for their group of controls
+            (normally check boxes or radio buttons).
+
+            For example, you may want to respond to a selection change in any
+            one of a group of radio buttons in a similiar manner. You can do
+            this by deriving a class from TBGroupBox that redefines the
+            member function SelectionChanged.
+
+            Alternatively, you could respond to selection changes in the
+            group of radio buttons by defining a response for the group box's
+            parent. To do so, define a child-ID-based response member
+            function, using the ID of the group box. The group box will
+            automatically send a child-ID-based message to its parent
+            whenever the radio button selection state changes.
+
+
+                 Member
+              functions
+
+            TBGroupBox(PTWindowsObject AParent, int AnId, LPSTR AText, int X,
+                       int Y, int W, int H, PTModule AModule = NULL);
+
+            Constructs a group box object with the supplied parent window
+            (AParent), control ID (AnId), associated text (AText), position
+            (X, Y) relative to the origin of the parent window's client area,
+            width (W), and height (H). Invokes the TGroupBox constructor with
+            similar parameters, which modifies Attr.Style by removing
+            WS_TABSTOP. The TBGroupBox constructor then removes BS_GROUPBOX
+            and adds BSS_GROUP to Attr.Style. NotifyParent is set to TRUE in
+            the TGroupBox constructor; by default, the group box's parent
+
+
+
+
+            Page 8
+                                                            TBGroupBox
+
+
+            will be notified when a selection change occurs in any of the
+            group box's controls.
+
+            See also: TGroupBox::TGroupBox
+
+            constructor
+
+            TBGroupBox(PTWindowsObject AParent, int ResourceId,
+                       PTModule AModule = NULL);
+
+            Constructs a TBGroupBox object to be associated with a group box
+            control of a TDialog. Invokes the TGroupBox constructor with
+            identical parameters, which calls DisableTransfer to exclude
+            group boxes from the transfer mechanism because they have no data
+            to be transferred.
+
+            The ResourceId parameter must correspond to a group box resource
+            that you define.
+
+            See also: TGroupBox::TGroupBox, TWindowsObject::DisableTransfer
+
+            constructor
+
+            TBGroupBox(StreamableInit);                             protected
+
+            TBGroupBox stream constructor. Invokes TGroupBox's stream
+            constructor. Called when a TBGroupBox is instantiated using data
+            from an input stream.
+
+            See also: TGroupBox::TGroupBox
+
+            build
+
+            static PTStreamable build();
+
+            Invokes the TBGroupBox(StreamableInit) constructor. Constructs an
+            object of the type TBGroupBox prior to reading in its data
+            members from a stream.
+
+            GetClassName
+
+            virtual LPSTR GetClassName();                           protected
+
+            Returns the name of TBGroupBox's Windows registration class,
+            "BORSHADE".
+
+
+
+
+
+
+
+
+
+
+            Page 9
+            TBRadioButton
+
+
+            =================================================================
+            TBRadioButton                                            BRADIO.H
+            =================================================================
+
+            Derived from TRadioButton.
+
+            A TBRadioButton is an interface object that represents an
+            attractive BWCC radio button element. Use TBRadioButton to create
+            a radio button control in a parent TWindow. A TBRadioButton can
+            also be used to communicate between your application and the
+            radio button controls of a TDialog.
+
+            Radio buttons have two states: checked and unchecked. Optionally,
+            a radio button can be part of a group (TGroupBox) that visually
+            and logically groups its controls.
+
+
+                 Member
+              functions
+            TBRadioButton(PTWindowsObject AParent, int AnId, LPSTR ATitle,
+                          int X, int Y, int W, int H, PTGroupBox AGroup,
+                          PTModule AModule = NULL);
+
+            Constructs a radio button object with the supplied parent window
+            (AParent), control ID (AnId), associated text (ATitle), position
+            (X, Y) relative to the origin of the parent window's client area,
+            width (W), height (H), and associated group box (AGroup). Invokes
+            the TRadioButton constructor with similar parameters, which sets
+            the Attr.Style data member to WS_CHILD | WS_VISIBLE |
+            BS_AUTORADIOBUTTON.
+
+            See also: TRadioButton::TRadioButton
+
+            constructor
+
+            TBRadioButton(PTWindowsObject AParent, int ResourceId,
+                          PTGroupBox AGroup, PTModule AModule = NULL);
+
+            Constructs a TBRadioButton object to be associated with a radio
+            button control of a TDialog. Invokes the TRadioButton constructor
+            with identical parameters. The ResourceId parameter must
+            correspond to a radio button resource that you define.
+
+            constructor
+
+            TBRadioButton(StreamableInit);                          protected
+
+            TBRadioButton stream constructor. Invokes TRadioButton's stream
+            constructor. Called when a TBRadioButton is instantiated using
+            data from an input stream.
+
+            See also: TRadioButton::TRadioButton
+
+
+
+            Page 10
+                                                         TBRadioButton
+
+
+            build
+
+            static PTStreamable build();
+
+            Invokes the TBRadioButton(StreamableInit) constructor. Constructs
+            an object of the type TBRadioButton prior to reading in its data
+            members from a stream.
+
+            GetClassName
+
+            virtual LPSTR GetClassName();                           protected
+
+            Returns the name of TBRadioButton's Windows registration class,
+            "BORRADIO".
+
+
+
+            =================================================================
+            TBStatic                                                BSTATIC.H
+            =================================================================
+
+            Derived from TStatic.
+
+            A TBStatic is an interface object that represents a static text
+            interface element in Windows. A TBStatic must be used to create a
+            static control in a parent TWindow. A TBStatic can also be used
+            to facilitate modifications to the text of static controls in
+            TDialogs.
+
+
+                 Member
+              functions
+
+            TBStatic(PTWindowsObject AParent, int AnId, LPSTR ATitle, int X,
+                     int Y, int W, int H, WORD ATextLen, PTModule AModule =
+                     NULL);
+
+            Constructs a static control object with the supplied parent
+            window (AParent), control ID (AnId), text (ATitle), position (X,
+            Y) relative to the origin of the parent window's client area,
+            width (W), height (H), and text length(ATextLen). By default, the
+            static control is visible upon creation and has left-justified
+            text. (Attr.Style is set to WS_CHILD | WS_VISIBLE | WS_GROUP |
+            SS_LEFT.) Invokes a TStatic constructor.
+
+            See also: TStatic::TStatic
+
+            constructor
+
+            TBStatic(PTWindowsObject AParent, int ResourceId, WORD ATextLen,
+                     PTModule AModule = NULL);
+
+
+
+
+            Page 11
+            TBStatic
+
+
+            Constructs a TBStatic object to be associated with a static
+            control interface control of a TDialog. Invokes the TStatic
+            constructor with similar parameters, which sets TextLen to
+            ATextLen. Disables the data transfer mechanism by calling
+            DisableTransfer.
+
+            The ResourceId parameter must correspond to a static control
+            resource that you define.
+
+            See also: TStatic::TStatic
+
+            constructor
+
+            TBStatic(StreamableInit);                               protected
+
+            TBStatic stream constructor. Invokes TStatic's stream
+            constructor. Called when a TBStatic is instantiated using data
+            from an input stream.
+
+            See also: TStatic::TStatic
+
+            build
+
+            static PTStreamable build();
+
+            Invokes the TBStatic(StreamableInit) constructor. Constructs an
+            object of the type TBStatic prior to reading in its data members
+            from a stream.
+
+            GetClassName
+
+            virtual LPSTR GetClassName();                           protected
+
+            Returns the name of TBStatic's Windows registration class,
+            "BORSTATIC".
+
+
+
+            =================================================================
+            TBStaticBmp                                            BSTATBMP.H
+            =================================================================
+
+            Derived from TControl.
+
+            A TBStaticBmp is an interface object that represents a static
+            BWCC bitmap interface element used for displaying splash images.
+            A TBStaticBmp must be used to create a bitmap control in a parent
+            TWindow. A TBStaticBmp can also be used to facilitate
+            modifications to the text of bitmap controls in TDialogs.
+
+
+
+
+
+
+            Page 12
+                                                           TBStaticBmp
+
+
+                 Member
+              functions
+            TBStaticBmp(PTWindowsObject AParent, int AnId, LPSTR AText, int
+                        X, int Y, int W, int H, PTModule AModule = NULL);
+
+            Constructs a static bitmap object with the supplied parent window
+            (AParent), control ID (AnId), text (ATitle), position (X, Y)
+            relative to the origin of the parent window's client area, width
+            (W), and height (H). By default, the static control is visible
+            upon creation. Invokes a TControl constructor.
+
+            See also: TControl::TControl
+
+            constructor
+
+            TBStaticBmp(PTWindowsObject AParent, int ResourceId,
+                        PTModule AModule = NULL);
+
+            Constructs a TBStaticBmp object to be associated with a static
+            bitmap interface control of a TDialog. Invokes the TControl
+            constructor with similar parameters. Disables the data transfer
+            mechanism by calling DisableTransfer.
+
+            The ResourceId parameter must correspond to a static control
+            resource that you define.
+
+            See also: TControl::TControl, TWindowsObject::DisableTransfer
+
+            constructor
+
+            TBStaticBmp(StreamableInit);                            protected
+
+            TBStaticBmp stream constructor. Invokes TControl's stream
+            constructor. Called when a TBStaticBmp is instantiated using data
+            from an input stream.
+
+            See also: TControl::TControl
+
+            build
+
+            static PTStreamable build();
+
+            Invokes the TBStaticBmp(StreamableInit) constructor. Constructs
+            an object of the type TBStaticBmp prior to reading in its data
+            members from a stream.
+
+            GetClassName
+
+            virtual LPSTR GetClassName();                           protected
+
+
+
+
+
+
+            Page 13
+            TBWindow
+
+
+            Returns the name of TBStaticBmp's Windows registration class,
+            "BORBTN".
+
+
+
+            =================================================================
+            TBWindow                                                BWINDOW.H
+            =================================================================
+
+            TBWindow is derived from TWindow.
+
+            TBWindow is a generic window with a light gray background that
+            will look attractive with BWCC.
+
+
+                 Member
+              functions
+            TBWindow(PTBWindowsObject AParent, LPSTR ATitle, PTModule AModule
+                     = NULL);
+
+            Constructs a gray-background window object with the parent window
+            supplied in AParent. (AParent should be NULL for main windows,
+            which have no parent.) The associated text, usually the window's
+            caption, is copied from ATitle.
+
+            See also: TWindow::TWindow
+
+            constructor
+
+            TBWindow(StreamableInit);                               protected
+
+            TBWindow stream constructor. Called when a TBWindow is
+            instantiated using data from an input stream.
+
+            See also: TWindow::TWindow
+
+            build
+
+            static PTStreamable build();
+
+            Invokes the TBWindow(StreamableInit) constructor. Constructs an
+            object of the type TBWindow prior to reading in its data members
+            from a stream.
+
+            See also: TBWindow::TBWindow
+
+            GetClassName
+
+            virtual LPSTR GetClassName();                           protected
+
+            Returns "TBWindow", the name of the default Windows registration
+            class for a TBWindow.
+
+
+
+            Page 14
+                                                              TBWindow
+
+
+            GetWindowClass
+
+            virtual void GetWindowClass(WNDCLASS & AWndClass);
+            Fills the WNDCLASS structure, supplied in AWndClass, with the
+            default registration attributes appropriate for a TBWindow. These
+            attributes are the same as those for a TWindow except that the
+            background color is set to LTGRAY_BRUSH.
+
+            See also: TBWindow::GetClassName, TWindow::GetWindowClass,
+            TWindowsObject::Register, TBWindow::Create
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            Page 15
+

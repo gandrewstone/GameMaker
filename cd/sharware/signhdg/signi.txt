@@ -1,0 +1,14 @@
+        C O N T R O L S
+
+ Left, Right: Walk those ways
+      Up: Jump upwards
+ Up-Left, Up-Right: Jump those
+            ways
+         Down: Duck
+  Down-Right, Down-Left: Roll
+         those ways
+  G, H: Pour tea to the left,
+            right
+T, Y:  Blow steam to the left,
+            right
+     P, D: Pick up, drop.

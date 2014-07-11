@@ -1,0 +1,44 @@
+facelift.obj:   facelift.c
+                $(CCOMPILER) $(CFLAGS) facelift.c
+dirtrect.obj:   dirtrect.c
+                $(CCOMPILER) $(CFLAGS) dirtrect.c
+membloca.obj:   membloca.asm
+                $(ASSEMBLER) $(AFLAGS) membloca.asm
+microcnl.obj:   microcnl.asm
+                $(ASSEMBLER) $(AFLAGS) microcnl.asm
+soundc.obj:     soundc.c
+                $(CCOMPILER) $(CFLAGS) soundc.c
+oldmouse.obj:   oldmouse.asm
+                $(ASSEMBLER) $(AFLAGS) oldmouse.asm
+windio.obj:     windio.c
+                $(CCOMPILER) $(CFLAGS) windio.c
+genc.obj:       genc.c
+                $(CCOMPILER) $(CFLAGS) genc.c
+gifc.obj:       gifc.c
+                $(CCOMPILER) $(CFLAGS) gifc.c
+palc.obj:       palc.c
+                $(CCOMPILER) $(CFLAGS) palc.c
+svgac.obj:      svgac.c
+                $(CCOMPILER) $(CFLAGS) svgac.c
+hiscorel.obj:   hiscorel.c
+                $(CCOMPILER) $(CFLAGS) hiscorel.c
+sbmusic.obj:    sbmusic.c
+                $(CCOMPILER) $(CFLAGS) sbmusic.c
+jstickc.obj:    jstickc.c
+                $(CCOMPILER) $(CFLAGS) jstickc.c
+jsticka.obj:    jsticka.asm
+                $(ASSEMBLER) $(AFLAGS) jsticka.asm
+pala.obj:       pala.asm
+                $(ASSEMBLER) $(AFLAGS) pala.asm
+scrnrout.obj:   scrnrout.asm
+                $(ASSEMBLER) $(AFLAGS) scrnrout.asm
+svgaa.obj:      svgaa.asm
+                $(ASSEMBLER) $(AFLAGS) svgaa.asm
+bloca.obj:      bloca.asm
+                $(ASSEMBLER) $(AFLAGS) bloca.asm
+regspace.obj:   regspace.asm
+                $(ASSEMBLER) $(AFLAGS) regspace.asm
+graphc.obj:     graphc.c
+                $(CCOMPILER) $(CFLAGS) graphc.c
+
+

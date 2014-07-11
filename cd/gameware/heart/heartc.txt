@@ -1,0 +1,17 @@
+ Graphics, Sound, Animation:
+       Eric-jon Waugh
+
+        Menu Screens
+        Andrew Stone
+       Eric-jon Waugh
+
+All of  the  graphics  in  the
+game  were  drawn  with Deluxe
+Paint ][ Enhanced.   The  menu
+animation was done with  Auto-
+desk  Animator.    The  sounds
+were  mastered   with  WinDat.
+The game  engine is Game-Maker
+Version 3.00 from Recreational
+Software Designs.
+

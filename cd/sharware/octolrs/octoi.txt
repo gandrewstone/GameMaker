@@ -1,0 +1,16 @@
+Here's how to control Octolris
+==============================
+Left, right arrows:
+----Walk those ways
+Up arrow:
+----Jump upwards
+Up-left, up-right (Home,PgUp):
+----Jump those ways
+Down arrow:
+----Duck, slide down
+Slash (/):
+----Climb up
+==============================
+The little blue hearts give
+you a hit point and the vials
+of slime enable you to climb.

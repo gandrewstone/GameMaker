@@ -1,0 +1,17 @@
+N     E     B     U    L     A
+
+Movement: Joystick
+          Numerical keypad
+
+Spit Fireball: <Space bar>
+
+Pick up Objects: the 'P' key
+
+You do not have the  power to
+spit fire at first.  Find the
+Yellow orb in  the blue world
+(and pick it up) to gain this
+ability. There is also a more
+powerful  fireball  hidden in
+the game, so look carefully!
+

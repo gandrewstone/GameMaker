@@ -1,0 +1,46 @@
+// Borland C++ - (C) Copyright 1991 by Borland International
+
+# include <windows.h>
+
+# include "hdump.h"
+
+hdump  ICON hdump.ico
+
+hdump  MENU
+BEGIN
+  POPUP "File"
+  BEGIN
+    MENUITEM "Open..."  IDM_OPEN
+    MENUITEM SEPARATOR
+    MENUITEM "About",   IDM_ABOUT
+    MENUITEM "Exit",    IDM_QUIT
+  END
+END
+
+STRINGTABLE
+BEGIN
+  IDS_NAME, "hdump"
+END
+
+ABOUT DIALOG                                                                                  22,  17, 154,  75
+STYLE WS_POPUP | WS_DLGFRAME
+BEGIN
+  ICON    "hdump"                    -1,                                                       9,  23,   0,   0
+  CONTROL "Hdump"                    -1, "static", SS_CENTER | WS_CHILD,                       0,   5, 154,   8
+  CONTROL "Version 1.0"              -1, "static", SS_CENTER | WS_CHILD,                      30,  34,  94,   8
+  CONTROL "Ok"                     IDOK, "button", BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD,  61,  59,  32,  14
+END
+
+OPENFILE DIALOG                                                                                     10,  10, 148, 116
+STYLE WS_POPUP | WS_DLGFRAME
+BEGIN
+  CONTROL "Open File Name:",         -1, "static",  SS_LEFT | WS_CHILD,                              2,   4,  76,  10
+  CONTROL "",                 IDD_FNAME, "edit",    ES_LEFT | WS_BORDER | WS_TABSTOP | WS_CHILD,     2,  18, 144,  12
+  CONTROL "Files in",                -1, "static",  SS_LEFT | WS_CHILD,                              2,  40,  38,  10
+  CONTROL "",                 IDD_FPATH, "static",  SS_LEFT | WS_CHILD,                             44,  40,  98,  12
+  CONTROL "",                 IDD_FLIST, "listbox", LBS_NOTIFY | WS_BORDER | WS_VSCROLL | WS_CHILD,  2,  54,  70,  58
+  CONTROL "OK",                    IDOK, "button",  BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD,       88,  62,  50,  14
+  CONTROL "Cancel",            IDCANCEL, "button",  BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,          88,  86,  50,  14
+END
+
+

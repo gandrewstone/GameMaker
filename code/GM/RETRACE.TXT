@@ -1,0 +1,86 @@
+Video Retrace Info.  : All code released to the Public Domain.  Andy Stone.
+
+In the VGA, there is no video retrace interrupt.  Some cards do not disable
+this EGA feature when going into VGA modes, but others do.  So be careful
+if you use it.  Instead, you are supposed to poll the card to find when a
+retrace is occuring.  Here's the info:
+
+PORT 03DAh:
+
+Numbers:8   7   6   5   4   3   2   1
+        -----------------------------
+Bits    0   0   0   0   *   0   0   *
+
+Bit#4:  Vertical Retrace Occuring.
+        1 = retracing.
+        0 = not retracing.
+
+Bit#1:  Horizontal Retrace.
+        1 = retracing.
+        0 = not retracing.
+
+Example: Pause until a vertical retrace occurs:
+*C*
+while ((inport(0x03DA)&8) ==0);
+
+
+      The problem is that no one really wants to wait around for the
+retrace, wasting valuable computer time.  So what people do is reprogram
+the timer interrupt to occur about when the retrace should be occuring,
+and put their own routine in place of the timer routine.
+      The timer starts programmed to interrupt 18.2 times a second.  This
+corresponds to 0xFFFF (65535) in the timer control register.  The control
+register is an int, so it must be programmed with two out instructions.
+Examine the code below for details:
+
+outportb(port number, value to send to the port)
+
+static void SlowTimer(void)
+  {
+  outportb(0x43,0x36);    /* Control reg., write LSB then MSB to counter 0 */
+  outportb(0x40,65535%256); /* Write the LSB - 18.2X/sec = 65535      */ 
+  outportb(0x40,65535/256); /* Write the MSB  */
+  }
+
+#define FASTAMT  8            // 8 timer faster
+static void FastTimer(void)
+  {
+  outportb(0x43,0x36);  /* Control reg., write LSB then MSB to counter 0   */
+  outportb(0x40,(65535/FASTAMT)%256);  /* Write the LSB - 18.2X/sec = 65535      */
+  outportb(0x40,(65535/FASTAMT)/256);  /* Write the MSB - so / 8 for much faster */
+  }
+
+        So now that we have the timer going so fast, how do we take the
+interrupt?  Since the timer interrupt is 8, we can do it easily in DOS.
+Check out:
+
+ DOS interrupt 0x21, AH=25h.         This sets an interrupt to your routine.
+ DOS interrupt 0x21, AH=35h.         This returns the current vector.
+
+
+       Keep in mind that an interrupt will hang the system if it calls any
+other DOS or BIOS function (DOS is not reentrant).  This actually will occur
+only in certain cases, but they are the majority, and they are too convoluted
+to discuss here.  As a general rule, keep your routine SHORT and simple!
+Also keep in mind that interrupts must return via the iret instruction,
+and that you must tell the Programmable Interrupt Controller that you want
+to re-enable interrupts.  See the code below for details.
+
+Example interrupt routine:
+
+#define RETRACEMULT 4
+unsigned long int clk=0;
+static void interrupt NewTimer(...)
+  {
+  clk++;
+  enable();
+  if (clock%RETRACEMULT) UpdateScrn();  // Call the screen update fn.
+  outportb(0x20,0x20); // Tell 8259 PIC controller to enable interrupts.
+  return;  // routine declared as an interrupt, so iret automatically generated.
+  }
+
+                                                Good Luck,
+                                                Andy.
+
+
+

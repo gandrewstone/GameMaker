@@ -1,0 +1,863 @@
+                           CUSTCNTL.RW
+                           ===========
+
+
+1        Creating custom control classes
+----------------------------------------
+
+Windows provides standard control classes, such as list boxes and
+radio buttons, that you can add to your dialog box resources. In
+addition to these standard classes, Resource Workshop also lets
+you create and use custom control classes. This file describes
+the functions you'll need to use to make your custom controls
+accessible to Resource Workshop.
+
+See Chapter 4 in the Resource Workshop User's guide for
+descriptions of the standard menu controls and of how to load and
+use a custom control library.
+
+You must store your custom controls in a dynamic-link library
+(DLL) file. For an example of how to use the custom control
+application program interface described in this file and to
+create a sample DLL file, see the BITBTN demonstration programs
+on your Resource Workshop distribution disks. These programs come
+in a Pascal version and a C version.
+
+The DLL file must contain functions that enable Resource Workshop
+to work with the custom controls just as it works with the
+standard Windows controls. In particular, you must implement the
+ListClasses function and export it by name. This function
+provides information to Resource Workshop about the custom
+control classes in the DLL.
+
+You must also provide the following functions for each custom
+control window class:
+
+- Info
+- Style
+- Flags
+
+These functions can have any name. They must, however, be
+exported by the DLL, and pointers to them must be supplied in the
+ListClasses function.
+
+The remainder of this file is divided into two sections, the
+first for C programmers and the second for Pascal programmers.
+The C programming section follows immediately. To skip to the
+Pascal portion, search for "Pascal programming section".
+
+
+2        C programming section
+------------------------------
+
+2.1      ListClasses function
+-----------------------------
+
+ListClasses is a programmer-implemented function that passes
+information about the custom control classes back to Resource
+Workshop. Exporting ListClasses marks your DLL as supporting this
+custom control specification.
+
+If ListClasses is present in the DLL, Resource Workshop calls the
+function, passing information about itself along with two utility
+function variables used in editing the custom control.
+
+ListClasses should return a handle to global memory allocated by
+calling GlobalAlloc.  The memory referenced by this handle holds
+a structure of type CTLCLASSLIST, which describes the controls in
+the library.  CTLCLASSLIST is described later in this section.
+The handle is freed by Resource Workshop and should not be freed
+by the DLL.
+
+Return value:
+
+    Returns a global handle to the data structure.
+
+Syntax:
+
+   HGLOBAL CALLBACK ListClasses( LPSTR szAppClass, UINT wVersion,
+   LPFNLOADRES fnLoad, LPFNEDITRES fnEdit);
+
+Parameters:
+
+    szAppClass     The class name of the main window of the
+                   calling application. This class name can be
+                   used by the custom control to determine if it
+                   is running under a resource editor. If
+                   szAppClass is "rwswnd", the calling
+                   application is Resource Workshop.
+
+    wVersion       The version number of the calling application.
+                   The major version is in the high-order byte
+                   and the minor version in the low-order byte.
+                   For example, version 1.02 is 0x0102.
+
+    fnLoad         A pointer to a function a custom control can
+                   use to obtain a binary version of any resource
+                   in the project being edited by the calling
+                   application--the equivalent of the Windows API
+                   function LoadResource(). The function takes
+                   two parameters, a resource type name and a
+                   resource name. The custom control is
+                   responsible for freeing the global handle (if
+                   any) returned by this function.
+
+    fnEdit         A pointer to a function a custom control can
+                   use to start a resource editor for any
+                   resource in the project being edited by
+                   Resource Workshop. It takes two parameters, a
+                   resource type name and a resource name.
+
+Data structures:
+
+    typedef struct
+    {
+      LPFNINFO  fnRWInfo;             // Info function
+      LPFNSTYLE fnRWStyle;            // Style function
+      LPFNFLAGS fnFlags;              // Flags function
+      char  szClass[ CTLCLASS];       // Class name
+
+    } RWCTLCLASS, FAR *LPRWCTLCLASS;
+
+    typedef struct {
+      short  nClasses;          // Number of classes in list
+      RWCTLCLASS Classes[];           // Class list
+    } CTLCLASSLIST, FAR *LPCTLCLASSLIST;
+
+    The CTLCLASSLIST structure contains a variable number of
+    RWCTLCLASS strucures, the number of which is determined by
+    the nClasses field.
+
+    Each control class in the DLL must have a corresponding
+    RWCTLCLASS structure in the CTLCLASSLIST. The szClass field
+    contains the name with which the class was registered. For
+    example, if you called RegisterClass giving the class name as
+    "MYBUTTON", szClass must be "MYBUTTON".
+
+The function variables Info, Style, and Flags--which correspond
+to the pointers fnRWInfo, fnRWStyle, and fnFlags--are described
+in the following sections.
+
+
+2.2      Info function
+----------------------
+
+The Info function is called by Resource Workshop to retrieve
+information about the control class, including the string to add
+to the control menu and the bitmap to add to the tool palette.
+The function returns a memory handle that can be allocated by
+GlobalAlloc. This handle must refer to memory that contains a
+RWCTLINFO structure. Like ListClasses, the handle returned by
+Info is freed by Resource Workshop and should not be freed by the
+DLL. This function is called once by Resource Workshop upon
+loading the DLL.
+
+Syntax:
+
+    HGLOBAL CALLBACK Info( void);
+
+Parameters:
+
+    None.
+
+Structure:
+
+    The RWCTLINFO structure, defined by a typedef in the file
+    CUSTCNTL.H, has two basic parts:
+
+    - The first part has a fixed length and provides information
+      about the whole control class.
+
+    - The second part is a variable-length array of fixed-length
+      records. Each record provides information about a
+      particular type or subclass of the control.
+
+    /* general size definitions */
+    #define     CTLTYPES   12   /* number of control types   */
+    #define     CTLDESCR   22   /* size of control menu name */
+    #define     CTLCLASS   20   /* max size of class name    */
+    #define     CTLTITLE   94   /* max size of control text  */
+
+     typedef struct {
+       UINT         wVersion;            /* control version */
+       UINT         wCtlTypes;           /* control types */
+       char         szClass[CTLCLASS];   /* control class name */
+       char         szTitle[CTLTITLE];   /* control title */
+       char         szReserved[10];    // reserved for future use
+       RWCTLTYPE    Type[CTLTYPES];      /* control type list */
+     } RWCTLINFO;
+
+     typedef RWCTLINFO *RWPCTLINFO;
+     typedef RWCTLINFO FAR *LPRWCTLINFO;
+
+    wVersion       The version number of the custom control
+                   library. The major version is in the
+                   high-order byte and the minor version is in
+                   the low-order byte. For example, version 1.02
+                   is 0x0102. This field is not used by Resource
+                   Workshop.
+
+    wCtlTypes      The number of control sub-types defined in the
+                   Type array.
+
+    szClass        The name of the class as registered with
+                   Windows.  This is duplicated from the
+                   CTLCLASSLIST structure to retain upward
+                   compatiblity with the Windows custom control
+                   specificiation.
+
+    szReserved     Space reserved for future expansion.  Must be
+                   cleared to null characters (0).
+
+    Type           An array of sub-type description structures of
+                   type RWCTLTYPE.
+
+    /*
+     * RWCTLTYPE DATA STRUCTURE
+     *
+     * This data structure is returned by the control options
+     * function while inquiring about the capabilities of a
+     * particular control. Each control may contain various types
+     * (with predefined style bits) under one general class.
+     *
+     * The width and height fields provide the application with
+     * a suggested size. Use pixels or dialog units for the
+     * values in these fields. If you use pixels, turn on the
+     * most significant bit (MSB). If you use dialog units, turn
+     * off the MSB.
+     *
+     */
+
+     typedef struct {
+       UINT         wType;               /* type style */
+       UINT         wWidth;              /* suggested width */
+       UINT         wHeight;             /* suggested height */
+       DWORD        dwStyle;             /* default style */
+       char         szDescr[CTLDESCR];   /* menu name */
+       HBITMAP      hToolBit;            // Toolbox bitmap
+       HCURSOR      hDropCurs;           // Drag and drop cursor
+     } RWCTLTYPE, FAR * LPRWCTLTYPE;
+
+    wType          A user-defined value used to indicate the
+                   sub-type of the control.  This value is not
+                   used by Resource Workshop.
+
+    wWidth         The default width for the control.  Resource
+                   Workshop will use this value if, for example,
+                   the control is created by dragging the icon
+                   from the tool palette.  wWidth is in dialog
+                   coordinates unless the most significant bit is
+                   set, in which case the value is in pixels. For
+                   example, a value of "32" is 32 in dialog
+                   coordinates, but the value "32 | 0x8000" is in
+                   pixels.
+
+    wHeight        The default height for the control.  Resource
+                   Workshop will use this value if, for example,
+                   the control is created by dragging the icon
+                   from the tool palette.  wHeight is in dialog
+                   coordinates unless the most significant bit is
+                   set, in which case the value is in pixels. For
+                   example, a value of "32" is 32 in dialog
+                   coordinates, but the value "32 | 0x8000" is in
+                   pixels.
+
+    wStyle         The default style Resource Workshop will use
+                   to create the Window.  This is the key field
+                   that you will use to distinguish one subtype
+                   from another.
+
+    szDescr        The description of the control subtype.  This
+                   text is used by Resource Workshop to construct
+                   a menu item that the user can use to create an
+                   instance of your custom control.
+
+    hToolBit       A handle to a bitmap which will be placed on
+                   the tool palette.  Resource Workshop requires
+                   the bitmap be a 22x22 black and gray bitmap
+                   containing a 2-pixel border that is white on
+                   the top and left and black on the bottom and
+                   right. You can use the bitmaps contained in
+                   BITBTN.RES as templates.
+
+    hDropCurs      A cursor to be used while dragging the control
+                   from the tool palette.
+
+
+2.3      Style function
+-----------------------
+
+The Style function makes it possible for you to edit your custom
+control. You must first create an appropriate dialog box in
+Resource Workshop and then implement a Boolean function that
+displays that dialog box. Resource Workshop calls this function
+whenever you initiate a request to edit the custom control.
+Resource Workshop passes the function a handle to the window that
+is the parent of the dialog, a handle to memory containing the
+RWCTLSTYLE structure, and two function variables for string
+conversion.
+
+Return value:
+
+    If the user changes any options for the control, this
+    function's return value is TRUE. If the user doesn't make any
+    changes or if an error prevents changes, the return value is
+    FALSE.
+
+Syntax:
+
+    BOOL CALLBACK Style( HWND hWnd, HGLOBAL hCtlStyle,
+    LPFNSTRTOID lpfnStrToId, LPFNIDTOSTR lpfnIdToStr);
+
+Parameters:
+
+    hWnd           A handle to the parent window of the dialog
+                   box displayed by this function.
+
+    hCtlStyle      A handle to global memory containing the
+                   RWCTLSTYLE structure to be edited.
+
+    lpfnStrToId    A function variable that converts a string
+                   into a control ID for the wId field of
+                   RWCTLSTYLE. This allows the user to enter the
+                   control ID using a constant identifier. This
+                   routine evaluates the string as an expression,
+                   returning the result.  The ID can be converted
+                   back into a string by calling lpfnIdToStr.
+
+    lpfnIdToStr    A function variable that converts the control
+                   ID in the wId field of RWCTLSTYLE to a string
+                   for editing. The ID can be converted back into
+                   a word by calling lpfnStrToId. This function
+                   variable allows the user to see the symbolic
+                   constant that represents the control ID
+                   instead of the word value.
+
+Data structure:
+
+    /*
+     * CONTROL-STYLE DATA STRUCTURE
+     *
+     * The class style function uses this data structure
+     * to set or reset various control attributes.
+     *
+     */
+
+    typedef struct {
+      UINT         wX;                  /* x origin of control */
+      UINT         wY;                  /* y origin of control */
+      UINT         wCx;                 /* width of control */
+      UINT         wCy;                 /* height of control */
+      UINT         wId;                 /* control child id */
+      DWORD        dwStyle;             /* control style */
+      char         szClass[CTLCLASS];   // name of control class
+      char         szTitle[CTLTITLE];   /* control text */
+      BYTE         CtlDataSize;         /* control data size */
+      BYTE         CtlData[ CTLDATALENGTH]; /* control data */
+    } RWCTLSTYLE;
+
+    typedef RWCTLSTYLE *   PRWCTLSTYLE;
+    typedef RWCTLSTYLE FAR *   LPRWCTLSTYLE;
+
+    wX             The horizontal (X) location of the control in
+                   dialog coordinates.
+
+    wY             The vertical (Y) location of the control in
+                   dialog coordinates.
+
+    wCx            The width of the control in dialog
+                   coordinates.
+
+    wCy            The height of the control in dialog
+                   coordinates.
+
+    wId            The control's ID value.  This value must be
+                   converted to a string by calling lpfnIdToStr
+                   before being displayed for editing. It must be
+                   converted back into a word for storage by
+                   calling lpfnStrToId after editing.
+
+    dwStyle        The style flags of the control.
+
+    szClass        The class name of the control.
+
+    szTitle        The title of the control.
+
+    CtlDataSize    Windows allows controls in a resource file to
+                   have up to 255 bytes of control-defined data.
+                   This field indicates how much of that space is
+                   being used by the control.  The data is stored
+                   in CtlData.
+
+    CtlData        This field holds up to 255 bytes of
+                   control-specific data.  The amount used must
+                   be recorded in the CtlDataSize field.  The use
+                   of this data area is user-defined.
+
+When you save your project, Resource Workshop saves the CtlData
+array into the .RC or .RES file.
+
+To enable a custom control to access this array from within your
+program at run time, lParam of the WM_CREATE message points to a
+CREATESTRUCT data structure. The CREATESTRUCT structure contains
+a field, lpCreateParams, that is a pointer to the extra data you
+stored in the CtlData array. If the pointer is NULL, there is no
+CtlData.
+
+The CtlDataSize variable is not available to your program. To
+make the size data accessible to your program, the CtlData array
+should either contain a fixed amount of data, or its first byte
+should contain the length of the data.
+
+The Style function first converts the ID to a string by passing
+the numerical ID value to LPFNIDTOSTR. The Style function then
+displays the string in the dialog box.
+
+If the user changes the string that's returned by LPFNIDTOSTR,
+the Style function verifies the string by passing it to
+LPFNSTRTOID, which determines if the string is a valid constant
+expression. If LPFNSTRTOID returns a zero in the LOWORD, the ID
+is illegal and is displayed in the dialog box so the user can
+change it to a valid ID. If LPFNSTRTOID is successful, it returns
+a nonzero value in the LOWORD and the ID in the HIWORD.
+
+
+2.4      Flags function
+-----------------------
+
+The Flags function is used by Resource Workshop to translate the
+style of a control into text.  Resource Workshop inserts the text
+into the .RC file being edited.  The function must only convert
+the values unique to the control.  For example, if you were
+creating a Flags function for the Windows button class, you would
+only examine the lower sixteen bits of Flags and translate them
+into one of the bs_XXXX constants.
+
+Return value:
+
+    Returns the number of bytes copied into the destination
+    string. Returns 0 if the Flags word is not valid or the
+    string exceeds MaxString in length.
+
+Syntax:
+
+    UINT CALLBACK Flags(DWORD dwFlags, LPSTR lpStyle, UINT
+    wMaxString);
+
+Parameters:
+
+    dwFlags        The style of the control to be translated into
+                   text.  This field is derived from the dwStyle
+                   field of the RWCTLSTYLE structure passed to
+                   the Style function variable.
+
+    lpStyle        The location to write the translated
+                   text.
+
+    wMaxString     The maximum number of bytes the Flags function
+                   can write into Style.
+
+
+3        Pascal programming section
+-----------------------------------
+
+3.1      ListClasses function
+-----------------------------
+
+ListClasses is a programmer-implemented function that passes
+information about the custom control classes back to Resource
+Workshop. Exporting ListClasses marks your DLL as supporting this
+custom control specification.
+
+If ListClasses is present in the DLL, Resource Workshop calls the
+function, passing information about itself along with two utility
+function variables used in editing the custom control.
+
+ListClasses should return a handle to global memory allocated by
+calling GlobalAlloc.  The memory referenced by this handle holds
+a record of type TCtlClassList, which describes the controls in
+the library.  TCtlClassList is described later in this section.
+The handle is freed by Resource Workshop and should not be freed
+by the DLL.
+
+Syntax:
+
+    function ListClasses(AppName: PChar; Version: Word;
+      Load: TLoad; Edit: TEdit): THandle; export;
+
+Return value:
+
+    Returns a handle to global memory containing a record of type
+    TCtlClassList.
+
+Parameters:
+
+    AppName        The class name of the main window of the
+                   calling application.  This value can be used
+                   by the custom control to determine if it is
+                   running under a resource editor. If AppName is
+                   'rwswnd', the calling application is Resource
+                   Workshop.
+
+    Version        The version number of the calling application.
+                   The major version is in the high-order byte
+                   and the minor version in the low-order byte.
+                   For example, version 1.02 is $0102.
+
+    Load           A function variable that custom controls can
+                   use to obtain the handle of a resource in the
+                   project being edited by the calling
+                   application (the equivalent of the Windows API
+                   function LoadResource). The function takes two
+                   parameters, a resource type name and a
+                   resource name. The custom control is
+                   responsible for freeing the global handle (if
+                   any) returned by this function.
+
+    Edit           A function variable that custom controls can
+                   use to start a resource editor for any
+                   resource in the project being edited by
+                   Resource Workshop. The function takes two
+                   parameters, a resource type name and a
+                   resource name.
+
+Return value records:
+
+    PCtlClassList = ^TCtlClassList;
+    TCtlClassList = record
+      nClasses: Integer;           { Number of classes in list }
+      Classes: array[0..0] of TRWCtlClass;     { Class list }
+    end;
+
+    TCtlClassList contains a variable number of TRWCtlClass
+    records, the number of which is determined by the nClasses
+    field.
+
+    PRWCtlClass = ^TRWCtlClass;
+    TRWCtlClass = record
+      fnInfo:  TFnInfo;                       { Info function }
+      fnStyle: TFnStyle;                      { Style function }
+      fnFlags: TFnFlags;                      { Flags function }
+      szClass: array[0..ctlClass-1] of Char;  { Class name }
+    end;
+
+    Each control class in the DLL must have a corresponding
+    TRWCtlClass record in the TCtlClassList. The szClass field
+    contains the name with which the class was registered. For
+    example, if you called RegisterClass giving the class name as
+    'MYBUTTON', szClass must be 'MYBUTTON'.
+
+The function variables Info, Style, and Flags--which correspond
+to the pointers TFnInfo, TFnStyle, and TFnFlags--are described in
+the following sections.
+
+
+3.2      Info function
+----------------------
+
+The Info function is called by Resource Workshop to retrieve
+information about the control class, including the string to add
+to the control menu and the bitmap to add to the tool palette.
+The function returns a memory handle that can be allocated by
+GlobalAlloc. This handle must refer to memory that contains a
+TRWCtlInfo record.  Like ListClasses, the handle returned by Info
+is freed by Resource Workshop and should not be freed by the DLL.
+This function is called once by Resource Workshop upon loading
+the DLL.
+
+Syntax:
+
+    function Info: Handle; export;
+
+Return value:
+
+    Returns a handle to global memory containing a record of type
+    TRWCtlInfo.
+
+Parameters:
+
+    None.
+
+Return value record:
+
+    TRWCtlInfo has two parts:
+
+    - A fixed-length part that provides information about the
+      control class in general.
+
+    - A variable-length array of records, with each record
+      providing information about a particular type or subclass
+      of the control.
+
+    Each control class can include several control types. For
+    example, Windows provides a BUTTON class that includes push
+    buttons, radio buttons, and check boxes. This variety can be
+    duplicated by your classes by providing two or more
+    TRWCtlType records in the TRWCtlInfo record.
+
+    The following is the declaration of TRWCtlInfo:
+
+    PRWCtlInfo = ^TRWCtlInfo;
+    TRWCtlInfo = record
+      wVersion:   Word;           { control version }
+      wCtlTypes:  Word;           { control types }
+      szClass:    array[0..ctlClass-1] of Char;
+                                  { control class name }
+      szTitle:    array[0..ctlTitle-1] of Char;
+                                  { control title }
+      szReserved: array[0..9] of Char;
+                                  { reserved for future use }
+      ctType:     array[0..ctlTypes] of TRWCtlType;
+                                  { control type list }
+    end;
+
+    wVersion       The version number of the custom control
+                   library. The major version is in the
+                   high-order byte and the minor version in the
+                   low-order byte. For example, version 1.02 is
+                   $0102. This field is not used by Resource
+                   Workshop.
+
+    wCtlTypes      The number of control sub-types defined in the
+                   ctType array.
+
+    szClass        The name of the class as registered with
+                   Windows.  This is duplicated from the
+                   TCtlClassList record to retain upward
+                   compatiblity with the Windows custom control
+                   specificiation.
+
+    szReserved     Space reserved for future expansion.  Must be
+                   cleared to null characters (#0).
+
+    ctType         An array of sub-type description records of
+                   type TRWCtlType.
+
+    The following is the declaration of TRWCtlType:
+
+    PRWCtlType = ^TRWCtlType;
+    TRWCtlType = record
+      wType:   Word;                         { type style }
+      wWidth:  Word;                         { suggested width }
+      wHeight: Word;                         { suggested height }
+      dwStyle: LongInt;                      { default style }
+      szDescr: array[0..ctlDescr-1] of Char; { menu name }
+      hToolBit:  HBitmap;                    { toolbox bitmap }
+      hDropCurs: HCursor;              { drag and drop cursor }
+    end;
+
+    wType          A user-defined value used to indicate the
+                   sub-type of the control.  This value is not
+                   used by Resource Workshop.
+
+    wWidth         The default width for the control.  Resource
+                   Workshop will use this value if, for example,
+                   the control is created by dragging the icon
+                   from the tool palette.  wWidth is in dialog
+                   coordinates unless the most significant bit is
+                   set, in which case the value is in pixels. For
+                   example, a value of "32" is 32 in dialog
+                   coordinates, but the value "32 or $8000" is in
+                   pixels.
+
+    wHeight        The default height for the control.  Resource
+                   Workshop will use this value if, for example,
+                   the control is created by dragging the icon
+                   from the tool palette.  wHeight is in dialog
+                   coordinates unless the most significant bit is
+                   set, in which case the value is in pixels. For
+                   example, a value of "32" is 32 in dialog
+                   coordinates, but the value "32 or $8000" is in
+                   pixels.
+
+    wStyle         The default style Resource Workshop will use
+                   to create the Window.  This is the key field
+                   that you will use to distinguish one subtype
+                   from another.
+
+    szDescr        The description of the control subtype.  This
+                   text is used by Resource Workshop to construct
+                   a menu item that the user can use to create an
+                   instance of your custom control.
+
+    hToolBit       A handle to a bitmap which will be placed on
+                   the tool palette.  Resource Workshop requires
+                   the bitmap be a 22x22 black and gray bitmap
+                   containing a 2-pixel border that is white on
+                   the top and left and black on the bottom and
+                   right. You can use the bitmaps contained in
+                   BITBTN.RES as templates.
+
+    hDropCurs      A cursor to be used while dragging the control
+                   from the tool palette.
+
+
+3.3      Style function
+-----------------------
+
+The Style function makes it possible for you to edit your custom
+control. You must first create an appropriate dialog box in
+Resource Workshop and then implement a Boolean function that
+displays that dialog box. Resource Workshop calls this function
+whenever you initiate a request to edit the custom control.
+Resource Workshop passes the function a handle to the window that
+is the parent of the dialog, a handle to memory containing the
+TRWCtlStyle record, and two function variables for string
+conversion.
+
+Return value:
+
+    The function must return true if the TRWCtlSytle record has
+    been modified; otherwise, it must return false.
+
+Syntax:
+
+    function Style(Window: HWnd; CtlStyle: THandle; StrToId:
+      TStrToId; IdToStr: TIdToStr): Bool; export;
+
+Parameters:
+
+    Window         A handle to the parent window of the dialog
+                   box displayed by this function.
+
+    CtlStyle       A handle to global memory containing the
+                   TRWCtlStyle record to be edited.
+
+    StrToId        A function variable that converts a string
+                   into a control ID for the wId field of
+                   TRWCtlStyle. This allows the user to enter the
+                   control ID using a constant identifier. This
+                   routine evaluates the string as an expression,
+                   returning the result.  The ID can be converted
+                   back into a string by calling IdToStr.
+
+    IdToStr        A function variable that converts the control
+                   ID in the wId field of TRWCtlStyle to a string
+                   for editing. The ID can be converted back into
+                   a word by calling StrToId. This function
+                   variable allows the user to see the symbolic
+                   constant that represents the control ID
+                   instead of the word value.
+
+CtlStyle record:
+
+    The following is the record type referenced by the CtlStyle
+    memory handle:
+
+      PRWCtlStyle = ^TRWCtlStyle;
+      TRWCtlStyle = record
+        wX:   Word;               { x origin of control }
+        wY:   Word;               { y origin of control }
+        wCx:  Word;               { width of control }
+        wCy:  Word;               { height of control }
+        wId:  Word;               { control child id }
+        dwStyle: LongInt;         { control style }
+        szClass: array[0..ctlClass-1] of Char;
+                                  { name of control class }
+        szTitle: array[0..ctlTitle-1] of Char;
+                                  { control text }
+        CtlDataSize: Byte;        { control data size }
+        CtlData: array[0..ctlDataLength-1] of Char;
+                                  { control data }
+      end;
+
+      wX           The horizontal (X) location of the control in
+                   dialog coordinates.
+
+      wY           The vertical (Y) location of the control in
+                   dialog coordinates.
+
+      wCx          The width of the control in dialog
+                   coordinates.
+
+      wCy          The height of the control in dialog
+                   coordinates.
+
+      wId          The control's ID value.  This value must be
+                   converted to a string by calling IdToStr
+                   before being displayed for editing. It must be
+                   converted back into a word for storage by
+                   calling StrToId after editing.
+
+      dwStyle      The style flags of the control.
+
+      szClass      The class name of the control.
+
+      szTitle      The title of the control.
+
+      CtlDataSize  Windows allows controls in a resource file to
+                   have up to 255 bytes of control-defined data.
+                   This field indicates how much of that space is
+                   being used by the control.  The data is stored
+                   in CtlData.
+
+      CtlData      This field holds up to 255 bytes of
+                   control-specific data.  The amount used must
+                   be recorded in the CtlDataSize field.  The use
+                   of this data area is user-defined.
+
+When you save your project, Resource Workshop saves the CtlData
+array into the .RC or .RES file.
+
+To enable a custom control to access this array from within your
+program at run time, lParam of the WM_CREATE message points to a
+CREATESTRUCT data structure. The CREATESTRUCT structure contains
+a field, lpCreateParams, that is a pointer to the extra data you
+stored in the CtlData array. If the pointer is nil, there is no
+CtlData.
+
+The CtlDataSize variable is not available to your program. To
+make the size data accessible to your program, the CtlData array
+should either contain a fixed amount of data, or its first byte
+should contain the length of the data.
+
+The Style function first converts the ID to a string by passing
+the numerical ID value to IdToStr. The Style function then
+displays the string in the dialog box.
+
+If the user changes the string that's returned by IdToStr, the
+Style function verifies the string by passing it to StrToId,
+which determines if the string is a valid constant expression. If
+StrToId returns a zero in the low word, the ID is illegal and is
+displayed in the dialog box so the user can change it to a valid
+ID. If StrToId is successful, it returns a nonzero value in the
+low word and the ID in the high word.
+
+
+3.4      Flags function
+-----------------------
+
+The Flags function is used by Resource Workshop to translate the
+style of a control into text.  Resource Workshop inserts the text
+into the .RC file being edited.  The function must only convert
+the values unique to the control.  For example, if you were
+creating a Flags function for the Windows button class, you would
+only examine the lower sixteen bits of Flags and translate them
+into one of the bs_XXXX constants.
+
+Return value:
+
+    Returns the number of bytes copied into the destination
+    string. Returns 0 if the Flags word is not valid or the
+    string exceeds MaxString in length.
+
+Syntax:
+
+    function Flags(Flags: LongInt; Style: PChar; MaxString:
+      Word): Word;
+
+  Parameters:
+
+    Flags          The style of the control to be translated into
+                   text.  This field is derived from the dwStyle
+                   field of the TRWCtlStyle record passed to the
+                   Style function variable.
+
+    Style          The location to write the translated text.
+
+    MaxString      The maximum number of bytes the Flags function
+                   can write into Style.
+                   
+
+           ========= END OF FILE CUSTCNTL.RW =========
+

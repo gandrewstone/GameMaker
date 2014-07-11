@@ -1,0 +1,16 @@
+The up, down, left, and right
+arrow keys move the ship in
+those directions. Tapping the
+space bar shoots, while hit-
+ting Enter drops a missile.
+
+There is a secret way out of
+every round, and until you
+find it you will loop through
+the round continuously.
+
+     TIP:
+When you gain a spinning
+shield, try not to shoot, as
+you will likely destroy your
+protection..

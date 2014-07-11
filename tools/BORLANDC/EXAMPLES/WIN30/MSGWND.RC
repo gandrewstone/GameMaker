@@ -1,0 +1,31 @@
+// Borland C++ - (C) Copyright 1991 by Borland International
+
+# include <windows.h>
+
+# include "msgwnd.h"
+
+msgwnd  ICON msgwnd.ico
+
+msgwnd  MENU
+BEGIN
+  POPUP "File"
+  BEGIN
+    MENUITEM "About",   IDM_ABOUT
+    MENUITEM "Exit",    IDM_QUIT
+  END
+END
+
+STRINGTABLE
+BEGIN
+  IDS_NAME, "msgwnd"
+END
+
+ABOUT DIALOG                                                                                  22,  17, 154,  75
+STYLE WS_POPUP | WS_DLGFRAME
+BEGIN
+  ICON    "msgwnd"                   -1,                                                       9,  23,   0,   0
+  CONTROL "Msgwnd"                   -1, "static", SS_CENTER | WS_CHILD,                       0,   5, 154,   8
+  CONTROL "Version 1.0"              -1, "static", SS_CENTER | WS_CHILD,                      30,  34,  94,   8
+  CONTROL "Ok"                     IDOK, "button", BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD,  61,  59,  32,  14
+END
+

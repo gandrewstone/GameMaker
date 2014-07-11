@@ -1,0 +1,9 @@
+c0l.obj+
+install.obj+
+fullpath.obj+
+repprntf.obj+
+scrnrout.obj
+install.exe
+install.map
+cl.lib
+

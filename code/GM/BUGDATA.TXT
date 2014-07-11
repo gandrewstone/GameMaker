@@ -1,0 +1,40 @@
+Testing Start  2:45
+
+Bug ID                                            Time            Time to fix
+------------------------------------------------------------------------------
+
+ 1 Video Set to zero screen after playscene.      3:00            0:02
+ 2 Grator Remove extension from save game.        3:10            0:03
+ 3 Charedit tie to block - fail load -> "OH NO!"  3:17            0:10
+ 4 Blue writing in charedit main menu             3:27
+ 5 Blocedit unable to save.                       3:30            0:08
+ 6 Meter- after seq (and only if no interruption) 5:00            0:10
+
+5:00 Stop
+
+ 7  Increase Demo Time                                             :01
+ 8  If No gif on hiscore - clr scrn after made highest             :03
+ 9  No demo... seems to play anyway.
+ 10 Turn off demo on ESC.                                          :10
+
+ 45 min testing
+
+ 11 Recording Play is recieving F6 (load) key.
+
+ 10 min
+
+ 12 Blocedit -> Flood Fill Stack Overrun                           :30
+ 13 Palchos -> Save uses old dir structure                         :03
+ 14 Grator -> New Game should create a new directory               :40
+
+ 2:00 hrs
+
+ 15 Empty getfname entry should make directory choices change.
+
+ 10 min
+
+ 16 DisplayHelpFile wait for key problems.                         :12
+
+ 7:12
+
+

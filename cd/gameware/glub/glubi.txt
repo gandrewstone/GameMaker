@@ -1,0 +1,73 @@
+   I N S T R U C T I O N S
+
+Up, down, left, right --
+ Swim those ways
+
+End (1), PgDn (3) --
+ Swim to the lower-left and
+  right
+
+Home (7), PgUp (9) --
+ Jump/swim to the upper-left
+  or right
+
+5 --
+ Pick up some items
+
+[Space] --
+ Fire
+
+[Enter]
+ Use bottle item
+
+          
+          I T E M S
+
+Small full bottle with
+ straw --
+  Gives you five HP
+
+Nearly empty, bobbing
+ bottle with straw --
+  Gives you one HP
+
+Large full bottle --
+ This is a potion storage
+  unit; press [enter] to take
+   a bottle from it
+
+Small full bottle without
+ straw --
+  One bottle for your potion
+   storage unit
+
+
+           T I P S
+
+When you shoot an enemy, you
+ enclose him in a bubble. If
+  you shoot him again, you
+   burst the bubble.
+
+To finish a round, kill all of
+ the enemies in the round and
+  collect the bubbles left be-
+   hind. When you have enough
+    bubbles, you can open the
+     treasure chest. Use the
+      gold from the chest in
+       the coin-operated
+        transportation device
+         to leave the round.
+
+The only way to get to some
+ places is to jump out of the
+  water.
+
+Feel free to edit or add to
+ this game at will. Add your
+  name to the credits if you
+   do. Hey, you deserve it!
+    But don't delete any of
+     the names on the list,
+      please.

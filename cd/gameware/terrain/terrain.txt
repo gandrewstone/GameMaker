@@ -1,0 +1,19 @@
+TERRAIN will show  you how the
+'Terrain'  picture  blocks can
+be used in a scene.    Terrain
+is not really a game, but  you
+may  roam   around  the  scene
+using the arrow  keys  or  the
+numeric  keypad  keys and  get
+some    ideas    of   some  of
+GAME-MAKER'S capabilities.
+
+The 'p' key picks  up objects.
+You  had  better  pick up  the
+lazer gun.  The 'd' key  drops
+objects.  The  numeric  keypad
+keys  1, 3, 7,  and  9  shoot.
+The   Space  Bar  shoots  four
+ways.     The  'b'  key  drops
+bombs, if  you have any.  Stay
+clear of the bombs you drop.

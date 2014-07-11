@@ -1,0 +1,85 @@
+        Configure Help
+        
+   This screen lets you set up
+hardware information which  is
+specific to your system.  
+
+  Yellow  rectangles  indicate
+the current  hardware  config-
+uration.    You  may  use  the
+arrow keys to  highlight (with
+the  blinking  white   cursor)
+another  option;   then  press
+<Enter>  or <Return> to select
+this  option.    Selecting  an
+option  highlights it  with  a
+yellow rectangle and unselects
+the    previously     selected
+option.
+
+Sound And Music:
+
+  If you own  a  Sound Blaster
+compatible sound board you can
+listen  to digitized sound and
+music  while   playing  games.
+
+  If you have a Sound  Blaster
+Pro  and you installed it nor-
+mally,  the   correct  set  up
+should be highlighted.  Other-
+wise, you first need  to enter
+which  Port and Interrupt your
+Sound  Blaster  is set to use.
+If  you  do  not  know what to
+choose,  try    experimenting.
+If the port is wrong,  neither
+music nor sound will work.  If
+the interrupt is wrong but the
+port  is  correct,  music will
+work but sound will not.
+
+  You also need to  specify  a
+Sound Blaster driver for sound
+to work. The default driver is
+called "sndblast.drv", located
+in   the   current  directory.
+This driver is compatible with
+the "CT-Voice" driver  used by
+Creative Labs'  Sound Blaster.
+If  your sound  card  supplies
+another    driver,    use   it
+instead.
+
+
+Video Cards:
+  
+  Ninty-nine  percent  of  the
+VGA  chips will  be  correctly
+detected  automatically.  Thus
+you should leave "auto-detect"
+chosen unless you  have  video
+problems.  
+
+  If  during a game  you  move
+vertically  and  the character
+seems to dissappear, or random
+dots scroll onto  the  screen,
+your VGA chip was  incorrectly
+detected.     To  remedy  this
+problem, select your chip type
+from the menu.
+
+  Video    card  manufacturers
+usually  obtain   their  video
+controller chips from  one  of
+the  chip  vendors  that  this
+software supports.  So if  the
+name of your video board isn't
+on our  list,  just experiment
+with  different video  choices
+until  one  works.    The  few
+boards  that  won't  work with
+any  of  the  choices  are not
+supported.
+

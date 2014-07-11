@@ -1,0 +1,27 @@
+MAKE Version 3.6  Copyright (c) 1992 Borland International
+
+Available memory 15350336 bytes
+
+	bcc -f- -c -C -ml -1 -P -O2 -Ic:\drv install.cpp
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+install.cpp:
+Warning install.cpp 123: Parameter 'argc' is never used in function main(int,char * *)
+
+	Available memory 4063308
+	tasm /ml/jP286N/m2 repprntf.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   repprntf.asm
+Error messages:    None
+Warning messages:  None
+Passes:            2
+Remaining memory:  419k
+
+	bcc -f- -c -C -ml -1 -P -O2 -Ic:\drv fullpath.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+fullpath.c:
+Warning fullpath.c 27: Redefinition of '_MAX_PATH' is not identical
+
+	Available memory 4111456
+	tlink /s/c @install.lnk
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International

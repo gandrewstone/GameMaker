@@ -1,0 +1,47 @@
+Animation Methods
+
+
+1. Start Address scrolling.
+   Single page.
+   Dirty rectangles in a page of normal memory handle screen updates.
+
+   +
+   Quick to implement
+   Fast
+
+   -
+   Scrolling wrap-around flicker, but dirty-rect will minimize.
+
+
+2. Mode X 2 traveling pages and flip.
+
+   +
+   No SuperVGA problems.
+   No Flicker.
+
+   -
+   Long implementation
+   Slow memory writes
+   Convoluted
+
+3. Mode X dual stationary pages
+   Background blocks in memory
+
+   +
+   No SVGA problems.
+   No flicker.
+
+   -
+   Medium implementation.
+   Monsters/characters need conventional memory due to bitmap swaps/rotations
+
+
+20. All updates in virtual screen in memory, copy over
+
+   -
+   Too slow! with < 486
+
+
+
+
+

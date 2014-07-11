@@ -1,0 +1,10 @@
+c0l.obj+
+flopinst.obj+
+fullpath.obj+
+repprntf.obj+
+findfile.obj+
+scrnrout.obj
+flopinst.exe
+flopinst.map
+cl.lib
+

@@ -1,0 +1,16 @@
+ |   KEY     |    FUNCTION   |
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+ Home (7)   =Jump to the left
+ Up Arrow   =Jump upwards
+ PgUp (9)   =Jump to the right
+ Left Arrow =Roll to the left
+ Right Arrow=Roll to the right
+ Down Arrow =Duck
+ Space Bar  =Squirt jelly
+ ____________________________ 
+|   RING     |    POWER      |
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+ Glass      =100 points
+ Gold       =1 life point
+ Silver     =10 points
+ Gem Studded=Extra life

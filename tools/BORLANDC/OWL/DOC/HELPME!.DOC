@@ -1,0 +1,284 @@
+===========================================================================
+ObjectWindows for C++
+ANSWERS TO COMMON QUESTIONS
+===========================================================================
+
+      Building OWL  =======================================================
+          programs
+                    Q: What compiler options do I build OWL programs with?
+                    A: For OWL applications that do not use DLLs, you can
+                       use the "Windows all functions exportable", "Windows
+                       explicit functions exported", or "Windows smart
+                       callbacks" options in the Options|Compiler|
+                       Entry/Exit code dialog box (these correspond to the
+                       -W, -WE, and -WS command line options of BCC,
+                       respectively). If your OWL application uses DLLs,
+                       you must use smart callbacks and you must build in
+                       large model. When building a DLL, you may use either
+                       "Windows DLL all functions exportable" or "Windows
+                       DLL explicit functions exported" (which correspond
+                       to -WD or -WDE, respectively) and your DLL must be
+                       in large model. Note that "smart callbacks" and "DLL
+                       explicit functions exported" are preferred. The
+                       OWL\EXAMPLES directory contains .PRJ project files
+                       for building OWL programs; eg, CHECKERS.PRJ uses
+                       OWL31.DLL, DLLHELLO.PRJ builds an OWL DLL, and
+                       CALLDLL.PRJ builds a program that uses DLLHELLO.DLL.
+
+                       Also, if you intend your program to use OWL31.DLL
+                       (ie, you link with the OWL.LIB import library), you
+                       must define the _CLASSDLL macro when you compile;
+                       you do this by adding "_CLASSDLL" in the "Defines"
+                       text box in the Options|Compiler|Code Generation
+                       dialog box in the IDE (or with the -D command-line
+                       option). This definition ensures that all classes
+                       are 'huge' (far 'this' and far vtable pointers). A
+                       common error is to fail to provide the _CLASSDLL
+                       definition when you link with OWL.LIB; this will
+                       result in linker errors saying 'undefined symbol'
+                       for many OWL functions.
+
+
+                    Q: What settings should I put in my program's module
+                       definition (.DEF) file?
+                    A: You do not need to provide module definition files
+                       for your Windows programs when they are built with
+                       Borland C++. If a .DEF file is not present, the
+                       linker provides reasonable defaults. We do provide a
+
+
+
+                                                                          1
+
+
+
+
+
+
+                       file, OWL.DEF, located in your OWL\LIB subdirectory,
+                       that provides the same settings as the TLINK
+                       defaults. If you need to change the default
+                       settings, copy this file and make your changes in
+                       the copy.
+
+                       Similarly, you do not need to provide a .DEF file
+                       for DLLs that you write because the linker provides
+                       defaults in that case as well. If the default values
+                       are not appropriate, you can use the file OWLDLL.DEF
+                       in OWL\LIB as a template for your .DEF file. Note
+                       that this file is different from the file of the
+                       same name in OWL\SOURCE which is used to build
+                       OWL31.DLL.
+
+
+                    Q: Why do I get a linker errors such as "Linker Error:
+                       Unable to open file 'DLLHELLO.LIB'" when I attempt
+                       to build the CALLDLL.EXE or the USECDLL.EXE example
+                       programs?
+                    A: The linker error indicates that an import library is
+                       not present. These programs must be linked with the
+                       import libraries of the DLLs that they call
+                       (DLLHELLO.DLL and CDLGDLL.DLL, respectively). The
+                       reason for the error is that the import library does
+                       not exist because the DLL has not yet been built.
+                       Building the DLL using the makefile or the
+                       associated .PRJ file will result in the import
+                       library being automatically created for you.
+
+
+     Debugging OWL  =======================================================
+          programs
+                    Q. Why do I get an Error message box when I run my
+                       program?
+                    A. The message box will appear if an error occurred
+                       during the creation of a Window element. This may
+                       indicate that you are low in memory. Very often this
+                       message appears when you attempt to create an
+                       element that depends on information in your resource
+                       template script (.RC) file and the identifier for it
+                       in your source code does not have a matching item in
+                       the .RC file; be wary of typographical errors.
+
+
+                    Q. Why do I get an Unrecoverable Application Error when
+                       I run my program?
+
+
+
+
+2                                               Online Document HELPME!.DOC
+
+
+
+
+
+
+                    A. Typically, this error is reported when memory is
+                       used incorrectly. You may be using a pointer
+                       containing an invalid address.
+
+                       You may be using an invalid window handle; for
+                       example, you attempt to send a message to a window
+                       before it has been created or after it has been
+                       destroyed. Remember that, when you construct a (C++)
+                       object representing a (Windows) element, the element
+                       does not yet exist. You initialize the window object
+                       in the constructor but you should not try to
+                       initialize the window element until the call to
+                       SetupWindow (or, on rare occasions, near the end of
+                       Create).
+
+                       Another place where errors are made is in the
+                       creation and execution of modal dialog boxes. You
+                       first create the dialog object using 'new', and then
+                       execute it using the ExecDialog member function of
+                       your application object, as in the following:
+
+                          TDialog *MyDialog = new TDialog(this,
+                                                          "DialogName");
+                          GetApplication()->ExecDialog(MyDialog);
+
+                       'ExecDialog' invokes the object's 'Execute' member
+                       function but first calls 'ValidWindow'. Always
+                       create window objects (including dialog and control
+                       objects) with 'new' (ie, from the heap) because
+                       'delete' is called on the window object pointer when
+                       the corresponding window element is destroyed.
+
+
+       Running OWL  =======================================================
+          programs
+                    Q. Why do I get error dialog boxes from Windows when I
+                       attempt to run my program?
+                    A. If you built your program to use a DLL, then that
+                       DLL must be located in the same directory as the EXE
+                       that uses it, in the Windows directory, in the
+                       Windows system directory, or in a directory in your
+                       path. If this is not the case, Windows will put up a
+                       message indicating that it cannot find the DLL. By
+                       default, OWL31.DLL, TCLASS31.DLL, and BC30RTL.DLL
+                       are placed into your BORLANDC\BIN directory by the
+                       INSTALL program; unless you specify otherwise,
+                       BWCC.DLL will be placed into your WINDOWS\SYSTEM
+                       directory.
+
+
+
+                                                                          3
+
+
+
+
+
+
+                       Also, take care that you are using the correct
+                       versions of DLLs required by your EXEs. If you
+                       modify and rebuild a DLL, make sure that the new DLL
+                       is in your path and found before any older versions
+                       of the DLL on your search path; your application may
+                       crash doing otherwise correct code if an older
+                       version of your DLL is in your path and found before
+                       a new version.
+
+
+                    Q. Why do I get a message saying "Error: Cannot
+                       establish DDE link to DDE server" when I attempt to
+                       run the PROGTALK example program?
+                    A. If you started this program from the DOS command
+                       line by typing "win progtalk", then you will get
+                       this message. This example program attempts to use
+                       the program manager as its DDE server. When the
+                       program is invoked via "win progtalk", Windows loads
+                       PROGTALK before PROGMAN, and the DDE initialization
+                       fails.
+
+
+   Other questions  =======================================================
+
+                    Q. What is the difference between a child window in
+                       ObjectWindows and a WS_CHILD window?
+                    A. In Windows, WS_CHILD is a style for a window that is
+                       confined to the client area of a parent window.
+
+                       This child-parent relationship is not the same as
+                       the child-parent model used to describe
+                       relationships between windows in ObjectWindows
+                       (though there are conceptual similarities).
+
+                       In ObjectWindows, a child window is an interface
+                       element that is managed by another interface
+                       element. A child window is displayed only when its
+                       parent window is displayed. For example, a dialog
+                       box is a child window managed by the window that
+                       spawned it. When you close its parent window, the
+                       child window automatically closes.
+
+                       An ObjectWindows child window MAY have a WS_CHILD
+                       style, though it is not required to be.
+
+                       For more information on the child-parent
+                       relationship in ObjectWindows, see the ObjectWindows
+                       User's Guide. For more information on the WS_CHILD
+
+
+
+4                                               Online Document HELPME!.DOC
+
+
+
+
+
+
+                       window style and (Windows) child windows, see the
+                       Microsoft Windows Programmer's Reference.
+
+
+                    Q. If I am porting a program from ObjectWindows for
+                       Pascal (OWLP) to ObjectWindows for C++ (OWLC), what
+                       are the differences that I will need to know?
+
+                    A. The object hierarchies for OWLP and OWLC are similar
+                       but you will want to note the following differences:
+
+                    o The 'TMDIFrame' class in OWLC corresponds to the
+                      'TMDIWindow' object in OWLP.
+
+                    o The 'TMDIClient' object in OWLP is derived from
+                      'TControl' while the 'TMDIClient' class in OWLC is
+                      derived from 'TWindow'.
+
+                    o The 'TDlgWindow' object in OWLP does not have a
+                      corresponding class in OWLC. However, all of its
+                      functionality is contained within TDialog. If you are
+                      porting an OWLP application to OWLC, interpret all
+                      references to 'TDlgWindow' as 'TDialog'. For an
+                      example of how to use a dialog as a main window,
+                      check out CALC.CPP in the OWL\EXAMPLES\CALC
+                      subdirectory.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                          5
+

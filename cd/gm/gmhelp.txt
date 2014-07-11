@@ -1,0 +1,22 @@
+   G E N E R A L   H E L P
+
+ESC  End game, end help.
+F1   Displays help message
+F2   Status and inventory
+F3   Toggle Music
+F4   Toggle Sound
+F5   Saves the game
+F6   Restores a saved game
+F8   Toggle joystick
+F9   Calibrate joystick
+F10  Tell about GAME-MAKER
+
+This help will not appear in a
+transferred game.
+
+ However, this text is located
+in the file gmhelp.txt in your
+GameMaker  directory,  so  you
+can just append it to your own
+help text file if you want to.
+

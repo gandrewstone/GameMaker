@@ -1,0 +1,9 @@
+startupl.obj+
+register.obj+
+oldmouse.obj+
+windio.obj+
+scrnrout.obj
+register.exe
+register.map
+cl.lib
+

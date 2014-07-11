@@ -1,0 +1,81 @@
+
+ PAPER AIRPLANE INSTRUCTIONS
+
+Note:  This  Shareware version
+contains 7 levels.    Send $15
+and  an  additional  7  levels
+will   be  sent  to  you  (see
+credits).
+        
+Things you can pick up:
+
+The YAHs  give  you  extra hit
+points.  Hit  points  are your
+health.   When they  reach  0,
+you lose a life.
+
+The  rocket  engines  give you
+extra power (level 4-6 only).
+
+The  bomb  gives  you  5  more
+bombs (levels 1-6 only).
+
+The plus signs give  you extra
+lives.
+
+There   are  also  some  other
+things that you can pick up.
+
+
+
+    
+    
+
+    
+Character Controls
+
+Normal motion (no controls)
+ - gradually lose altitude
+   (levels 1-6 and 9-12)
+ - move forward at normal 
+   speed (level 7-8)
+ - nothing (level 13)
+
+Up key
+ - rocket up
+   (levels 4-6 and 9-12)
+ - glide up (levels 7-8)
+ - move north (level 13)
+
+
+    
+    
+Right key
+ - move right
+   (level 1-6 and 9-12)
+ - move east (level 13)
+ - go faster (level 7-8)
+    
+Left key
+ - move left
+   (levels 1-6 and 9-12)
+ - go slower (level 7-8)
+ - move west (level 13)
+
+Space bar
+ - drop bomb (level 1-6)
+ - fire rocket (level 7-11)
+ - fire star rocket (level 11)
+
+Down key
+ - move south (level 13)
+
+    
+"P" key
+ - buy something if you have 
+   any money (level 10, Bud's 
+   Crud)
+
+F5 - save game
+F6 - load saved game 
+

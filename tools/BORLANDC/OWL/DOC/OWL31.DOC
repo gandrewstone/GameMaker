@@ -1,0 +1,227 @@
+
+
+
+
+
+
+===========================================================================
+ObjectWindows and Windows 3.1
+===========================================================================
+
+                    ObjectWindows has been greatly enhanced to support
+                    changes in Windows 3.1. Here's a summary of those
+                    changes:
+
+                    o The ObjectWindows DLL has been renamed OWL31.DLL, to
+                      avoid incompatibilities with older versions. Note
+                      that the import library is still named OWL.LIB, so
+                      you don't have to change your current makefiles,
+                      projects, or .DEF files to use the new .DLL name.
+
+                    o GetClassName in the following classes now returns new
+                      class names, for compatibility with older versions of
+                      OWL.DLL:
+
+                      TDialog
+                      TMDIFrame
+                      TWindow
+
+                    o ObjectWindows applications and ObjectWindows itself
+                      can be built in several new variations:
+
+                      - with full backward compatibility with Borland C++
+                        3.0 and Turbo C++ for Windows 3.0. (See "Backward
+                        compatibility: Using all your existing code,"
+                        below.) When using this option, your ObjectWindows
+                        applications will run under both Windows 3.0 and
+                        3.1.
+
+                      - for full compatibility with Windows 3.1. (See
+                        "Windows 3.1 compatibility," below.) When you use
+                        this option, you can use the new features of
+                        Windows 3.1 (like multimedia and TrueType).
+
+                      - for Windows 3.1's new Strict code style. (See
+                        "Strict compatibility," below.) Strict is a new set
+                        of macros and types that help you catch common
+                        ObjectWindows programming errors when you compile
+                        your applications, rather than waiting for bugs and
+                        crashes to happen when you run them.
+
+                    o ObjectWindows is no longer supported in the Compact
+                      memory model.
+
+
+
+
+
+
+                    If you have Borland C++ 3.1, you can also its other new
+                    features like 80386 code generation, the Object Data
+                    calling convention, and the Borland Resource Compiler
+                    and Resource Linker. Naturally, you can also use
+                    features from Borland C++ 3.0, like global
+                    optimizations, too.
+
+
+          Backward  =======================================================
+    compatibility:
+    Using all your  This version of ObjectWindows contains the classes and
+     existing code  members to be compatible with Borland C++ 3.0 and Turbo
+                    C++ for Windows 3.0. All the code you've written that
+                    calls ObjectWindows member functions will still compile
+                    and run fine.
+
+                    All you have to do to use this option is to define the
+                    macro WIN30 before you include the owl.h header file.
+                    There are three ways to do this:
+
+                    o If you use the Borland C++ command-line compiler, add
+                      "-DWIN30" (without the quotes) to the beginning of
+                      your command line. For example, you might compile a
+                      module like this:
+
+                      BCC -WE -DWIN30 myprog.cpp owlws.lib tclasss.lib
+
+                    o If you use any of the IDEs, add "WIN30" (without the
+                      quotes) to the Options|Compiler|Code Generation|
+                      Defines input box. For example, if you already define
+                      a macro DEBUG in this input box, adding WIN30 would
+                      look like this:
+
+                      DEBUG;WIN30
+
+                    o You can also add "#define WIN30" in your source code
+                      before you include owl.h. For example,
+
+                      ...
+                      #define WIN30
+                      #include <owl.h>
+                      ...
+
+
+
+
+
+
+
+
+
+                                   - 2 -
+
+
+
+
+
+
+       Windows 3.1  =======================================================
+     compatibility
+                    ObjectWindows is also fully compatible with Windows 3.1
+                    and the Windows 3.1 windows.h header file. Using this
+                    option lets you use new Windows 3.1 features like
+                    multimedia. Note that although Windows 3.0 applications
+                    run under Windows 3.1 without change, changes to the
+                    Windows 3.1 windows.h header file do require some
+                    changes to your code. Many Windows API functions now
+                    take slightly different argument types. Converting your
+                    code to those new argument types is quite simple; for
+                    more details, see the online Help API reference and the
+                    online document WIN31.DOC.
+
+                    As when you use the WIN30 macro, all you have to do to
+                    use this option is to define the macro WIN31 before you
+                    include the owl.h header file. There are three ways to
+                    do this:
+
+                    o If you use the Borland C++ command-line compiler, add
+                      "-DWIN31" (without the quotes) to the beginning of
+                      your command line. For example, you might compile a
+                      module like this:
+
+                      BCC -WE -DWIN31 myprog.cpp owlws.lib tclasss.lib
+
+                    o If you use any of the IDEs, add "WIN31" (without the
+                      quotes) to the Options|Compiler|Code Generation|
+                      Defines input box. For example, if you already define
+                      a macro DEBUG in this input box, adding WIN31 would
+                      look like this:
+
+                      DEBUG;WIN31
+
+                    o You can also add "#define WIN31" in your source code
+                      before you include owl.h. For example,
+
+                      ...
+                      #define WIN31
+                      #include <owl.h>
+                      ...
+
+
+
+
+
+
+
+
+
+
+                                   - 3 -
+
+
+
+
+
+
+            Strict  =======================================================
+     compatibility
+                    ObjectWindows is also Strict-compliant; the advantages
+                    you get when using Strict are well worth the changes
+                    you need to make in your code. We do recommend that you
+                    start converting your code to Strict. For details about
+                    Strict, see the online document WIN31.DOC.
+
+                    Note that you must use the WIN31 macro to use Strict.
+                    The macro you need to define is STRICT. The three ways
+                    to define these macros:
+
+                    o If you use the Borland C++ command-line compiler, add
+                      "-DWIN31;STRICT" (without the quotes) to the
+                      beginning of your command line. For example, you
+                      might compile a module like this:
+
+                      BCC -WE -DWIN31;STRICT myprog.cpp owlws.lib
+                      tclasss.lib
+
+                    o If you use any of the IDEs, add "WIN31;STRICT"
+                      (without the quotes) to the Options|Compiler|Code
+                      Generation|Defines input box. For example, if you
+                      already define a macro DEBUG in this input box,
+                      adding WIN31;STRICT would look like this:
+
+                      DEBUG;WIN31;STRICT
+
+                    o You can also add "#define WIN31" and "#define STRICT"
+                      in your source code before you include owl.h. For
+                      example,
+
+                      ...
+                      #define WIN31
+                      #define STRICT
+                      #include <owl.h>
+                      ...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                   - 4 -
+

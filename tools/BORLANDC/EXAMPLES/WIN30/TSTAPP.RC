@@ -1,0 +1,34 @@
+// Borland C++ - (C) Copyright 1991 by Borland International
+
+# include <windows.h>
+# include "tstapp.h"
+# include "msgproc.h"
+
+tstapp  ICON tstapp.ico
+
+tstapp  MENU
+BEGIN
+  POPUP "File"
+  BEGIN
+    MENUITEM "About",   IDM_ABOUT
+    MENUITEM "Exit",    IDM_QUIT
+  END
+  MENUITEM "Msg",       IDM_MESSAGE
+  MENUITEM "Clear",     IDM_CLEAR
+  MENUITEM "Lines",     IDM_LINES
+END
+
+STRINGTABLE
+BEGIN
+  IDS_NAME, "tstapp"
+END
+
+ABOUT DIALOG                                                                                  22,  17, 154,  75
+STYLE WS_POPUP | WS_DLGFRAME
+BEGIN
+  ICON    "tstapp"                    -1,                                                       9,  23,   0,   0
+  CONTROL "TstApp"                    -1, "static", SS_CENTER | WS_CHILD,                       0,   5, 154,   8
+  CONTROL "Version 1.0"              -1, "static", SS_CENTER | WS_CHILD,                      30,  34,  94,   8
+  CONTROL "Ok"                     IDOK, "button", BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD,  61,  59,  32,  14
+END
+

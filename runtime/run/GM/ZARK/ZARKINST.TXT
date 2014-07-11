@@ -1,0 +1,16 @@
+       NUMERICAL KEYPAD    
+              Up
+              |
+        |~~~|~~~|~~~|
+Up-left-| 7 | 8 | 9 |-Up-right
+        |___|___|___|
+        |~~~|   |~~~|
+   Left-| 4 |   | 6 |-Right
+        |___|   |___|
+        |~~~|~~~|~~~|
+Dwn-lft-| 1 | 2 | 3 |-Dwn-rght
+        |___|___|___|
+              |
+            Down
+
+The space bar shoots.

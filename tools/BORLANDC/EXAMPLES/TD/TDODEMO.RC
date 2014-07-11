@@ -1,0 +1,15 @@
+#define STRICT
+#include <windows.h>
+
+100 MENU LOADONCALL MOVEABLE PURE DISCARDABLE
+BEGIN
+  POPUP "&Pen"
+  BEGIN
+    MenuItem  "&Red", 101 
+    MenuItem  "&Green", 102 
+    MenuItem  "&Blue", 103 
+    MenuItem  "B&lack", 204
+  END
+END
+100 ICON TDODEMO.ICO
+

@@ -1,0 +1,31 @@
+// ObjectWindows - (C) Copyright 1992 by Borland International
+
+FILECOMMANDS  MENU LOADONCALL MOVEABLE PURE DISCARDABLE
+BEGIN
+  POPUP "&File"
+  BEGIN
+    MenuItem  "&New", CM_FILENEW
+    MenuItem  "&Open...", CM_FILEOPEN
+    MenuItem  "&Save", CM_FILESAVE
+    MenuItem  "Save &As...", CM_FILESAVEAS
+    MenuItem  SEPARATOR
+    MenuItem  "E&xit", CM_EXIT
+  END
+  POPUP "&Edit"
+  BEGIN
+    MenuItem  "&Undo\aAlt+BkSp", CM_EDITUNDO
+    MenuItem  SEPARATOR
+    MenuItem  "&Cut\aShift+Del", CM_EDITCUT
+    MenuItem  "C&opy\aCtrl+Ins", CM_EDITCOPY
+    MenuItem  "&Paste\aShift+Ins", CM_EDITPASTE
+    MenuItem  "&Delete\aDel", CM_EDITDELETE
+    MenuItem  "C&lear All\aCtrl+Del", CM_EDITCLEAR
+  END
+  POPUP "&Search"
+  BEGIN
+    MenuItem  "&Find...", CM_EDITFIND
+    MenuItem  "&Replace...", CM_EDITREPLACE
+    MenuItem  "&Next\aF3", CM_EDITFINDNEXT
+  END
+END
+

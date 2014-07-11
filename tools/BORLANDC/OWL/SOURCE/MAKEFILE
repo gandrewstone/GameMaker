@@ -1,0 +1,312 @@
+# ObjectWindows - (C) Copyright 1992 by Borland International
+
+.autodepend
+.swap
+
+!if $d(DEBUG)
+DBG = -v
+!endif
+
+VERSION = 31
+
+!if !$d(MODEL)
+!if $d(DLL)
+MODEL = l
+!else
+MODEL = l
+!endif
+!endif
+
+!if $d(DLL)
+WIN = -WDE -D_CLASSDLL
+D = d
+!else
+WIN = -WE
+D = w
+!endif
+
+#
+# By default, build OWL with STRICT and WIN30 and WIN31 entry points.
+#
+
+WINMODE = -DWIN30;WIN31;STRICT
+
+!if $d(STRICT)
+
+WINMODE = -DSTRICT
+!if $d(WIN31)
+WINMODE = -DWIN31 $(WINMODE)
+!endif
+!if $d(WIN30)
+WINMODE = -DWIN30 $(WINMODE)
+!endif
+
+!else # !STRICT
+
+!if $d(WIN31)
+WINMODE = -DWIN31
+!if $d(WIN30)
+WINMODE = -DWIN30 $(WINMODE)
+!endif
+
+!else # !WIN31 && !STRICT
+
+!if $d(WIN30)
+WINMODE = -DWIN30
+!endif
+
+!endif # !WIN31
+!endif # !STRICT
+
+
+!if !$d(BCROOT)
+BCROOT=..\..
+!endif
+
+!if !$d(OWLROOT)
+OWLROOT=$(BCROOT)\owl
+!endif
+
+!if !$d(CLASSDIR)
+CLASSDIR = $(BCROOT)\classlib
+!endif
+
+KEY = $(D)$(MODEL)
+OBJDIR = ..\object\$(KEY)
+
+.path.obj = $(OBJDIR)
+
+!if $d(DEBUG)
+TLIB = $(BCROOT)\bin\tlib /P128
+!else
+TLIB = $(BCROOT)\bin\tlib /0
+!endif
+
+CC = $(BCROOT)\bin\bcc
+TLINK = $(BCROOT)\bin\tlink
+ASM = $(BCROOT)\bin\tasmx
+
+INCLUDE = $(OWLROOT)\include;$(CLASSDIR)\include;$(BCROOT)\include
+LIBDIR = $(OWLROOT)\lib
+
+!if $d(DLL)
+CFLAGS = -c -v -vi $(WINMODE);BUILD_OWL $(WIN) -m$(MODEL) -n$(OBJDIR) -2
+!else
+CFLAGS = -c $(DBG) $(WINMODE);BUILD_OWL $(WIN) -m$(MODEL) -n$(OBJDIR) -2
+!endif
+
+ASMFLAGS = /o /D__LARGE__ /D__CDECL__ /e /ml
+
+BCC = $(CC) $(CFLAGS)
+!if $d(DLL)
+TBCC = $(CC) $(CFLAGS) -TD_CLASSDLL
+!else
+TBCC = $(CC) $(CFLAGS)
+!endif
+
+#used for linking DLL
+LFLAGS = /v /Twd /n /x /c /C
+BCLIBDIR = $(BCROOT)\lib
+DCLASSLIB = $(CLASSDIR)\lib\tclasdll.lib
+STDLIBS =  $(BCLIBDIR)\import $(BCLIBDIR)\crtldll $(BCLIBDIR)\cwl
+
+OBJS = \
+	module.obj \
+	applicat.obj  \
+	window.obj \
+	owl.obj \
+	dialog.obj \
+	scroller.obj \
+	control.obj \
+	button.obj \
+	checkbox.obj \
+	static.obj \
+	edit.obj \
+ 	groupbox.obj \
+	radiobut.obj \
+	listbox.obj \
+	combobox.obj \
+	scrollba.obj \
+	mdiframe.obj \
+	mdiclien.obj \
+	inputdia.obj \
+	filedial.obj \
+	editwnd.obj \
+	filewnd.obj \
+	bbutton.obj \
+	bchkbox.obj \
+	bradio.obj \
+	bdivider.obj \
+	bgrpbox.obj \
+	bstatic.obj \
+	bstatbmp.obj \
+	bwindow.obj \
+	safepool.obj \
+        objstrm.obj \
+        tcollect.obj \
+        tsortcol.obj \
+        appdict.obj \
+	windobj.obj \
+        version.obj \
+        owlmath.obj \
+        swindobj.obj
+
+.cpp.obj:
+	$(BCC) $.
+
+.c.obj:
+	$(BCC) $.
+
+.asm.obj:
+	$(TBCC) $.
+
+!if $d(DLL)
+all: config $(LIBDIR)\owl.lib
+!else
+all: config $(LIBDIR)\owl$(KEY).lib
+!endif
+
+config:
+    echo -I$(INCLUDE) >turboc.cfg
+
+swindobj.obj: swindobj.cpp
+    $(CC) $(CFLAGS) -S swindobj.cpp
+    $(ASM) $(ASMFLAGS) $(OBJDIR)\swindobj.asm,$(OBJDIR)\swindobj.obj
+
+$(LIBDIR)\owl.lib: $(OBJS) $(DCLASSLIB)
+ $(TLINK) $(LFLAGS) @&&!
+$(BCLIBDIR)\c0$(KEY)	+
+$(OBJDIR)\windobj		+
+$(OBJDIR)\swindobj		+
+$(OBJDIR)\applicat		+
+$(OBJDIR)\window		+
+$(OBJDIR)\owl		    +
+$(OBJDIR)\dialog		+
+$(OBJDIR)\scroller		+
+$(OBJDIR)\owlmath		+
+$(OBJDIR)\inputdia		+
+$(OBJDIR)\filedial		+
+$(OBJDIR)\control		+
+$(OBJDIR)\button		+
+$(OBJDIR)\checkbox		+
+$(OBJDIR)\static		+
+$(OBJDIR)\edit		    +
+$(OBJDIR)\radiobut		+
+$(OBJDIR)\groupbox		+
+$(OBJDIR)\listbox		+
+$(OBJDIR)\combobox		+
+$(OBJDIR)\mdiframe		+
+$(OBJDIR)\mdiclien		+
+$(OBJDIR)\scrollba		+
+$(OBJDIR)\editwnd		+
+$(OBJDIR)\filewnd		+
+$(OBJDIR)\module		+
+$(OBJDIR)\bbutton		+
+$(OBJDIR)\bchkbox		+
+$(OBJDIR)\bradio		+
+$(OBJDIR)\bdivider		+
+$(OBJDIR)\bgrpbox		+
+$(OBJDIR)\bstatic		+
+$(OBJDIR)\bstatbmp		+
+$(OBJDIR)\bwindow		+
+$(OBJDIR)\safepool		+
+$(OBJDIR)\objstrm	    +
+$(OBJDIR)\tcollect	    +
+$(OBJDIR)\tsortcol      +
+$(OBJDIR)\appdict       +
+$(OBJDIR)\version
+! $(LIBDIR)\owl$(VERSION).dll,, @&&!
+/v- $(DCLASSLIB) $(STDLIBS)
+!,owldll.def
+ implib $(LIBDIR)\owl.lib $(LIBDIR)\owl$(VERSION).dll
+ tdstrip -s $(LIBDIR)\owl$(VERSION).dll
+
+$(LIBDIR)\owl$(KEY).lib: $(OBJS)
+     del $(LIBDIR)\owl$(KEY).lib
+     $(TLIB) $(LIBDIR)\owl$(KEY).lib @&&!
++$(OBJDIR)\windobj 	    &
++$(OBJDIR)\swindobj	    &
++$(OBJDIR)\window 		&
++$(OBJDIR)\applicat 	&
++$(OBJDIR)\owl 		&
++$(OBJDIR)\dialog 		&
++$(OBJDIR)\scroller 	&
++$(OBJDIR)\owlmath 	&
++$(OBJDIR)\inputdia 	&
++$(OBJDIR)\filedial 	&
++$(OBJDIR)\control 	&
++$(OBJDIR)\button 		&
++$(OBJDIR)\checkbox 	&
++$(OBJDIR)\static 		&
++$(OBJDIR)\edit 		&
++$(OBJDIR)\radiobut 	&
++$(OBJDIR)\groupbox 	&
++$(OBJDIR)\listbox 	&
++$(OBJDIR)\combobox 	&
++$(OBJDIR)\mdiframe 	&
++$(OBJDIR)\mdiclien 	&
++$(OBJDIR)\scrollba 	&
++$(OBJDIR)\editwnd 	&
++$(OBJDIR)\filewnd 	&
++$(OBJDIR)\module 	&
++$(OBJDIR)\bbutton	&
++$(OBJDIR)\bchkbox	&
++$(OBJDIR)\bradio	&
++$(OBJDIR)\bdivider	&
++$(OBJDIR)\bgrpbox	&
++$(OBJDIR)\bstatic	&
++$(OBJDIR)\bstatbmp	&
++$(OBJDIR)\bwindow	&
++$(OBJDIR)\safepool	&
++$(OBJDIR)\objstrm	&
++$(OBJDIR)\tcollect	&
++$(OBJDIR)\tsortcol	&
++$(OBJDIR)\appdict	&
++$(OBJDIR)\version
+!
+
+clean:
+ @echo Removing .OBJ's and .ASM's from $(OBJDIR)
+ @if exist .\version.cpp  \
+     if exist $(OBJDIR)\version.obj   del $(OBJDIR)\version.obj
+ @if exist .\owlmath.cpp  \
+     if exist $(OBJDIR)\owlmath.obj    del $(OBJDIR)\owlmath.obj
+ @if exist .\swindobj.cpp \
+     if exist $(OBJDIR)\swindobj.obj   del $(OBJDIR)\swindobj.obj
+ @if exist $(OBJDIR)\swindobj.asm 	del $(OBJDIR)\swindobj.asm
+ @if exist $(OBJDIR)\module.obj 	del $(OBJDIR)\module.obj
+ @if exist $(OBJDIR)\applicat.obj 	del $(OBJDIR)\applicat.obj
+ @if exist $(OBJDIR)\window.obj 	del $(OBJDIR)\window.obj
+ @if exist $(OBJDIR)\owl.obj 		del $(OBJDIR)\owl.obj
+ @if exist $(OBJDIR)\dialog.obj 	del $(OBJDIR)\dialog.obj
+ @if exist $(OBJDIR)\scroller.obj 	del $(OBJDIR)\scroller.obj
+ @if exist $(OBJDIR)\control.obj 	del $(OBJDIR)\control.obj
+ @if exist $(OBJDIR)\button.obj 	del $(OBJDIR)\button.obj
+ @if exist $(OBJDIR)\checkbox.obj 	del $(OBJDIR)\checkbox.obj
+ @if exist $(OBJDIR)\static.obj 	del $(OBJDIR)\static.obj
+ @if exist $(OBJDIR)\edit.obj 		del $(OBJDIR)\edit.obj
+ @if exist $(OBJDIR)\groupbox.obj 	del $(OBJDIR)\groupbox.obj
+ @if exist $(OBJDIR)\radiobut.obj 	del $(OBJDIR)\radiobut.obj
+ @if exist $(OBJDIR)\listbox.obj 	del $(OBJDIR)\listbox.obj
+ @if exist $(OBJDIR)\combobox.obj 	del $(OBJDIR)\combobox.obj
+ @if exist $(OBJDIR)\scrollba.obj 	del $(OBJDIR)\scrollba.obj
+ @if exist $(OBJDIR)\mdiframe.obj 	del $(OBJDIR)\mdiframe.obj
+ @if exist $(OBJDIR)\mdiclien.obj 	del $(OBJDIR)\mdiclien.obj
+ @if exist $(OBJDIR)\inputdia.obj 	del $(OBJDIR)\inputdia.obj
+ @if exist $(OBJDIR)\filedial.obj 	del $(OBJDIR)\filedial.obj
+ @if exist $(OBJDIR)\editwnd.obj 	del $(OBJDIR)\editwnd.obj
+ @if exist $(OBJDIR)\filewnd.obj 	del $(OBJDIR)\filewnd.obj
+ @if exist $(OBJDIR)\bbutton.obj 	del $(OBJDIR)\bbutton.obj
+ @if exist $(OBJDIR)\bchkbox.obj 	del $(OBJDIR)\bchkbox.obj
+ @if exist $(OBJDIR)\bradio.obj 	del $(OBJDIR)\bradio.obj
+ @if exist $(OBJDIR)\bdivider.obj 	del $(OBJDIR)\bdivider.obj
+ @if exist $(OBJDIR)\bgrpbox.obj 	del $(OBJDIR)\bgrpbox.obj
+ @if exist $(OBJDIR)\bstatic.obj 	del $(OBJDIR)\bstatic.obj
+ @if exist $(OBJDIR)\bstatbmp.obj 	del $(OBJDIR)\bstatbmp.obj
+ @if exist $(OBJDIR)\bwindow.obj 	del $(OBJDIR)\bwindow.obj
+ @if exist $(OBJDIR)\safepool.obj 	del $(OBJDIR)\safepool.obj
+ @if exist $(OBJDIR)\objstrm.obj 	del $(OBJDIR)\objstrm.obj
+ @if exist $(OBJDIR)\tcollect.obj 	del $(OBJDIR)\tcollect.obj
+ @if exist $(OBJDIR)\tsortcol.obj 	del $(OBJDIR)\tsortcol.obj
+ @if exist $(OBJDIR)\appdict.obj 	del $(OBJDIR)\appdict.obj
+ @if exist $(OBJDIR)\windobj.obj 	del $(OBJDIR)\windobj.obj

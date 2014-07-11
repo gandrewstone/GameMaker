@@ -1,0 +1,44 @@
+The SAMPLE  game shows many of
+Game-Maker's features.   A two
+block high character walks  in
+four directions, shoots, drops
+bombs, picks  up  items,  gets
+hurt, and dies.  
+
+Arrow keys move the character,
+as  does a joystick.   On  the
+numeric  keyboard,  keys 2, 4,
+6, and 8 act as arrow keys.  
+
+In  order  to shoot the laser,
+you need to first  pick it up.
+Inorder to shoot the revolver,
+you    need  to  pick  it  and
+its  ammo  up.  You start with
+five bombs,  and  can  pick up
+others.
+
+The  space  bar   shoots  four
+laser  monsters away from  the
+character.   The 'b' key  sets
+down bombs which explode.  Key
+5  shoots  bullets.    On  the
+numeric keypad, the  1,  3, 7,
+and 9 keys shoot single lasers
+various ways.   
+ 
+The  character starts with 250
+hit points  and  3 lives.  The
+objective is to  pick  up  the
+Book of Wisdom.   To  do this,
+you must eat enough hamburgers
+to   get  strength,  find  two
+keys, and  fight  through  the
+maze -- and  you  are going to
+need a sword.
+
+Monsters  subtract hit points,
+food  adds  hit points.   Most
+monsters  can  be  killed, but
+some  are  too  strong  to  be
+killed by a laser.

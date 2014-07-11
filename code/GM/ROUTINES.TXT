@@ -1,0 +1,289 @@
+
+All routines which I have already written, but do not appear in the
+GAME-MAKER package.  This includes already written routines which I may
+put in GAME-MAKER this summer.
+
+These generic graphics manipulation routines.
+
+
+Point(int x, int y, unsigned char col)
+GetCol(int x,int y)
+Line(int x1,int y1,int x2,int y2,unsigned char col)
+Box(int x,int y,int x1,int y1,unsigned char col)
+BoxFill(int x,int y, int x1, int y1, unsigned char col)
+Line(int x1,int y1,int x2,int y2,unsigned int col,DrawingBoard *d)
+Box(int x,int y,int x1,int y1,unsigned int col,DrawingBoard *d)
+BoxFill(int x,int y,int x1,int y1,unsigned int col,DrawingBoard *d)
+_FourPoint
+
+Low256GetCol (unsigned int x,unsigned int y,DrawingBoard *d)
+Low256Point  (unsigned int x,unsigned int y,unsigned int col,DrawingBoard *d)
+Low256Rep1Col(unsigned int x, unsigned int y, unsigned int len, unsigned int col, DrawingBoard *d)
+Low256RepCols(unsigned int x, unsigned int y, unsigned int len, unsigned char *col, DrawingBoard *d)
+Low256GetCols(unsigned int x, unsigned int y, unsigned int len, unsigned char *col, DrawingBoard *d)
+Low256GraphMode()
+
+HiBoxFill(int x, int y, int x1, int y1, void Point(int x,int y))
+HiCircleFill(int centx, int centy, int x1, int y1, void point(int x,int y))
+HiCircle(int centx, int centy, int x1, int y1, void point(int x,int y))
+HiLine(int x1,int y1,int x2,int y2, void point(int x,int y))
+HiBox(int x, int y, int x1, int y1, void point(int x,int y))
+HiFill(int x, int y)
+FillIter(int x,int y,int dir)
+
+InitDirty(void)
+UnInitDirty(void)
+DrawDirtyRects(void)
+ClearDirtyRects(void)
+AddDirtyRect(int x,int y, int x1, int y1)
+AddDirtyRect(unsigned int addr,int len,int wid)
+
+GPutChar(int initx,int y,unsigned char col,char c)
+GWrite(int initx,int y,unsigned char col, char *str)
+GGet(int x,int y,unsigned char col,unsigned char bcol,char *ans,int maxlen)
+Gwritestr(int x,int y,int col,char *str,int len)
+
+draw4dat(int x,int y, char *pict, int len,int wid,unsigned char *col, int rotation)
+
+GetROMFont(void)
+
+BufPoint(int x,int y,unsigned char col)
+BufFourPoint(int x,int y,unsigned char far *addr)
+BufDrawBlk(int x,int y,unsigned char *blk)
+BufDrawBlkAddr(unsigned int ScrnLoc,unsigned char *blk)
+BufGetBlk (int x,int y,unsigned char *blk)
+BufDrawSpBlk(int x,int y,char rotation,unsigned char *blk)
+BufDraw4x4Addr(unsigned int ScrnLoc,unsigned char *Pict)
+BufDraw4x20Addr(unsigned int ScrnLoc,unsigned char *Pict)
+SvgaBufScrnBox(int x,int y,int x1, int y1)
+SvgaBufToScrn(unsigned int addr,int len,int wid)
+SvgaBufToScrn(unsigned int len,unsigned int offset)
+BufToScrn(unsigned int len,unsigned int offset)
+PutBufToScrn
+
+_SVGAdrawblk
+_SVGAgetblk
+_drawcbloc
+
+TextMode(void)
+GraphMode(void)
+
+MoveViewScreen(unsigned long int offset4,unsigned int LittleShiftx)
+drawblk(int x,int y,unsigned char *blk)
+getblk (int x,int y,unsigned char *blk)
+GetCol(int x,int y)
+
+class GPFclass
+class CursorClass
+CursorRulesCheck(NodeClass *node)
+CursorClassDraw(void *d1)
+Display_File(char *filen,unsigned char col)
+
+
+                  Palette changing routines:
+
+Palette(unsigned char col,unsigned char red,unsigned char green,unsigned char blue)
+SetAllPal(RGBdata *pal)
+SetAllPalTo(RGBdata *pal)
+GetAllPal(RGBdata *pal)
+FindForCol(RGBdata *colors, char bkcol,char choice)
+FadeTo(RGBdata *dest,int FadeTime)
+FadeAllTo(RGBdata dest,int FadeTime)
+PalFindCol(unsigned char red, unsigned char green, unsigned char blue,RGBdata *colors)
+RainbowCols(RGBdata *colors)
+RandCols(RGBdata *colors)
+InitStartCols(RGBdata *colors)
+
+
+                 Hardware Manipulation:
+
+WaitVertRetrace(void)
+SetupCard(VideoCards Vcard)
+Force_VGA(VideoCards v)
+Force_VGA(char *vgaid)
+MoveWindow(unsigned char offset64k)
+ViewWindow(unsigned long int offset4)
+
+SetParadise(void)
+SetNotSupported(void)
+SetOldATI(void)
+SetPage(unsigned char pgnum)
+SetTrident(void)
+SetTridentStart(int highstart)
+
+SlowKeys()
+FastKeys()
+
+SlowTimer()
+FastTimer()
+@NewTimer$qve
+
+Generic input handling routines and classes:
+
+class InputClass
+
+ Joystick:
+class JoyStickClass
+CheckJoyStick(void *t1)
+_ReadJoyStick
+GetJoyPos(char far *pos, int far *button, ConfigStruct far *js);
+LoadConfigData(ConfigStruct far  *js);
+SaveConfigData(ConfigStruct far *js);
+InitJStick(void);
+joyclearbuts(void);
+HandleJStick(int fn)
+Joy_Config(ConfigStruct *cs);
+ReadJoyStick(unsigned int far *x,unsigned int far *y,unsigned int far *butn);
+getjoydat(unsigned int *x, unsigned int *y,unsigned int *butn);
+
+
+ Keyboard:
+class KeyBoardClass
+PopKey(unsigned char key);
+PushKey(void);
+CleanKeyStk(void);
+StealKbd(void);
+_NewMicroKbd
+_NewATKbd
+
+ Mouse:
+class MouseClass
+initmouse(void);
+moucur(int a);
+moustats(int far *x,int far *y,int far *butstats);
+setmoupos(int x,int y);
+moucurbox(int x,int y,int x1,int y1);
+getmoubox(int far *x,int far *y,int far *x1, int far *y1);
+mouclearbut(void);
+MoveCursors(NodeClass *CursorNode)
+_MouseInterrupt
+_SetMouseRoutine
+
+
+
+                  Gif drawing routines:
+
+DrawGif(char *gif, RGBdata *colors);
+initable(void);
+initchop(void);
+decode(FILE *gif,int skip);
+intro  (FILE *gif,RGBdata colors[256] );
+drawbkd(char *bkdname,RGBdata *colors);
+readcols(FILE *fp,RGBdata colors[256]);
+datatrans(unsigned char from[],unsigned int *to,int *bits);
+interpret(int coded,int skip);
+usedata(int size,int skip);
+extension(FILE *gif);
+
+
+                 Generic Hardware detection routines:
+
+MicroChannel(void);
+idParadise(void);
+idTrident(void);
+idTseng4000(void);
+TextID_VGA(void);
+WhichATI  (void);
+WhichTseng(void);
+Identify_VGA(void)
+DetectCard(SoundCards *s,unsigned int *Port, unsigned int *Interrupt,char *drvrname);
+
+
+                Generic routines and classes:
+
+
+class NodeClass
+class NetworkClass
+class LinkedListClass
+class TimerClass
+
+NewTimerAsm(...)
+CallEm(NodeClass *CursorNode)
+FreeIt(NodeClass *node)
+NewAbortMSG(char *str)
+
+ShowVidMem(void)
+GetMem(char *s,char *mem)
+
+PauseTimeKey(int seconds)
+MakeFileName(char *out, const char *path, const char *name, const char *ext)
+ParseFileName(const char *in,char *name,char *path)
+
+findfiles(char *filespec, char *path,char *result,int maxfiles)
+CopyFile(const char *From,const char *To);
+del(char *file,char *path)
+
+printstring(char *str)
+printchar(char ch)
+
+AskConfigData(ConfigStruct *cs)
+DrawConfigScrn(ConfigStruct *cs,int Vga,char *DrvrName,char *DrvrPath)
+
+
+                 Text Screen windowing Functions:
+
+writestr     ( int x, int y, int col, const char *str);
+writech      ( int x, int y, int col, int ch);
+readch       ( int x, int y);
+copypage     ( int source,int destination);
+drawbox      ( int x, int y, int x1, int y1, int col, int ltype, int shadcol);
+savebox      ( int x, int y, int x1, int y1, char *copyto);
+restorebox   ( int x, int y, int x1, int y1, char *copyfrom);
+xchgbox      ( int x, int y, int x1, int y1, char *window);
+clrbox       ( int x, int y, int x1, int y1, int attrib);
+ 
+drawcursor(int,int,int,int);
+erasecursor(void);
+
+getfname(int x,int y,char *q,char *ext,char *ans);
+closemenu(int x,int y,int len,int wid,char *buffer);
+openmenu(int x,int y,int lenx,int widy,char *w);
+errorbox(char *l,char *l1,unsigned int maxpause);
+
+horizmenu(int numitems, int curitem, int y,...);
+vertmenu(int x,int y,int lenOFitems,int numitems, int curitem);
+qwindow(int x,int y,int len, char *q,char *ans);
+loadany(char *prompt,char *ext,char *path,unsigned int bytes,char *buffer,int cansave);
+saveany(char *prompt,char *ext,char *path,unsigned int bytes,char *buffer);
+delany(char *prompt,char *ext,char *path);
+getstr(int x,int y, int maxlen, char *ans);
+
+
+                 Sound Blaster routines:
+
+SoundCard(ConfigStruct *cs);
+InitMusic(int *Instru,char *cmffile);
+InitCard(void);
+PlayIt(void);
+StopIt(void);
+sbfreemem(void);
+ResetFM(void);
+SetupAndTestCard(unsigned int portaddress, unsigned int intaddress);
+ParseBlasterEnv(unsigned int *portaddress, unsigned int *intaddress)
+WaitSbVocComplete(void)
+SetInstTable(char far *inst);
+load_file(int *Instru,char *filename);
+getpaws(void);
+DoSound(unsigned char sndnum);
+
+InitSbVocDriver(ConfigStruct *cs);
+PlaySbVocFile(char far * filename);
+StopSound(void);
+ShutSbVocDriver(void);
+
+
+                      Standard Install Program Routines
+
+install "main()"
+MySetVect(int num,char interrupt far (*fn)(...));
+*MyGetVect(int num);
+NewDOS(...);
+CopyFile(const char *From,const char *To);
+NewCritError(...);
+GetFreeBytes(unsigned char drive);
+ParseFileName(const char *in,char *name,char *path);
+_fullpath(char *b, const char *b1, int buflen);
+InstallIt(char *src, char *dest);
+FirstScreen(char *path);
+
+

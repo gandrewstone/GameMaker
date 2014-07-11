@@ -1,0 +1,22 @@
+
+NAME         msgwnd
+
+DESCRIPTION 'Find Windows Program'
+
+CODE         PRELOAD MOVEABLE DISCARDABLE
+DATA         PRELOAD MOVEABLE MULTIPLE
+
+EXETYPE      WINDOWS
+
+SEGMENTS
+       _RES  PRELOAD MOVEABLE DISCARDABLE
+
+HEAPSIZE     128
+STACKSIZE    8192
+
+EXPORTS
+             MsgwndWndProc
+             About
+             DDEServerWndProc
+
+

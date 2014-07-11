@@ -1,0 +1,31 @@
+
+          N E B U L A
+
+Storyline:
+    Gregory Stone.
+
+Graphics:
+
+  Character, Background, Menus
+  Animations
+    Gregory Stone
+  Monsters
+    Joan Stone
+
+Creator's Note:
+    Feel  free  to    add  and
+modify  any of the  worlds  in
+Nebula   with  GameMaker.    I
+certainly  would  have   liked
+more  then  four  planets  and
+stars in the game.   Perhaps a
+dark    planet    (in    which
+everything is black  until you
+touch  it)  would add  to  the
+game.    You  should add  your
+name  to the ones on the  list
+above under  a  short descrip-
+tion for  your  addition,  but
+you may not  erase  any  names
+currently in the list.   
+

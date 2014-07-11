@@ -1,0 +1,38 @@
+// Borland C++ - (C) Copyright 1991 by Borland International
+
+# include <windows.h>
+
+# include "ffind.h"
+
+ffind  ICON ffind.ico
+
+STRINGTABLE
+BEGIN
+  IDS_NAME, "ffind"
+END
+
+MAIN DIALOG LOADONCALL MOVEABLE DISCARDABLE                                                           10,  19, 270, 123
+CAPTION "Ffind"
+STYLE WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_SYSMENU | WS_GROUP | WS_VISIBLE | WS_POPUP
+BEGIN
+    CONTROL "Pattern:",     101,        "static",  SS_LEFT | WS_CHILD,                                 3,   7,  32,   7
+    CONTROL "",             102,        "edit",    ES_LEFT | WS_BORDER | WS_TABSTOP | WS_CHILD,       36,   5, 104,  12
+    CONTROL "Drives:",      103,        "static",  SS_LEFT | WS_CHILD,                                 3,  22,  28,   8
+    CONTROL "",             104,        "listbox", LBS_NOTIFY | WS_BORDER | WS_VSCROLL | WS_CHILD,     2,  41, 253,  81
+    CONTROL "#:    0",      105,        "static",  SS_RIGHT | WS_CHILD,                              216,  22,  50,   8
+    CONTROL " Filename      Size    Date     Time   Drive:\\Path", 106, "static", SS_LEFT | WS_CHILD,  4,  31, 250,   9
+    CONTROL "Search",       107,        "button",  BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD,         150,   4,  32,  14
+    CONTROL "Clear",        108,        "button",  BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,            186,   4,  32,  14
+    CONTROL "Cancel",       109,        "button",  BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD,            222,   4,  32,  14
+    CONTROL "1:",           110,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,           36,  19,  18,  12
+    CONTROL "2:",           111,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,           56,  19,  18,  12
+    CONTROL "3:",           112,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,           76,  19,  18,  12
+    CONTROL "4:",           113,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,           96,  19,  18,  12
+    CONTROL "5:",           114,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,          116,  19,  18,  12
+    CONTROL "6:",           115,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,          136,  19,  18,  12
+    CONTROL "7:",           116,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,          156,  19,  18,  12
+    CONTROL "8:",           117,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,          176,  19,  18,  12
+    CONTROL "9:",           118,        "button",  BS_AUTOCHECKBOX | WS_TABSTOP | WS_CHILD,          196,  19,  18,  12
+END
+
+

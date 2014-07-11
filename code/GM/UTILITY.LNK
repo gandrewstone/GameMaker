@@ -1,0 +1,14 @@
+startupl.obj+
+utility.obj+
+oldmouse.obj+
+windio.obj+
+genc.obj+
+gma.obj+
+jsticka.obj+
+jstickc.obj+
+findfile.obj+
+scrnrout.obj
+utility.exe
+utility.map
+cl.lib
+

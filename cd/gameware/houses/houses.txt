@@ -1,0 +1,22 @@
+            HOUSES
+
+Houses illustrates how to make
+buildings out of the blocks in
+the HOUSES block set.  It also
+illustrates  how  you can have
+the  character    change    to
+another character.
+
+Use the arrow  keys  to  move.
+Other  keys do various  things
+for each of the characters.
+
+
+
+
+Follow    the  green  path  to
+change into another character.
+To leave the  game,  press the
+ESC key or enter the door with
+the EXIT sign.
+

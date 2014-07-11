@@ -1,0 +1,25 @@
+Up Arrow: Walk upwards
+
+Down Arrow: Walk downwards
+
+Left Arrow: Walk left
+
+Right Arrow: Walk right
+
+
+<SPACE>: Attack
+
+
+1: Lightagin spell
+
+2: Watagil spell
+
+3: Earnimor spell
+
+4: Fironimar spell
+
+
+P: Pick up item
+
+D: Drop an item
+.

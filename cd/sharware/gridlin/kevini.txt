@@ -1,0 +1,11 @@
+
+
+
+    UP, DOWN, LEFT, RIGHT:
+       walk those ways.
+
+            G, H:
+   kick to the left, right.
+
+            Y, B:
+        punch up, down..

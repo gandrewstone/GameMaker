@@ -1,0 +1,10 @@
+startupl.obj+
+chk.obj+
+oldmouse.obj+
+windio.obj+
+gma.obj+
+scrnrout.obj
+chk.exe
+chk.map
+cl.lib
+

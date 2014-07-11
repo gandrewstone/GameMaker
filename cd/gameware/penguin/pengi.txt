@@ -1,0 +1,36 @@
+
+   PENGUIN PETE INSTRUCTIONS
+
+Arrow keys or joystick move
+Penguin Pete, but we recommend
+the numeric keypad (set
+NumLock to on).  4,6,8, and 2
+move left, right, up, and
+down.  7 jumps left, 9 jumps
+right.  The 'j' key jumps
+straight up.
+
+The space bar throws the
+harpoon.  The 'm' key throws
+snowballs and the 'b' key
+drops bombs, if you have any.
+The 'n' key jumps up and back
+down, killing some monsters.
+Power level of weapons is:
+        Harpoon (lowest)
+        Killing Jump
+        Snowball
+        Bomb (highest)
+
+The 'p' picks up objects.  The
+'d' key drops objects.  
+
+Touch a bomb and you acquire
+it.  Food (such as algae,
+fish, some starfish, some
+crabs) increase hit points.
+
+Items such as mines and
+pebbles increase score.  Gold
+increases money.  Hearts add a
+life.

@@ -1,0 +1,33 @@
+LIBRARY	OWL31
+DESCRIPTION	'ObjectWindows DLL'
+EXETYPE	WINDOWS
+CODE PRELOAD MOVEABLE DISCARDABLE
+DATA PRELOAD MOVEABLE SINGLE
+HEAPSIZE 4096
+EXPORTS 
+    _RegButton
+    _RegCheckBox
+    _RegComboBox
+    _RegEdit
+    _RegFileDialog
+    _RegFileWindow
+    _RegGroupBox
+    _RegInputDialog
+    _RegListBox
+    _RegMDIClient
+    _RegMDIFrame
+    _RegDialog
+    _RegRadioButton
+    _RegScrollBar
+    _RegScroller
+    _RegStatic
+    _RegWindowsObject
+    _RegWindow
+    _RegEditWindow
+    _RegBButton
+    _RegBCheckBox
+    _RegBDivider
+    _RegBGroupBox
+    _RegBRadioButton
+    _RegBStaticBmp
+    _RegBStatic

@@ -1,0 +1,5 @@
+// Borland C++ - (C) Copyright 1991 by Borland International
+
+dlldemo1 BITMAP dlldemo1.bmp
+dlldemo2 BITMAP dlldemo2.bmp
+

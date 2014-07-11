@@ -1,0 +1,11 @@
+copy b:*.?bl blk\*.*
+copy b:*.chr chr\*.*
+copy b:*.mon mon\*.*
+copy b:*.snd snd\*.*
+copy b:*.txt gam\*.*
+copy b:*.gam gam\*.*
+copy b:*.map map\*.*
+copy b:*.gif gif\*.*
+copy b:*.bkd gif\*.*
+copy b:*.his gam\*.*
+copy b:*.pal pal\*.*

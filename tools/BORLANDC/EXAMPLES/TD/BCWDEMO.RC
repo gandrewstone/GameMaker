@@ -1,0 +1,35 @@
+/**********************************************************************
+ *          Copyright (c) 1991 by Borland International, Inc.         *
+**********************************************************************/
+
+#include <windows.h>
+#include "bcwdemo.h"
+
+SIMPLEPAINT MENU
+BEGIN
+  MENUITEM "&Quit!", MID_QUIT
+  POPUP "&Shape"
+  BEGIN
+	 MENUITEM "&Line", MID_LINE
+	 MENUITEM "&Ellipse", MID_ELLIPSE
+	 MENUITEM "&Rectangle", MID_RECTANGLE
+  END
+  POPUP "&Pen"
+  BEGIN
+	 POPUP "&Thickness"
+	 BEGIN
+		MENUITEM "&Thin", MID_THIN
+		MENUITEM "&Regular", MID_REGULAR
+		MENUITEM "T&hick", MID_THICK
+	 END
+	 POPUP "&Color"
+	 BEGIN
+		MENUITEM "&Red", MID_RED
+		MENUITEM "&Green", MID_GREEN
+		MENUITEM "&Black", MID_BLACK
+	 END
+  END
+END
+
+IDI_SIMPLEPAINT ICON BCWDEMO.ICO
+

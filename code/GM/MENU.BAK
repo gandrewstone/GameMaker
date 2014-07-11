@@ -1,0 +1,10 @@
+startupl.obj+
+menu.obj+
+oldmouse.obj+
+menuc.obj+
+gma.obj+
+scrnrout.obj
+menu.exe
+menu.map
+cl.lib
+

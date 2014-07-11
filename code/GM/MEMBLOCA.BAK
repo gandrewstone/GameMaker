@@ -1,0 +1,505 @@
+        IDEAL
+        MODEL LARGE
+        LARGESMALL EQU 6
+        P286
+        PUBLIC _BufDrawBlk
+        PUBLIC _BufDrawBlkAddr
+        PUBLIC _BufGetBlk
+        PUBLIC _BufGetBlkAddr
+
+        PUBLIC _BufDraw4x4Addr
+        PUBLIC _BufPoint
+        PUBLIC _BufDrawSpBlk
+        PUBLIC _BufDrawSpBlkAddr
+
+        EXTRN  _zeroaddon:WORD
+        EXTRN  _ScratchSeg:WORD
+               
+        CODESEG
+
+PROC    _BufDrawSpBlkAddr
+        CLEAR   EQU    255
+        BLEN    EQU    20
+        SCRNX   EQU    320
+        ADDR    EQU    [bp+LARGESMALL]
+        ROT     EQU    [bp+2+LARGESMALL]
+        BLK     EQU    [bp+4+LARGESMALL]
+        ADDX    EQU    bx
+        ADDY    EQU    dx
+        INITADD EQU    si
+
+        push    bp
+        mov     bp,sp
+        push    es
+        push    ds
+        push    di
+        push    si
+
+        cld
+
+        mov     ax,[_ScratchSeg]
+        mov     es,ax
+
+        mov     di,ADDR        ; di = place to draw block.
+
+        lds     si,BLK
+
+        mov     ax,ROT
+        mov     ah,0           ; C may not clear high byte of ROT since it is a char
+        cmp     ax,4
+        jl      @@Less4
+        jg      @@Greater4
+        mov     ADDX,-1     ; Flip horizontal (Rot index = 4).
+        mov     ADDY,(BLEN*2)
+        add     INITADD,BLEN-1
+        jmp     @@SetupDone
+@@Less4:
+        cmp     ax,2
+        jl      @@Less2
+        jg      @@MustBe3
+        ; Set up for rotate 180 degrees (Rot index = 2).
+        mov     ADDX,-1
+        mov     ADDY,0
+        add     INITADD,(BLEN*BLEN)-1
+        jmp     @@SetupDone
+@@Less2:
+        cmp     ax,1
+        jl      @@MustBe0
+        mov     ADDX,-BLEN    ; Set up for 90 Degrees clockwise (index=3)
+        mov     ADDY,(BLEN*BLEN)+1
+        add     INITADD,(BLEN*(BLEN-1))
+        jmp     @@SetupDone
+@@MustBe3:
+        mov     ADDX,BLEN       ; Set up for 90 deg. counter clock (index = 1).
+        mov     ADDY,(-1*BLEN*BLEN)-1
+        add     INITADD,BLEN-1
+        jmp     @@SetupDone
+@@Greater4:
+        cmp     ax,6
+        jg      @@MustBe7
+        jl      @@MustBe5
+        mov     ADDX,1    ; Flip vertical (index = 6).
+        mov     ADDY,-(BLEN*2)
+        add     INITADD,(BLEN*(BLEN-1))
+        jmp     @@SetupDone
+@@MustBe5:
+        mov     ADDX,BLEN           ; 90 degrees counter clock and (x,y)
+        mov     ADDY,-(BLEN*BLEN)+1 ; (0,0) -> (BLEN-1,0) (swap Horiz).
+        add     INITADD,0
+        jmp     @@SetupDone
+@@MustBe7:
+        mov     ADDX,-BLEN           ; Set up for 90 Degrees clockwise
+        mov     ADDY,(BLEN*BLEN)-1   ; and swap vertical
+        add     INITADD,(BLEN*BLEN)-1
+        jmp     @@SetupDone
+@@MustBe0:                           ; Last 'cause most used + 1 less jump.
+        mov     ADDX,1               ; Set up for Normal (Index = 0)
+        mov     ADDY,0
+        add     INITADD,0
+;        jmp     @@SetupDone
+
+@@SetupDone:
+
+        mov     ch,BLEN     ; Vertical length
+@@DoNextLine:
+        mov     cl,BLEN     ; Horizontal length
+@@NextPixel:
+        mov     al,[ds:si]  ; Get the pixel
+        cmp     al,CLEAR
+        je      @@SkipWrite
+        mov     [es:di],al
+@@SkipWrite:
+        inc     di          ; Next Pixel in Screen Buffer.
+        add     si,ADDX     ; Next pixel in Bitmap.
+        sub     cl,1
+        jnz     @@NextPixel ; Horizontal line finished if no jump.
+        add     di,300      ; Next line in Screen Buffer.
+        add     si,ADDY     ; Next line in Bitmap.
+        dec     ch
+        jnz     @@DoNextLine
+
+        pop     si
+        pop     di
+        pop     ds
+        pop     es
+        pop     bp
+        ret
+ENDP    _BufDrawSpBlkAddr
+
+
+
+PROC    _BufDrawSpBlk
+        CLEAR   EQU    255
+        BLEN    EQU    20
+        SCRNX   EQU    320
+        SX      EQU    [bp+LARGESMALL]
+        SY      EQU    [bp+2+LARGESMALL]
+        ROT     EQU    [bp+4+LARGESMALL]
+        BLK     EQU    [bp+6+LARGESMALL]
+        ADDX    EQU    bx
+        ADDY    EQU    dx
+        INITADD EQU    si
+
+        push    bp
+        mov     bp,sp
+        push    es
+        push    ds
+        push    di
+        push    si
+
+        cld
+
+        mov     ax,[_ScratchSeg]
+        mov     es,ax
+
+        mov     dx,320
+        mov     ax,SY                ; Map starting screen point
+        mul     dx
+        mov     di,ax
+        add     di,SX
+        add     di,[_zeroaddon]
+
+        lds     si,BLK
+
+        mov     ax,ROT
+        mov     ah,0           ; C may not clear high byte of ROT since it is a char
+        cmp     ax,4
+        jl      @@Less4
+        jg      @@Greater4
+        mov     ADDX,-1     ; Flip horizontal (Rot index = 4).
+        mov     ADDY,(BLEN*2)
+        add     INITADD,BLEN-1
+        jmp     @@SetupDone
+@@Less4:
+        cmp     ax,2
+        jl      @@Less2
+        jg      @@MustBe3
+        ; Set up for rotate 180 degrees (Rot index = 2).
+        mov     ADDX,-1
+        mov     ADDY,0
+        add     INITADD,(BLEN*BLEN)-1
+        jmp     @@SetupDone
+@@Less2:
+        cmp     ax,1
+        jl      @@MustBe0
+        mov     ADDX,-BLEN    ; Set up for 90 Degrees clockwise (index=3)
+        mov     ADDY,(BLEN*BLEN)+1
+        add     INITADD,(BLEN*(BLEN-1))
+        jmp     @@SetupDone
+@@MustBe3:
+        mov     ADDX,BLEN       ; Set up for 90 deg. counter clock (index = 1).
+        mov     ADDY,(-1*BLEN*BLEN)-1
+        add     INITADD,BLEN-1
+        jmp     @@SetupDone
+@@Greater4:
+        cmp     ax,6
+        jg      @@MustBe7
+        jl      @@MustBe5
+        mov     ADDX,1    ; Flip vertical (index = 6).
+        mov     ADDY,-(BLEN*2)
+        add     INITADD,(BLEN*(BLEN-1))
+        jmp     @@SetupDone
+@@MustBe5:
+        mov     ADDX,BLEN           ; 90 degrees counter clock and (x,y)
+        mov     ADDY,-(BLEN*BLEN)+1 ; (0,0) -> (BLEN-1,0) (swap Horiz).
+        add     INITADD,0
+        jmp     @@SetupDone
+@@MustBe7:
+        mov     ADDX,-BLEN           ; Set up for 90 Degrees clockwise
+        mov     ADDY,(BLEN*BLEN)-1   ; and swap vertical
+        add     INITADD,(BLEN*BLEN)-1
+        jmp     @@SetupDone
+@@MustBe0:                           ; Last 'cause most used + 1 less jump.
+        mov     ADDX,1               ; Set up for Normal (Index = 0)
+        mov     ADDY,0
+        add     INITADD,0
+;        jmp     @@SetupDone
+
+@@SetupDone:
+
+        mov     ch,BLEN     ; Vertical length
+@@DoNextLine:
+        mov     cl,BLEN     ; Horizontal length
+@@NextPixel:
+        mov     al,[ds:si]  ; Get the pixel
+        cmp     al,CLEAR
+        je      @@SkipWrite
+        mov     [es:di],al
+@@SkipWrite:
+        inc     di          ; Next Pixel in Screen Buffer.
+        add     si,ADDX     ; Next pixel in Bitmap.
+        sub     cl,1
+        jnz     @@NextPixel ; Horizontal line finished if no jump.
+        add     di,300      ; Next line in Screen Buffer.
+        add     si,ADDY     ; Next line in Bitmap.
+        dec     ch
+        jnz     @@DoNextLine
+
+        pop     si
+        pop     di
+        pop     ds
+        pop     es
+        pop     bp
+        ret
+
+ENDP    _BufDrawSpBlk
+
+
+PROC    _BufPoint
+        COL     EQU    [bp+4+LARGESMALL]
+        SY      EQU    [bp+2+LARGESMALL]
+        SX      EQU    [bp+LARGESMALL]
+
+        push    bp
+        mov     bp,sp
+        push    es
+        push    di
+        push    ax
+        push    dx
+
+        mov     ax,[_ScratchSeg]
+        mov     es,ax
+
+        mov     ax,SY                ; Find memory spot
+        mov     dx,320
+        mul     dx
+        mov     di,ax
+        add     di,SX
+        add     di,[_zeroaddon]
+
+        mov     ax,COL
+        stosb
+
+        pop     dx
+        pop     ax
+        pop     di
+        pop     es
+        pop     bp 
+        ret
+ENDP    _BufPoint
+
+PROC    _BufDrawBlk
+        SX      EQU [bp+LARGESMALL]
+        SY      EQU [bp+2+LARGESMALL]
+        BLOC    EQU [bp+4+LARGESMALL]
+        MEM     EQU [bp+8+LARGESMALL]
+
+        push    bp
+        mov     bp,sp
+        push    di
+        push    si
+        push    ds
+        push    es
+
+        cld
+        mov     ax,[_ScratchSeg]
+        mov     es,ax
+
+        mov     dx,320
+        mov     ax,SY   ;map starting screen point
+        mul     dx
+        mov     di,ax
+        add     di,SX
+        add     di,[_zeroaddon]
+
+        lds     si,BLOC
+
+        mov     ax,20  ; width of box
+@@drawhoriz:
+        mov     cx,20
+        test    di,01b                  ; Write the bytes Word-aligned.
+        jz      @@SkipByte1             ; its faster, and when writing
+        movsb                           ; a word to location 65535 it
+        dec     cx                      ; screws up - writing word-aligned
+@@SkipByte1:                            ; avoids this.
+        mov     bx,cx
+        shr     cx,1
+        cmp     cx,0
+        je      @@SkipIntegers2
+        rep     movsw
+@@SkipIntegers2:
+        test    bx,01b
+        jz      @@NextLine
+        movsb
+@@NextLine:
+        add     di,300
+        sub     ax,1
+        jnz     @@drawhoriz
+
+@@endproc:
+        pop     es
+        pop     ds
+        pop     si
+        pop     di
+        pop     bp
+        ret
+ENDP    _BufDrawBlk
+
+PROC    _BufDrawBlkAddr
+        ADDR    EQU [bp+LARGESMALL]
+        BLOC    EQU [bp+2+LARGESMALL]
+
+        push    bp
+        mov     bp,sp
+        push    di
+        push    si
+        push    ds
+        push    es
+  
+        mov     ax,[_ScratchSeg]
+        mov     es,ax
+        mov     di,ADDR
+
+        lds     si,BLOC
+      
+        mov     ax,20  ; width of box
+@@drawhoriz:
+        mov     cx,20
+        test    di,01b                  ; Write the bytes Word-aligned.
+        jz      @@SkipByte1             ; its faster, and when writing
+        movsb                           ; a word to location 65535 it
+        dec     cx                      ; screws up - writing word-aligned
+@@SkipByte1:                            ; avoids this.
+        mov     bx,cx
+        shr     cx,1
+        cmp     cx,0
+        je      @@SkipIntegers2
+        rep     movsw
+@@SkipIntegers2:
+        test    bx,01b
+        jz      @@NextLine
+        movsb
+@@NextLine:
+        add     di,300
+        sub     ax,1
+        jnz     @@drawhoriz
+
+@@endproc:
+        pop     es
+        pop     ds
+        pop     si
+        pop     di
+        pop     bp
+        ret
+ENDP    _BufDrawBlkAddr
+
+
+
+PROC    _BufGetBlk
+        SX      EQU [bp+LARGESMALL]
+        SY      EQU [bp+2+LARGESMALL]
+        BLOC    EQU [bp+4+LARGESMALL]
+        MEM     EQU [bp+8+LARGESMALL]
+        push    bp
+        mov     bp,sp
+        push    di
+        push    si
+        push    ds
+        push    es
+             
+
+        mov     si,[_zeroaddon]
+        mov     ax,[_ScratchSeg]
+        mov     ds,ax
+
+        mov     ax,SY   ;map starting point into di
+        mov     dx,320
+        mul     dx
+        add     si,ax
+        add     si,SX
+
+        les     di, BLOC
+
+        mov     ax,20  ; width of box
+        @@drawhoriz:
+        mov     cx,20  ; length of box
+        rep     movsb
+        add     si,300
+        sub     ax,1
+        jnz   @@drawhoriz
+
+@@endproc:
+        pop     es
+        pop     ds
+        pop     si
+        pop     di
+        pop     bp
+        ret
+ENDP    _BufGetBlk
+
+PROC    _BufGetBlkAddr
+        ADDR    EQU [bp+LARGESMALL]
+        BLOC    EQU [bp+2+LARGESMALL]
+        MEM     EQU [bp+6+LARGESMALL]
+        push    bp
+        mov     bp,sp
+        push    di
+        push    si
+        push    ds
+        push    es
+             
+
+        mov     ax,[_ScratchSeg]
+        mov     si,ADDR
+        mov     ds,ax
+
+        les     di, BLOC
+
+        mov     ax,20  ; width of box
+        @@drawhoriz:
+        mov     cx,20  ; length of box
+        rep     movsb
+        add     si,300
+        sub     ax,1
+        jnz   @@drawhoriz
+
+@@endproc:
+        pop     es
+        pop     ds
+        pop     si
+        pop     di
+        pop     bp
+        ret
+ENDP    _BufGetBlkAddr
+
+
+
+
+PROC    _BufDraw4x4Addr
+        ADDR    EQU [bp+LARGESMALL]
+        BLOC    EQU [bp+2+LARGESMALL]
+
+        push    bp
+        mov     bp,sp
+        push    di
+        push    si
+        push    ds
+        push    es
+  
+        mov     ax,[_ScratchSeg]
+        mov     es,ax
+        mov     di,ADDR
+
+        lds     si,BLOC
+      
+        mov     ax,4  ; width of box
+        @@drawhoriz:
+        mov     cx,2  ; length of box
+        rep     movsw
+        add     di,SCRNX-4
+        add     si,BLEN-4
+        sub     ax,1
+        jnz     @@drawhoriz
+
+@@endproc:
+        pop     es
+        pop     ds
+        pop     si
+        pop     di
+        pop     bp
+        ret
+ENDP    _BufDraw4x4Addr
+
+END
+
+

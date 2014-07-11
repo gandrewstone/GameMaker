@@ -1,0 +1,21 @@
+
+ Start  Stop   Length Name               Class
+
+ 00000H 002C4H 002C5H _TEXT              CODE
+ 002C6H 002C6H 00000H _DATA              DATA
+
+
+Detailed map of segments
+
+ 0000:0000 02C5 C=CODE   S=_TEXT          G=DGROUP  M=gm.asm     ACBP=48
+ 0000:02C6 0000 C=DATA   S=_DATA          G=DGROUP  M=gm.asm     ACBP=48
+
+  Address         Publics by Name
+
+
+  Address         Publics by Value
+
+
+Program entry point at 0000:0100
+Warning: No stack
+

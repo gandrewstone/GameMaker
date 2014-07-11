@@ -1,0 +1,27 @@
+  Get   items  by  shooting  a
+monitor  with  your  claw gun.
+The  item will be released and
+fly to you.
+
+
+       Movement techniques
+
+  To slide, run and duck.  You
+can scoot under  things  using
+this technique. If you need to
+reach  high  objects,  you can
+jump high by  pressing all the
+jump keys rapidly.
+
+
+            Objects
+
+100 Points Monitor:
+  Gives you 100 points (duh!)
+
+Shell: Gives you one Hit Point
+
+Shell Monitor: Five Hit Points
+
+Lobster: Gives you a life
+

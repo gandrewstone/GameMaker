@@ -1,0 +1,5221 @@
+/*---------------------------------------------------------------------*/
+/* playgame.c -- plays a game made using gamemaker                     */
+/* Created:  JUNE 20,1991    Programmer:   Andy Stone                  */
+/*                                                                     */
+/* Last Edited: July 8, 1993    Andy Stone     Version: 2.04           */
+/* Feb 21, 94 - MicroChannel kbd support added.                        */
+/* Aug  8, 94 - GIFs,FLIs between scene support + new grator format.   */
+/*---------------------------------------------------------------------*/
+
+//#pragma inline
+#include <dos.h>
+#include <bios.h>
+//#include <stdio.h>
+#include <new.h>
+#include <conio.h>
+#include <alloc.h>
+#include <string.h>
+#include <process.h>
+#include <stdlib.h>
+
+#include "svga.h"
+#include "gen.h"
+#include "gmgen.h"
+#include "pal.h"
+#include "fastcord.hpp"
+#include "graph.h"
+#include "mousefn.h"
+#include "jstick.h"
+#include "scrnrout.h"
+#include "windio.h"
+#include "palette.h"
+#include "gif.h"
+#include "bloc.h"
+#include "mon.h"
+#include "map.h"
+#include "char.h"
+#include "grator.h"
+#include "sound.h"
+#include "dirty.h"
+
+#include "viddrive.hpp"
+#include "fli.h"
+
+#ifndef MOUSE
+#error MOUSE needs to be defined! (old mouse is used in playgame).
+#endif
+
+extern int mouinstall;
+
+// Needed definitions from "time.h"
+typedef long time_t;
+time_t   _Cdecl time(time_t _FAR *__timer);
+
+//#define DEBUG   printf
+//#define DEBUGPRT(x)
+
+
+#define TRANSCOL 255     // The value that is transparent in _pic fns
+#define DEAD       2
+
+#define CHRSEQ chr.sq[chr.cseq]
+#define CHRFRAME CHRSEQ.fr[chr.cframe]
+
+#define MAXKEYS          20      // Every Finger and Toe, hee hee hee...
+#define MAXGRAV          11
+#define SCRNBLEN         16
+#define SCRNBWID         10
+#define GRAVSPEED        1
+#define MONMOVESPEED     1
+#define JSTICKPOLLSPEED  1
+#define JSTICKKEY        1       // Since 1 is ESC, which can't be on the stack, we are safe
+#define ATTACKX          8       // Boundaries
+#define ATTACKY          5
+#define RESETTIMER       1
+#define OFFSCRN         -100
+#define SLOWSCROLLAMT    4
+#define SCRSPDX          40
+#define SCRSPDY          40
+#define SCROLLPERMOVE    6
+#define MaxMonsShown     50
+
+#define CRTCINDEX      0x3D4
+#define CRTCADDRESS    0x3D5
+
+//#define SOLDEBUG
+//#define GENDEBUG
+//#define HITDEBUG
+//#define NOMONS
+//#define NOCHAR
+//#define NOBACKANI
+//#define SCROLLDEBUG
+//#define WAYSLOW
+//#define REALLYFAST
+//#define MEMDEBUG
+#define RECORDER
+#define DIGITALSND
+//#define REPLAYHIGHSCORES
+ 
+typedef struct
+  {
+  unsigned char key;
+  int seq,frame;
+  } onekey;
+
+typedef struct
+  {
+  int DScroll;
+  int Ctr;
+  int Iters;
+  void Clear(void) { DScroll = Ctr = Iters = 0; }
+  } BresScroll;
+
+class minfo
+  {
+  boolean ChkVertWalls(Coord2d *Move, Coord2d *Temp);
+  boolean ChkHorizWalls(Coord2d *Move, Coord2d *Temp);
+  public:
+  char fromchar;        // Birthed monsters can't hurt the character
+  Coord2d Delta;        // Bresenham's algorythm - dx = (curpos-dest)
+  int curx[2],cury[2];  // [0] map position [1] pos. in block
+  Coord2d Target;       // Where the monster is going if in a path.
+  int     offl,offs;    // xy ratios in Bresenham's line algorithm
+  //21
+  char    CurMarch;     // index to normal=0 or attack=1 pattern
+  int     CurPic;       // Index in mon[].pic[Curpic] of monster picture
+  uchar   orient;       // How to flip, rotate picture
+  uchar  *save;         // address to saved screen behind monster
+  char    PicDrawn;     // Whether or not there is a picture to erase
+  Coord2d ScrPos;       // Screen coords of monster
+  Coord2d OldPos;       // Where to erase the picture
+  uint    EraseAddr;
+  uint    DrawAddr;
+  char    dest;         // Index to Next Position of Monster in monstruct
+  ulongi  NextAni;      // Time to animate next
+  ulongi  NextMove;     // Time to move next
+  ulongi  BirthTime;    // The time the monster was born
+
+  Coord2d Bresenhams(int speed);
+  boolean ChkWalls(Coord2d *Move);
+  void    DistToPlace(int x, int y);
+  void    DistToPlace(Coord2d Spot);
+  void    Draw(int MMnum);
+  void    Erase(void);
+  void    Reset(void);
+  boolean CalcDraw(void);
+  };
+
+static boolean MonEndPath(int MMnum,int MONnum);
+
+typedef struct
+  {
+  long int score;
+  unsigned char  *savetop;     // save space for behind the top of the character
+  unsigned char  *savebottom;  // save space for behind the bottom of the char
+  char update;
+  char topthere;      // TRUE if character has a top block to erase
+  char bottomthere;   // TRUE if character has a bottom block to erase
+  char curtop;        // The current top picture
+  char curbottom;     // The current bottom picture
+  int nextx,nexty;    // Where character will be located on the screen.
+  int scrx,scry;      // Where character should be drawn.
+  int oldx,oldy;      // where character should be erased.
+  unsigned int EraseAddr; // address in mem of last place character was.
+  char netx,nety;     // Delta of character's last 2 moves
+  int gravx,gravy;    // Current velocity due to gravity
+  int hitpts;         // Current # of hitpoints the char has
+  int lives;          // Current # of lives -1 = game over
+  unsigned long int NextAni; // Next time to move the character
+  unsigned char inv[MAXINV]; // Array of inventory items gathered
+  int meter[MAXSEQ+10];      // Repetition counters
+  char seqon[MAXSEQ];
+  } cinfo;
+
+typedef struct               // Structure which contains map coords of
+  {                          // blocks the character is touching.
+  int blks[6][2];            // Contains x,y map coords
+  unsigned char blknum[6];   // Contains block number
+  } touchblk;
+
+typedef struct
+  {
+  ulongi zero;           // Where screen is in memory for playgame only
+  int    nx,ny;          // 1-20, Where edge of screen is in the edge block
+  int    Totalx,Totaly;  // How far to move screen in next 1/18 sec, - = mov screen up or left
+  int    distx,disty;    // distance in blocks to center of screen.
+  int    InMotion;       // 4 Boolean direction flags.
+  int    MaxX,MaxY,MinX,MinY;
+  int    LeftStop,RightStop,UpStop,DownStop;
+  int    movx,movy;
+  char   LittleShiftx,LittleShifty;
+  uchar  up,down,left,right;
+  BresScroll Movx,Movy;
+  void Clear(void) // Set Page scrolling variables to initial states.
+    {
+    InMotion                    = 0;
+    nx=ny                       = 0;
+    zero                        = 0;
+    Totalx = Totaly             = 0;
+    distx  = disty              = 0;
+    movx   = movy               = 0;
+    LittleShiftx = LittleShifty = 0;
+    Movx.Clear();
+    Movy.Clear();
+    }
+  } ScrollStruct;
+
+typedef struct
+  {
+  uchar  blnum;
+  ulongi nexttime;
+  } BlkMonStruct;
+
+static void SimKeyPress(unsigned char key);
+
+#ifdef  RECORDER
+#define RECLEN 1000
+#define RECORD 1
+#define PLAYBACK 2
+
+typedef struct
+  {
+  uint DeltaTime;
+  uchar key;
+  } RecordStruct;
+
+class Recording
+  {
+  public:
+  int              RecIndex;
+  int              LastRecordedKey;
+  char             RecFile[MAXFILENAMELEN];
+  RecordStruct    *Rec;
+  ulongi           RecordTimer;
+  char             RecFlag;
+  ulongi           LastKeyPress;
+  boolean          Paused;
+
+  Recording()
+    {
+    RecFlag = RECORD;
+    Paused  = False;
+    Rec     = new RecordStruct [RECLEN];
+    Restart();
+    }
+  ~Recording() { if (Rec) { delete Rec; Rec=NULL; } }
+
+  void    DoRecord(uchar key);
+  void    DoPlayBack(void);
+  void    InitRecord(char *file) { RecFlag=RECORD; strcpy(RecFile,file); }
+  boolean InitPlayback(char *file);
+  void    Save(char *File=NULL);
+  void    Pause(void)   { Paused=True; }
+  void    UnPause(void) { Paused=False; }
+
+  void    SaveGame(FILE *fp)
+    {
+    fwrite(this,sizeof(Recording),1,fp);
+    fwrite(Rec,sizeof(RecordStruct),RecIndex,fp);
+    }
+  void    LoadGame(FILE *fp)
+    {
+    RecordStruct *Temp=Rec;
+    fread(this,sizeof(Recording),1,fp);
+    Rec=Temp;
+    fread(Rec,sizeof(RecordStruct),RecIndex,fp);
+    }
+  boolean Load(void);
+  void    Stop(void) { RecFlag=0; Restart(); }
+  void    Restart(void)
+       { LastKeyPress = 0; RecIndex = 0; RecordTimer = 0; UnPause(); }
+  };
+
+Recording        *Rec;
+#endif RECORDER
+
+GameClass        Game;
+monstruct       *mon                = NULL;
+minfo           *mi                 = NULL;
+BlkMonStruct    *BlkMon             = NULL;   // Next time to birth monster for blocks.
+blkstruct       *blks[3]            = {NULL,NULL,NULL};   // addresses - Backgnd[0],mon[1],char[2]
+monmapstruct     mm        [LASTMM];
+sndstruct        snd       [LASTSND];
+mapstruct far    map       [MLEN][MWID];
+char             DigiSnd   [LASTSND][9];
+RGBdata          colors    [256];
+ScrollStruct     scroll;
+RGBdata          Black     (0,0,0);
+RGBdata          RGBYellow (63,63,0);
+RGBdata          RGBRed    (63,10,10);
+RGBdata          RGBBlue   (10,10,63);
+RGBdata          RGBPurple (50,10,50);
+cinfo            ci;
+chrstruct        chr;
+Coord2d          ScrnLowBnd={1,1}, ScrnUpBnd={SIZEX-BLEN,SIZEY-BLEN};
+
+uint    FirstEmptyMM = 0;
+uchar   monsolid     = 0;      // > 0 means that a monster is limiting movement.
+uchar   MMsolid      = LASTMM; // Use SOLTOP, BOT,LEF,RIG to find which dir.
+uchar   NoMons       = FALSE;
+
+uchar   MaxBlkMon    = 0;  // Number of blocks which birth monsters.
+ulongi  nxtchg[BACKBL];    // Next time array for each block change.
+uchar   blkmap[BACKBL];    // Current block displayed on map Array.
+
+int                    mx=0,my=0; // Screen upperleft in the map[].
+extern char           *FontPtr;
+ulongi                 clock;
+extern volatile ulongi TimerCounter;
+volatile ulongi        SndClock        = 1;
+volatile uchar         CurSnd          = LASTSND;
+volatile int           AtNote          = 0;
+char                   soundon         = TRUE;
+char                   anysound        = FALSE;
+extern uint            zeroaddon;
+extern uchar           zeropage;
+extern VideoCards far  Vcard;
+
+volatile onekey        keystack[MAXKEYS];
+volatile int           keystkptr       = 0;
+volatile int           PendCtr         = 0;
+volatile uchar         KeysPending[30];
+
+uchar                 *MonsterMem=NULL;
+uint                   MonsOnScrn=0;
+
+ConfigStruct           cs;                  // Joystick coordinates array.
+char                   jstickon=FALSE;
+extern char            joyinstall;
+
+extern VideoMode       MemScrn;
+extern VideoMode       VGAScrn;
+
+// static char            FromGM[6] = {0,0,0,0,0,0};
+// These are not needed because I use .asm keyboard routines now.
+//volatile unsigned char key=0;       // Used in the keyboard interrupt routine.
+//volatile unsigned char oldkey=0;    // In kbd int, stops key repeats.
+//volatile unsigned char keyFlag=0;   // Used in the keyboard interrupt routine.
+//volatile char          in=FALSE;    // True if in keyboard interrupt routine.
+
+volatile char          keydn[128];    // TRUE if key w/ scan code index is pressed.
+extern   uchar         ascii[128];    // ScanCode to ascii xlat table.
+volatile uchar         curkey   = 0;
+int                    oldscene = 0;  // Scene 0 is the startup scene
+int                    curscene = 0;
+int                    doscene,prevscene,linkin;
+static void interrupt  (*OldKbd) (...);
+static void interrupt  (*OldTimer)(...);
+
+static char            gamename [MAXFILENAMELEN];
+static char            TempFname[MAXFILENAMELEN];
+
+int                    Instruments;
+char                   SongInfo       = 0;
+char                   MicroChnl;
+
+extern unsigned        _stklen=15000U;
+
+extern boolean         RestorePal;
+
+/*--------------------------------------------------------------------------*/
+/*                         FUNCTION    PROTOTYPES                           */
+/*--------------------------------------------------------------------------*/
+
+extern int FindFiles(const char *filespec,const char *path,char *result,uint max,uint *Idx);
+
+extern "C" char MicroChannel(void);
+extern "C" char KeyBoardOff(void);   // The char is just so I can change al.
+extern "C" char KeyBoardOn (void);   // The char is just so I can change al.
+
+static int     AskConfigData (ConfigStruct *cs);
+static void    DrawConfigScrn(ConfigStruct *cs,int Vga,char *DrvrName,char *DrvrPath);
+static void    DrawSurf      (int x,int y,int xlen,int ylen);
+static void    CuteBox       (int x,int y,int x1,int y1,char col1,char col2);
+
+static int     BresenhamScroll(BresScroll *b,int speed);
+
+static void    DoFunKy      (int keynum);
+static ulongi  LoadGame     (void);
+static void    SaveGame     (unsigned long int SndTimeSaved);
+static boolean Display_File (char *filen,Pixel col,uint PauseTime=32000);
+static void    GMabout      (void);
+static void    HelpFiles    (void);
+static void    Display_Invent(void);
+static void    Joy_Config   (ConfigStruct *cs);
+static char    getjoydat    (unsigned int *x, unsigned int *y,unsigned int *butn);
+static char    DropBloc     (void);
+static int     PickupBloc   (void);
+static void    checkseq_fortie(unsigned char block,char setting);
+
+#define SAVECOLS NULL
+static boolean ShowGraphic(const char *File,RGBdata *Cols=NULL,int PauseLen=-1);
+
+static unsigned int chkdowns  (touchblk *t);
+static unsigned int chkups    (touchblk *t);
+static unsigned int chkrights (touchblk *t);
+static unsigned int chklefts  (touchblk *t);
+
+static void StealKbd(void);
+extern "C" void interrupt NewMicroKbd(...);
+extern "C" void interrupt NewATKbd   (...);
+static void interrupt NewTimer       (...); // Advances timer every clock tick.
+static void PopKey       (uchar key);
+static void PushKey      (void);
+static void CleanKeyStk  (void);
+static void cleanup      (void);
+
+static int  DoCollision  (int mm1,int mm2,int where);
+static char PicChkTouch  (int x1,int y1,unsigned char *pic1, int x2,int y2,unsigned char *pic2);
+static int  ChkMonChr    (int MMnum);
+static char MonInRange   (int MMnum);
+
+static void  play        (int startlink);
+static void  drawmap     (int x,int y);
+static void  initalldata (void);
+static void  changeblks  (void);
+static void  GetTouchbl  (touchblk *t);
+static void  CheckTouch  (void);
+static char  really_checktouch(int x,int y,unsigned char bnum);
+static uchar DoBlockTouchChar(blkstruct *blk);
+static void  chkmapbounds (void);            // Check to see is outside of map boundaries
+static void  chkscrnbounds(int *tx,int *ty); // Makes sure char stays within screen bounds
+static int   MoveCharGrav (int fn);          // fn=0 Test for Grav. fn=1 Reset timer
+
+static void     BlocBirthMon(void);
+static void     CharBirthMon(int x,int y,int mon);
+static int      BirthMon(int MMnum,char mon,int x,int y);
+static boolean  KillMon(int MMnum);
+static int      moveallmons(void);
+static boolean  movechars(void);
+static void     UpdateScreen(int monmoved);
+static void     erasechars(void);
+static void     drawchars(void);
+static int      MonPicNum(int MMnum);
+
+static int  chksolids(int xmotion,int ymotion,touchblk *t);
+static void OnGround(int SolidInfo);
+
+static int loadscene  (int scnum);
+static int loadspecblk(const char *file,int numblks,blkstruct *addr);
+static int loadspecmap(const char *file);
+static int loadspecmon(const char *file,int nummons);
+       int loadspecany(const char *fname,const char *ext,const char *path,unsigned int bytes, char *addr);
+static int loadspecsnd(const char *fname);
+static int playscene  (int curscene,int oldscene,int &oldlink);
+static int chklnk     (int cursc);
+static boolean onscrn (int x,int y,Coord2d *ret);
+
+static void Sdrawspbloc   (int x,int y,char dir,blkstruct *blk);
+
+static int  ChangeScroll  (void);
+static void DrawScroll    (int speed);
+static void drawhorizside (uint offset,int mx,int my,int nx,int ny);
+static void drawvertside  (uint offset,int mx,int my,int nx,int ny);
+
+static boolean ShiftEverything(Coord2d Shift);
+
+static void SlowKeys (void);
+static void FastKeys (void);
+static void SlowTimer(void);
+static void FastTimer(void);
+
+static char HandleJStick(int fn); // 0=handle, RESETTIMER=reset internal clock
+
+extern int  CheckHighScores(char *gamename,long int score);
+extern void ShowHighScores (char *gamename,long int score=-1);
+
+
+static void StartSceneInits(Coord2d StartPosition);
+static void StartGameInits (void);
+
+static void GameMenu  (int col);
+static void DoGame    (void);
+
+static void DrawDefaultScrn(RGBdata *colors);
+
+static uchar DoSound(uchar sndnum);
+                         
+static void ShowVidMem(void);
+void GetMem(char *s,char *mem);
+
+//--------------------------------------------------------------------------\\
+//                                 C O D E                                  \\
+//--------------------------------------------------------------------------\\
+
+inline uchar  Ascii(uchar scan)
+    {
+    int scancode = scan&0x7F;
+//    if (keydn[LEFTSHIFT]|keydn[RIGHTSHIFT]) return(ascii[scancode+0x80]);
+    return(ascii[scancode]);
+    }
+
+
+
+int  GetKey(char Peek)
+  {
+  union { uint i; uchar c[2]; } RetVal;
+
+  RetVal.i=0;
+
+  Rec->DoPlayBack();
+
+  if ((!bioskey(1))&&(PendCtr))
+    {
+    RetVal.c[1] = KeysPending[PendCtr-1];
+    if (Peek==0) PendCtr--;
+    RetVal.c[0] = Ascii(RetVal.c[1]);
+    return(RetVal.i);
+    }
+
+  RetVal.i = bioskey(Peek);
+  if (RetVal.i) Rec->DoRecord(RetVal.c[1]);
+  return(RetVal.i);
+  }
+
+#ifdef RECORDER
+void Recording::Save(char *File)
+  {
+  FILE *fp;
+  if (RecFlag>0)
+    {
+    if (File==NULL) File=RecFile;
+    if ((fp=fopen(File,"wb"))!=NULL)
+      {
+      fwrite(Rec,sizeof(RecordStruct),RecIndex,fp);
+      fclose(fp);
+      }
+    }
+  }
+
+boolean Recording::Load(void)
+  {
+  FILE *fp;
+  if ((fp=fopen(RecFile,"rb"))!=NULL)
+    {
+    LastRecordedKey=fread(Rec,sizeof(RecordStruct),RECLEN,fp);
+    Restart();
+    fclose(fp);
+    return(True);
+    }
+  return(False);
+  }
+
+
+boolean Recording::InitPlayback(char *file)
+  {
+  strcpy(RecFile,file);
+  if (Load()) { RecFlag=PLAYBACK; return(True); }
+  return(False);
+  }
+
+void Recording::DoPlayBack(void)
+  {
+  if (!Paused)
+    {
+    RecordTimer++;
+    if (RecFlag==PLAYBACK)
+      {
+      while ((RecIndex<LastRecordedKey)&&(LastKeyPress+Rec[RecIndex].DeltaTime<=RecordTimer))
+        {
+        KeysPending[PendCtr] = Rec[RecIndex].key;
+        PendCtr++;
+        LastKeyPress+=Rec[RecIndex].DeltaTime;
+        RecIndex++;
+        }
+      }
+    }
+  }
+
+void Recording::DoRecord(uchar key)
+  {
+  if (!Paused)
+    {
+    if ((RecFlag==RECORD)&&(RecIndex<RECLEN))
+      {
+      Rec[RecIndex].key=key;
+      Rec[RecIndex].DeltaTime=RecordTimer-LastKeyPress;
+      LastKeyPress=RecordTimer;
+      RecIndex++;
+      }
+    }
+  }
+
+#endif
+
+
+
+QuitCodes main(int argc,char *argv[])
+  {
+#ifdef TRANSFER
+  RestorePal=True;
+#else
+  int attr= 0;
+  char *w = NULL;
+  int       choice = 1;
+#ifdef CHKREG
+  if ((argc < 2) || (strcmp(argv[1],OKMSG)!=0)) RestorePal=True;
+#endif
+#endif
+
+  randomize();
+  initmouse();
+  TextMode();
+        // Show the video BIOS area
+  if ((argc==2)&&(strcmpi(argv[1],"ShowVideoMemory")==0))
+    {
+    ShowVidMem();
+    TextMode();
+    return(quit);
+    }
+
+  //--Get memory for everything
+#ifdef RECORDER
+  Rec    = new Recording;
+#endif
+  ci.savetop    = new Pixel     [BLEN*BLEN];
+  ci.savebottom = new Pixel     [BLEN*BLEN];
+  MonsterMem    = new Pixel     [BLEN*BLEN*MaxMonsShown];
+  mi            = new minfo     [LASTMM];
+  mon           = new monstruct [LASTMON];
+  FontPtr       = GetROMFont();
+  if (!InitDirty())   // If any allocs fail the last one must
+    {                 // since it is the biggest.
+    errorbox("NOT ENOUGH MEMORY!","  (Q)uit");
+    exit(quit);
+    }
+  #ifdef MEMDEBUG
+  printf ("EXTRA MEMORY:%lu\n",farcoreleft());
+  PauseTimeKey(2);
+  #endif
+  if (argc>1)
+    {
+#ifdef RECORDER
+    if (strcmpi(FileExt(argv[1]),".rec")==0)
+      if (Rec->InitPlayback(argv[1])) printf("Playback with %s.\n",argv[1]);
+#endif
+    }
+
+  InitJStick();
+
+  if ((!LoadConfigData(&cs))
+      ||(strcmpi((const char *) cs.SndDrvr,"NotInit")==0)
+      ||((argc>0)&&(strncmpi(argv[1],"config",6)==0)))
+    {
+    GraphMode();
+    if (AskConfigData(&cs)) SaveConfigData(&cs);
+    TextMode();
+    }
+
+  if (cs.ForceSnd==SndBlaster) SongInfo=SoundCard(&cs);
+  else SongInfo=0;
+  if ((MicroChnl=MicroChannel())==TRUE) printf("MicroChannel Bus Detected!\n");
+
+  #ifdef DIGITALSND
+  if (cs.ForceSnd==SndBlaster) InitSbVocDriver(&cs);
+  #endif
+  if (cs.ForceVGA==NoType) Identify_VGA();
+  else Force_VGA(cs.ForceVGA);
+
+  PauseTimeKey(2);
+  TextMode();
+  
+  initalldata();
+  atexit(cleanup);
+
+#ifdef TRANSFER
+  if (!ParseFileName(argv[0],gamename,WorkDir)) return(2);
+  strcpy(TempFname,gamename);
+  strcat(TempFname,".gam");
+  if (!Game.Load(TempFname))
+    {
+    printf("You are missing %s!  I can't do anything without it!",TempFname);
+    PauseTimeKey(4);
+    return(quit);
+    }
+  DoGame();
+  TextMode();
+  return(quit);
+#else
+  choice = 1;
+  while (choice!=3)
+    {
+#ifdef MEMDEBUG
+    printf ("Choice %d",choice);
+    printf ("EXTRA MEMORY 1:%lu\n",farcoreleft());
+#endif
+    if (choice==1)
+      {
+      if (w!=NULL) { delete w; w=NULL; }
+      do
+        {
+        TempFname[0]=0;
+        if (!getfname(5,5,"Enter game to play: ","*.gam\0",TempFname)) return(menu);
+        if (!ParseFileName(TempFname,gamename,WorkDir)) return(menu);
+        *FileExt(gamename) = 0;
+        } while (gamename[0]==0);
+      if (!Game.Load(TempFname))
+        {
+        errorbox("Incorrect Data File Version (You are running Game-Maker Version "GMVER").","To correct, load this game into the integrator, and then save it.");
+        return(menu);
+        }
+      DoGame();
+      TextMode();
+      choice++;
+      }
+    else if (choice==2)
+      {
+      if (SongInfo) ShutSbVocDriver();
+      GraphMode();
+      if (AskConfigData(&cs)) SaveConfigData(&cs);
+      TextMode();
+
+      if (cs.ForceVGA!=NoType) Force_VGA(cs.ForceVGA);
+      else Identify_VGA();
+      if (cs.ForceSnd==SndBlaster)
+        {
+        SongInfo=SoundCard(&cs);
+        SongInfo &= ~MUSICOFF;  // Turn Music on.
+        }
+      else SongInfo=0;
+      #ifdef DIGITALSND
+      if (cs.ForceSnd==SndBlaster)
+        {
+        InitSbVocDriver(&cs);
+        soundon=TRUE;
+        }
+      #endif
+      }
+
+    if ((choice==3)||(choice==0)) break;
+    choice++;
+    if (w==NULL) w = new char [2000];
+    attr = openmenu(30,5,20,7,w);
+    moucur(FALSE);
+    writestr(30,5,attr+PGMTITLECOL, " PLAYGAME     V"GMVER" ");
+    writestr(30,6,attr+PGMTITLECOL, "  By Gregory Stone  ");
+    writestr(30,7,attr+PGMTITLECOL, " Copyright(C) 1994  ");
+    writestr(31,9, attr+14, " Play a Game!");
+    writestr(31,10,attr+14, " Configure");
+    writestr(31,11,attr+14, " Quit");
+    choice=vertmenu(30,9,20,3,choice);
+    closemenu(30,5,20,7,w);
+    }
+  if (w!=NULL) { delete w; w=NULL; }
+  return(menu);
+  #endif
+  } 
+
+
+void StopSong(void)
+  {
+  if ((SongInfo&(CARDEXIST|SONGLOADED)) == (CARDEXIST|SONGLOADED))
+    {                     // Turn off music currently being played in order to
+    StopIt();             // replace it with the music for the loaded scene.
+    sbfreemem();          // Free memory
+    SongInfo &= ~SONGLOADED;  // Erase bit 2 (no song)
+    }
+  }
+
+boolean PlaySong(const char *File)
+  {
+  if (SongInfo&SONGLOADED) StopSong();
+  if ((File[0]!=0)&&(SongInfo&CARDEXIST))      // Board installed
+    {
+    if (!InitMusic(&Instruments,(char*)File))
+      {
+      SongInfo|=SONGLOADED;   // Song is valid--start playing it!
+      return(True);
+      }
+    SongInfo &= ~SONGLOADED;  // set bit two to zero
+    StopIt();                 // turn off music
+    }
+  return(False);
+  }
+
+boolean InitHiScoreRec(void)
+  {
+  char Files[150];
+  int NumRecs;
+  uint Last=0;
+
+  if ( (NumRecs=FindFiles("data*.rec",WorkDir,Files,150,&Last)) >0)
+    {
+    Last=random(NumRecs);
+    MakeFileName(TempFname,WorkDir,&Files[Last*14],"");
+    return(Rec->InitPlayback(TempFname));
+    }
+  return(False);
+  }
+
+int GVertMenu(int x,int y,int Deltay,int NumChoices,int Color,int IdleTime=0xFFFF,int choice=1)
+  {
+  Pixel   PrevCol;
+  boolean done=False;
+  int     inkey=0,mbuts=0;
+  ulongi  UserPauseStart;
+
+  if (mouinstall)
+    {
+    mouclearbut();
+    setmoupos(100,100);
+    }
+
+  PrevCol=GetCol(x,y-8+(choice*Deltay));
+  while(!done)
+    {
+    BoxFill(x,y-8+(choice*Deltay),x+5,y+4-8+(choice*Deltay),Color);
+    inkey=0;
+    UserPauseStart=TimerCounter;
+    while(!inkey)
+      {
+      int mx,my;
+      inkey=bioskey(1);
+      if (!inkey)
+        {
+        if (mouinstall)
+          {
+          moustats(&mx,&my,&mbuts);
+          if (my<90)        inkey = (UPKEY<<8);
+          else if (my>110)  inkey = (DOWNKEY<<8);
+          else if (mbuts>0) inkey = 13;
+          }
+        }
+      if (TimerCounter-UserPauseStart>(IdleTime*18)) inkey = 0x81; // TIME OUT!
+      }
+    if (mouinstall) setmoupos(100,100);
+    if (bioskey(1)) bioskey(0);
+    if (mbuts)      mouclearbut();
+    switch(inkey&255)
+      {
+      case 0:
+        BoxFill(x,y-8+(choice*Deltay),x+5,y+4-8+(choice*Deltay),PrevCol);
+        switch(inkey>>8)
+          {
+          case 72:
+            choice--;
+            break;
+          case 80:
+            choice++;
+            break;
+          }
+        if (choice<1) choice=NumChoices;
+        if (choice>NumChoices) choice=1;
+        PrevCol=GetCol(x,y-8+(choice*Deltay));
+        break;
+      case 13:
+        done   = TRUE;
+        break;
+      case 27:
+        done   = TRUE;
+        choice = 0;
+        break;
+      case 0x81:
+        done   = TRUE;
+        choice = NumChoices+1;
+        break;
+      }
+    }
+  return(choice);
+  }
+
+
+static void DoGame(void)
+  {
+  const int menustart = ((15*8)+1);
+  Pixel    Red,Blue;
+  int      choice=1;
+  Pixel   *TheGif=NULL;
+  RGBdata *ThePal=NULL;
+  char     out[MAXFILENAMELEN];
+  ulongi   UserPauseStart;
+  boolean  DemoDone=False;
+
+  GraphMode();
+  zeroaddon=0; zeropage=0;
+
+  //--------------------Get old timer and keyboard interrupts
+  OldTimer = getvect(0x8);
+  OldKbd   = getvect(0x9);
+
+  setvect(0x8,NewTimer);
+  FastTimer();
+
+  // Do the Title.
+  PlaySong(Game.File(0,1));       // Start Title music.
+  if (Game.FileExists(0,0)) ShowGraphic(Game.File(0,0));
+  if (Rec->RecFlag==PLAYBACK)
+    {
+    StopSong();
+    play(0);
+    SlowTimer();
+    if (SongInfo) ResetFM();      // Reset the FM chip
+    setvect(0x8,OldTimer);
+    return;
+    }
+
+  PlaySong(Game.File(0,3));       // Start Menu music
+  do
+    {
+    if (TheGif==NULL)             // Draw the user's menu screen
+      {
+      if (Game.FileExists(0,2)) ShowGraphic(Game.File(0,2),colors,0);
+      else
+        {
+        GraphMode();
+        DrawDefaultScrn(colors);  // If no menu screen draw the default screen
+        }
+      ThePal = new RGBdata [256];
+      TheGif = (Pixel*)MK_FP(ScratchSeg,0);    // Set it to the Dirty buffer.
+      GetScrn(TheGif);
+      if (ThePal!=NULL) GetAllPal(ThePal);
+      }
+    else
+      {
+      RestoreScrn(TheGif);
+      SetAllPal(ThePal);
+      memcpy(colors,ThePal,sizeof(RGBdata)*256);
+      }
+
+    Blue  = RGBBlue.Match(colors);
+    Red   = RGBRed .Match(colors);
+    GameMenu(Blue);
+
+    choice=GVertMenu(70,menustart,8,6,Blue,30,choice);
+    switch(choice)
+      {
+      case 1:
+        TheGif=NULL;
+        if (ThePal) { delete ThePal; ThePal=NULL; }
+        StopSong();
+        strcpy(TempFname,WorkDir);
+        strcat(TempFname,gamename);
+        strcat(TempFname,".rec");
+        Rec->InitRecord(TempFname);
+        play(0);
+        Rec->Save();
+        PlaySong(Game.File(0,3));  // Restart menu music.
+        break;
+      case 2:
+        if (TheGif) RestoreScrn(TheGif);
+        if (Game.FileExists(0,6)) ShowGraphic(Game.File(0,6),SAVECOLS);
+        else
+          {
+          GWrite(40,80,Red,"No game-specific instructions.");
+          PauseTimeKey(10);
+          }
+        break; 
+      case 3:
+        if (TheGif) RestoreScrn(TheGif);
+        PlaySong(Game.File(0,5));
+        if (Game.FileExists(0,4)) ShowGraphic(Game.File(0,4),SAVECOLS);
+        else
+          {
+          GWrite(40,80,Red,"No game-specific storyline.");
+          PauseTimeKey(10);
+          }
+        break; 
+      case 4:
+        if (TheGif) RestoreScrn(TheGif);
+        if (Game.FileExists(0,7)) ShowGraphic(Game.File(0,7),SAVECOLS);
+        else
+          {
+          GWrite(40,80,Red,"No game-specific credits given.");
+          PauseTimeKey(10);
+          }
+        break; 
+      case 5:   // High Score file
+        {
+        if (Game.FileExists(0,8)) ShowGraphic(Game.File(0,8),colors,0);
+        else if (TheGif) RestoreScrn(TheGif);
+        ShowHighScores(gamename,-1);
+        break;
+        }
+      case 7:   // Play a recording.
+#ifdef REPLAYHIGHSCORES
+        if ((Game.FileExists(0,11))&&(!DemoDone))
+          {
+          DemoDone=True;
+#else
+        if (Game.FileExists(0,11))
+          {
+#endif
+          if (Rec->InitPlayback(Game.File(0,11)))
+            {
+            TheGif=NULL;
+            if (ThePal) { delete ThePal; ThePal=NULL; }
+            StopSong();
+            play(0);
+            PlaySong(Game.File(0,3));  // Restart menu music.
+            }
+          }
+#ifdef REPLAYHIGHSCORES
+        else // Play a high score .rec file
+          {
+          DemoDone=False;  // Alternate between demo and recordings.
+          if (InitHiScoreRec())
+            {
+            TheGif=NULL;
+            if (ThePal) { delete ThePal; ThePal=NULL; }
+            StopSong();
+            play(0);
+            PlaySong(Game.File(0,3));  // Restart menu music.
+            }
+          }
+#endif REPLAYHIGHSCORES
+
+        choice=1;
+        break;
+      }
+    } while ((choice!=6)&&(choice!=0));
+
+  if (ThePal) { delete ThePal; ThePal=NULL; }
+
+  StopSong();
+  SlowTimer();
+  if (SongInfo) ResetFM();      // Reset the FM chip
+  setvect(0x8,OldTimer);
+  }
+
+static void DrawDefaultScrn(RGBdata *colors)
+  {
+  register int l;
+  BoxFill(0,0,SIZEX,SIZEY,0);
+  RandCols(colors);
+  SetAllPal(colors);
+  for (l=0;l<=100;l++) Box(40-(l*4)/10,100-l,280+(l*4)/10,180+(l*2)/10,l);
+  }
+
+static void GameMenu(int col)
+  {
+//  BoxFill(40,100,280,180,0);
+//  Box(40,100,280,180,col);
+  GWrite(12*8,13*8,col,Game.scns[0].desc);
+  GWrite(80,15*8,col,"Play");
+  GWrite(80,16*8,col,"Read Instructions");
+  GWrite(80,17*8,col,"Read Storyline");
+  GWrite(80,18*8,col,"See Credits");
+  GWrite(80,19*8,col,"See Highest Scores");
+  GWrite(80,20*8,col,"Quit");
+  }
+
+static void readyVgaRegs(void)
+  {
+  int v;
+  outportb(0x3d4,0x11);
+  v = inportb(0x3d5) & 0x7f;
+  outportb(0x3d4,0x11);
+  outportb(0x3d5,v);
+  }
+
+void CropScreen(void)  // Shorten the screen so wrap around painting invisible
+  {
+  int temp;
+  outportb(CRTCINDEX,0x1);            // cut off horizontally
+  outportb(CRTCADDRESS,0x4D);
+
+//  outportb(CRTCINDEX,0x11);           // lock registers 0-7
+//  outportb(CRTCADDRESS,(inportb(CRTCADDRESS)|128));
+
+  outportb(CRTCINDEX,0x12);           // Cut off vertically
+  temp=inportb(CRTCADDRESS);
+  outportb(CRTCADDRESS,temp-8);
+  }
+
+
+void UnCropScreen(void)  // Make the Screen the correct size.
+  {
+  int temp;
+  outportb(CRTCINDEX,0x1);            // restore Horizontal
+  outportb(CRTCADDRESS,79);
+
+//  outportb(CRTCINDEX,0x11);           // lock registers 0-7
+//  outportb(CRTCADDRESS,(inportb(CRTCADDRESS)|128));
+
+  outportb(CRTCINDEX,0x12);           // restore vertical.
+  temp=inportb(CRTCADDRESS);
+  outportb(CRTCADDRESS,temp+8);
+  }
+
+
+
+static void play(int curlink) // Link # off of scene 0 to start in
+  {
+  int oldlink=0;
+  char out[20];
+
+  SlowKeys();
+
+  oldscene=0;
+  StartGameInits();
+
+  curscene = Game.scns[0].links[curlink].ToScene;
+#ifndef TRANSFER                // Make sure the start pos != the end pos
+  int l;
+  for (l=0;l<MAXSCENELINKS;l++)
+    if ((Game.scns[curscene].links[l].ToScene==1)&&
+       (Game.scns[curscene].links[l].From.x==Game.scns[0].links[curlink].From.x)&&
+       (Game.scns[curscene].links[l].From.y==Game.scns[0].links[curlink].From.y))
+      {
+      int attr=63;
+      TextMode();
+      drawbox(8,4,70,15,attr,1,8);
+      clrbox (9,5,69,14,attr);
+      writestr(10,5,attr,"   Although you correctly drew links between the various");
+      writestr(10,6,attr,"scenes, you forgot to specify EXACTLY where in a scene");
+      writestr(10,7,attr,"you want the character to start and end (ie.win).  As a");
+      writestr(10,8,attr,"result, the starting place and the game won place are in");
+      writestr(10,9,attr,"the same position!  This means that player will win the");
+      writestr(10,10,attr,"game before he even starts playing.  I'm going to change");
+      writestr(10,11,attr,"the game won link temporarily, but you should go to the ");
+      writestr(10,12,attr,"integrator and fix the problem.");
+      writestr(10,13,attr,"Still Confused?  Read the Owner's Manual Section 4.8.2.");
+      writestr(10,14,attr,"              (fourth from the last paragraph)         ");
+      PauseTimeKey(120);
+      Game.scns[curscene].links[l].From.x +=  10;
+      Game.scns[curscene].links[l].From.y +=  10;
+      Game.scns[curscene].links[l].From.x %=MLEN;
+      Game.scns[curscene].links[l].From.y %=MWID;
+      GraphMode();
+      }
+#endif   
+  BoxFill(0,0,SIZEX,SIZEY,0);
+  readyVgaRegs();
+  CropScreen();
+#ifdef RECORDER
+  Rec->Restart();
+#endif
+
+  while ((curscene<Game.NumScenes)&&(curscene!=1))
+    {
+    if (Game.FileExists(curscene,PREGRAPHICFILEIDX)) ShowGraphic(Game.File(curscene,PREGRAPHICFILEIDX),NULL);
+    oldlink=curlink;
+    if (!playscene(curscene,oldscene,curlink)) break;
+    while(GetKey(1)) GetKey(0);           // Clear input devices
+    if (curlink>MAXSCENELINKS) break;     // ESC key hit or completely dead.
+    if (curlink!=MAXSCENELINKS)           // Equals means dead so do scene over
+      {                                   // Otherwise do the next scene
+      if (Game.FileExists(curscene,POSTGRAPHICFILEIDX)) ShowGraphic(Game.File(curscene,POSTGRAPHICFILEIDX),NULL);
+      oldscene=curscene;           // Save prev scene so link can be accessed
+      curscene=Game.scns[oldscene].links[curlink].ToScene; //Set next scene to correct #
+      }
+    else curlink=oldlink;
+    }
+
+  GraphMode();      // Set the Screen back to Full Size.
+  MoveWindow(0);
+  MoveViewScreen(0,0);
+  zeroaddon=0; zeropage=0;
+  Rec->Pause();
+  if (curscene==1)  // Game Won!
+    {
+    PlaySong(Game.File(1,1));
+    if (Game.FileExists(1,0)) ShowGraphic(Game.File(1,0),SAVECOLS);
+    }
+  if (curlink==MAXSCENELINKS+2)    // Dead Graphic.
+    {
+    PlaySong(Game.File(1,3));
+    if (Game.FileExists(1,2)) ShowGraphic(Game.File(1,2),SAVECOLS);
+    }
+  FastKeys();
+  BoxFill(0,0,SIZEX,SIZEY,0);    // Clear the screen.
+  SetAllPal(colors);
+  if (Rec->RecFlag!=PLAYBACK)
+    {
+    uint Position=CheckHighScores(gamename,ci.score);
+    if (Position)
+      {
+      sprintf(TempFname,"%sdata%d.rec",WorkDir,Position);
+      Rec->Save(TempFname);
+      }
+    }
+  else ci.score=-1;
+
+  // Put the high score whatever up.
+  if (Game.FileExists(0,8)) ShowGraphic(Game.File(0,8),colors,0);
+  else BoxFill(0,0,SIZEX,SIZEY,0);    // Clear the screen.
+  ShowHighScores(gamename,ci.score);
+  StopSong();
+  }
+
+
+class FileEntry
+  {
+  public:
+  char Name[16];
+  uint PauseLen;
+
+  void operator = (char *s)
+    {
+    int ctr=0;
+    PauseLen=0;
+    while ((*s!=' ')&&(*s!=0)&&(*s!=NEWLINE)&&(ctr<15))
+      {
+      Name[ctr] = *s;
+      s++; ctr++;
+      }
+    Name[ctr]=0;
+    while (*s==' ') s++;
+    if ((*s!=0)&&(*s!=NEWLINE)) PauseLen = atoi(s);
+    else PauseLen=0xFFFF;
+    }
+  };
+
+class FileListClass
+  {
+  static char Temp[MAXFILENAMELEN];
+  public:
+  FileEntry *File;
+  int MaxFiles;
+  FileListClass(const char *Name,uint PauseLen)
+    {
+    MaxFiles = 0;
+    File     = NULL;
+    uint     Length;
+    FILE *fp;
+    char s[82];
+    if ((fp=fopen(Name,"rt"))==NULL) return;
+    if ((File = new FileEntry [100])==NULL) { fclose(fp); return; }
+
+    while(fgets(s,81,fp)!=NULL)
+      {
+      File[MaxFiles]=s;
+      if (File[MaxFiles].Name[0]!=0)
+        {
+        MaxFiles++;
+        if (File[MaxFiles].PauseLen==0xFFFF) File[MaxFiles].PauseLen = PauseLen;
+        }
+      }
+    fclose(fp);
+    }
+  ~FileListClass() { if (File) delete File; File=NULL; }
+
+  char *FileName(int Idx)
+    {
+    if (Idx<MaxFiles)
+      {
+      strcpy(Temp,WorkDir);
+      strcat(Temp,File[Idx].Name);
+      return(Temp);
+      }
+    return(NULL);
+    }
+  };
+char FileListClass::Temp[MAXFILENAMELEN]="";
+
+static boolean ShowGraphic(const char *File,RGBdata *NewCols,int PauseLen)
+  {
+  const char *ExtPtr   = FileExt(File);
+  boolean     RetVal   = True;
+  boolean     MyCols   = False;
+  int         Key      = 0;
+
+  FreeSoundSample();
+
+  if (strcmpi(ExtPtr,".gif")==0)
+    {
+    if (PauseLen==-1) PauseLen = 15;
+    SetAllPalTo(&Black);
+    if (NewCols==NULL) { NewCols=new RGBdata [256]; MyCols=True; }
+    if (NewCols!=NULL)
+      {
+      if (DrawGif((char*)File,NewCols))
+        {
+        FadeTo(NewCols);
+        Key=PauseTimeKey(PauseLen)&255;
+        }
+      else GraphMode();
+      if (MyCols) delete NewCols;
+      }
+    }
+  else if (strcmpi(ExtPtr,".bkd")==0)
+    {
+    if (PauseLen==-1) PauseLen = 20;
+    SetAllPalTo(&Black);
+    if (NewCols==NULL) { NewCols=new RGBdata [256]; MyCols=True; }
+    if (NewCols!=NULL)
+      {
+      if (drawbkd((char*)File,NewCols))
+        {
+        FadeTo(NewCols);
+        Key=PauseTimeKey(PauseLen);
+        }
+      else GraphMode();
+      if (MyCols) delete NewCols;
+      }
+    }
+  else if (strcmpi(ExtPtr,".fli")==0)
+    {
+    FLI f;
+    if (PauseLen==-1) PauseLen = 0;
+    if (f.File.Open((char*)File))
+      {
+      f.Vid=&VGAScrn;
+      f.Pos.x=0; f.Pos.y=0;
+      f.View();
+      if (NewCols) GetAllPal(NewCols);
+      f.File.Close();
+      Key=PauseTimeKey(PauseLen);
+      }
+    }
+  else if (strcmpi(ExtPtr,".txt")==0)
+    {
+    if (PauseLen==-1) PauseLen = 90;
+    if (!NewCols) NewCols=colors;
+    Pixel Purple = RGBPurple.Match(NewCols);
+    RetVal       = Display_File((char*)File,Purple,PauseLen);
+    }
+  else if (strcmpi(ExtPtr,".lst")==0)
+    {
+    if (NewCols==NULL) { NewCols=new RGBdata [256]; MyCols=True; }
+    if (NewCols)
+      {
+      FileListClass FileLst(File,PauseLen);
+      for (uint i=0;i<FileLst.MaxFiles;i++)
+        {
+        if (!ShowGraphic(FileLst.FileName(i),NewCols,FileLst.File[i].PauseLen))
+          { RetVal=False; break; }
+        }
+      if (MyCols) delete NewCols;
+      }
+    }
+
+#ifdef MEMDEBUG
+  sprintf (TempFname,"ShowGraphic Mem:%lu\n",farcoreleft());
+  GWrite(10,10,RGBRed.Match(colors),TempFname);
+#endif
+  if ((Key&255)==27) RetVal=FALSE;
+  return(RetVal);
+  }
+
+static int playscene(int dosc,int prev,int &link)
+  {
+  #define ADJBLOC(a,b) blks[0][blkmap[map[(chr.y[0]+b)%MWID][(chr.x[0]+a)%MLEN].blk]]
+  int loop;
+  int tx,ty;
+  int     done     = FALSE;
+  int     newlink  = MAXSCENELINKS;
+  ulongi  oldSndclk= SndClock;
+  ulongi  OldClock = oldSndclk>>3;
+  boolean DoScroll = False;
+
+  clock            = OldClock;
+
+  doscene          = dosc;
+  prevscene        = prev;
+  linkin           = link;
+
+  /* Allocate Memory */
+  if (blks[0]==NULL) blks[0] = new blkstruct [BACKBL+1];
+  if (blks[1]==NULL) blks[1] = new blkstruct [MONBL+1];
+  if (blks[2]==NULL) blks[2] = new blkstruct [CHARBL+1];
+
+  /* Clear Screen */
+
+  SetAllPalTo(&Black);
+  MoveWindow(0);
+  MoveViewScreen(0,0);
+  zeroaddon=0; zeropage=0;
+
+  /* Check to see if I have the memory */
+
+  if ((blks[0]==NULL)||(blks[1]==NULL)||(blks[2]==NULL))
+    {
+    if (blks[0]!=NULL) { delete blks[0]; blks[0]=NULL; }
+    if (blks[1]!=NULL) { delete blks[1]; blks[1]=NULL; }
+    if (blks[2]!=NULL) { delete blks[2]; blks[2]=NULL; }
+    link=MAXSCENELINKS+1;
+    BoxFill(0,0,SIZEX,SIZEY,0);
+    GWrite(100,40,4,"Sorry...Out of Memory!");
+    Palette(4,63,20,0);
+    PauseTimeKey(10);
+    return(False);
+    }
+
+  if  (!loadscene(curscene)) return(False);     // Error Loading scene
+  StartSceneInits(Game.scns[prevscene].links[linkin].To);
+
+  /*  Set up the Scrolling info */
+
+  scroll.Clear();
+  scroll.up        =  Game.scns[doscene].Scroll.down;
+  scroll.down      =  Game.scns[doscene].Scroll.up;
+  scroll.left      =  Game.scns[doscene].Scroll.right;
+  scroll.right     =  Game.scns[doscene].Scroll.left;
+  scroll.MaxX      =  SIZEX/3;
+  scroll.MinX      = -SIZEX/3;
+  scroll.MaxY      =  60;
+  scroll.MinY      = -60;
+  scroll.UpStop    = -SIZEY/6;
+  scroll.DownStop  =  SIZEY/6;
+  scroll.LeftStop  = -SIZEX/4;
+  scroll.RightStop =  SIZEX/4;
+
+
+/***********************************************/
+/*    Set up and display the startup screen    */
+/***********************************************/
+  CropScreen();
+  drawmap(mx,my);                      // Draw the display map
+  FadeTo(colors);                      // Fade the map in
+
+  StealKbd();
+
+  SndClock= oldSndclk+1;
+  clock   = TimerCounter = OldClock;
+/***********************************************/
+/*                                             */
+/*    The main processing loop starts here     */
+/*                                             */
+/***********************************************/
+  while((done==FALSE)&&(newlink==MAXSCENELINKS)) // If <ESC> or end scene, exit
+    {                                            // Start of "while" logic
+    #ifdef KEYDEBUG
+    char numb[15];
+    sprintf(numb,"Keystk:%4d",keystkptr);
+    Gwritestr(20,5,27,numb,strlen(numb));
+    #endif
+
+    if (oldSndclk<=SndClock)                        // Scroll map
+      {
+      if (DoScroll) DrawScroll(SndClock-oldSndclk+1);
+      oldSndclk=SndClock+1;
+      }
+
+    if (keydn[1]) done=TRUE;
+ 
+    for (loop=1;loop<11;loop++)   // for function keys 1 to 10
+      {
+      if (keydn[58+loop]>0)
+        {
+        switch (loop)
+          {
+          case 3: if ((SongInfo&(CARDEXIST|SONGLOADED)) == (CARDEXIST|SONGLOADED))
+                     {
+                     if ((SongInfo&MUSICOFF)==0)  // if Music was on-- Turn off
+                     StopIt();
+                     SongInfo^=MUSICOFF;          // Toggle music on/off setting
+                     }
+                   break;
+          case 4: soundon^=TRUE; break;           // Toggles sound on/off setting
+          case 7: break;                          // reserved for future use
+          case 8: if (joyinstall) jstickon ^=TRUE;
+                  break;   // Toggle Joystick
+          default:
+            DoFunKy(loop);
+            OldClock = TimerCounter-1;
+            oldSndclk   = SndClock;
+            break;   // functions which take over screen
+          }
+        keydn[58+loop]=0;
+        }
+      }
+
+    if (OldClock<TimerCounter)
+      {
+      OldClock = clock = TimerCounter;
+      erasechars();
+      #ifndef NOMONS
+      if (!NoMons)
+        {
+        for (loop=LASTMM-1;loop>=0;loop--) mi[loop].Erase();
+        BlocBirthMon();
+        moveallmons();
+        }
+      #endif
+      #ifdef MEMDEBUG
+      sprintf (TempFname,"MEM:%10lu",farcoreleft());
+      //GWrite(160-(zeroaddon%320),100-(zeroaddon/320),39,TempFname);
+      Gwritestr(16,10,39,TempFname,14);
+      #endif
+
+      KeyBoardOff();
+#ifdef RECORDER
+      Rec->DoPlayBack();
+#endif
+      if ((PendCtr)&&
+          ((!chr.sq[chr.cseq].ground)||    // interruptable,
+           (chr.cframe==0))                // or beginning of seq...
+         )
+        { // If key pending and current sequence interruptible
+        for (int tx=0;tx<PendCtr;tx++)
+          {
+#ifdef RECORDER
+          Rec->DoRecord(KeysPending[tx]);
+#endif
+          SimKeyPress(KeysPending[tx]);
+          }
+        PendCtr=0;
+        }
+      KeyBoardOn();
+
+      do
+        {
+        if (movechars()) done=DEAD;   // Move char on the map. True = char dead
+        } while((chr.cframe==-1)&&(done!=DEAD));
+
+
+      #ifndef NOBACKANI
+      changeblks();
+      #endif
+      #ifndef NOMONS
+      if (!NoMons)
+        {
+        MonsOnScrn=0;
+        for (loop=0;((loop<LASTMM)&&(MonsOnScrn<MaxMonsShown));loop++)
+          {
+          if ((mm[loop].monnum<LASTMON)&&(mi[loop].CurPic>=0)&&(mi[loop].CurPic<LASTSL))
+            mi[loop].Draw(loop);
+          }
+        }
+      #endif
+      drawchars();
+
+      if (Vcard == SoftwareSim)
+        {
+        zeroaddon+=scroll.LittleShiftx+(scroll.LittleShifty*320);
+        SoftwareScroll();
+        zeroaddon-=scroll.LittleShiftx+(scroll.LittleShifty*320);
+        ClearDirtyRects();
+        }
+      else DrawDirtyRects();
+
+      DoScroll=ChangeScroll();    // Recalculate whether we should be scrolling
+                                  // or not and the Bresenham's algorithm stuff it we should.
+      monsolid= 0; MMsolid=LASTMM;
+      newlink = chklnk(doscene);  // See if time to change scene
+      }
+    }
+
+/*************************************************************/
+/*      Exit main "playscene" loop here, then clean up       */
+/*************************************************************/
+  StopSong();
+  FadeAllTo(Black);
+  UnCropScreen();
+  MoveWindow(0);
+  MoveViewScreen(0,0);
+  zeroaddon=0; zeropage=0;
+  setvect(0x9,OldKbd);          // Reset old keyboard handler address
+  nosound();
+
+  /* Free the memory */
+
+  if (blks[0]!=NULL) { delete blks[0]; blks[0]=NULL; }
+  if (blks[1]!=NULL) { delete blks[1]; blks[1]=NULL; }
+  if (blks[2]!=NULL) { delete blks[2]; blks[2]=NULL; }
+
+  if (keydn[1])  newlink=MAXSCENELINKS+1;  // If ESC key hit, signal to quit game.
+
+  #ifdef GENDEBUG
+  MoveViewScreen(0,0);
+  TextMode();
+  printf("Character Info\n");
+  printf("Hitpoints: %d\n",ci.hitpts);
+  printf("Lives: %d\n",ci.lives);
+  printf("Current Loc: (%d,%d)\n",chr.x[0],chr.y[0]);
+  printf("Score:%lu\n",ci.score);
+  printf("Current Sequence: %d, Frame: %d\n",chr.cseq,chr.cframe);
+  printf("KeyStack:%d (Must be 0 or >)!\n",keystkptr);
+  bioskey(0);
+  GraphMode();
+  #endif
+
+  if (done==DEAD)
+    {
+    if (ci.lives>0)
+      {
+      ci.lives--;                      // Subtract a life.
+      ci.hitpts=-1;
+      newlink=MAXSCENELINKS;           // Start this scene over.
+      } else newlink=MAXSCENELINKS+2;  // COMPLETELY DEAD!
+    }
+  link=newlink;                        // Return with the scene number
+  return(True);
+  }                                    // End of function "playscene"
+
+static void DoFunKy(int keynum)
+  {
+  int    l =0;
+  int    tx=0,ty=0;
+  ulongi ClockPause;
+  ulongi SlowClockPause;
+
+  disable();
+  ClockPause     = SndClock;          // Save so no time passes when fn key hit.
+  SlowClockPause = ClockPause>>3;
+  setvect(0x9,OldKbd);                // Reset old keyboard handler address
+  enable();
+
+  nosound();
+  Screen(0);                          // Turn off screen
+  BoxFill(0,0,SIZEX-1,SIZEY-1,0);     // screen. No time for fancy
+  MoveViewScreen(0,0);
+  zeroaddon=0; zeropage=0;
+  readyVgaRegs();
+  UnCropScreen();
+  Screen(1);                          // Turn the screen back on.
+  FastKeys();
+  for(l=0;l<128;l++) keydn[l]=0;
+  PendCtr=0;
+
+  keystkptr= 0;                           // Reset key/sequence stack.
+  curkey   = 0;
+
+  while(GetKey(1)) GetKey(0);            // Clear the keyboard buffer
+  switch (keynum)
+    {
+    case 1: HelpFiles(); break;          // Display Help.
+    case 2: Display_Invent(); break;     // Status Display.
+    case 5: SaveGame(SndClock); break;   // Saves game.
+    case 6: ClockPause     = LoadGame(); // Restore game.
+            SlowClockPause = ClockPause>>3;
+            break;  // Set clock to restored value.
+    case 7: break;                       // reserved for future use.
+    case 9: Joy_Config(&cs); break;      // Configure Joystick.
+    case 10: GMabout(); break;           // about Game-maker.
+    default: break;
+    }
+
+  // End Stuff - re-setup screen, variables for game play.
+
+  for(l=0;l<LASTMM;l++)
+    {
+    mi[l].EraseAddr = 0;
+    mi[l].DrawAddr  = 0;
+    mi[l].NextAni   = SlowClockPause;
+    mi[l].NextMove  = SlowClockPause;
+    Coord2d_Set(mi[l].ScrPos,OFFSCRN,OFFSCRN);  // Screen coords of monster
+    Coord2d_Set(mi[l].OldPos,OFFSCRN,OFFSCRN);
+    mi[l].PicDrawn  = FALSE;
+    }
+
+  scroll.zero= 0;   // Set Page scrolling variable to initial states
+  scroll.nx  =scroll.ny  = 0;
+  scroll.movx=scroll.movy= 0;
+  SetAllPalTo(&Black);
+  readyVgaRegs();
+  CropScreen();
+  SlowKeys();
+  drawmap(mx,my);  // Draw the display map
+                   // Calculate new character coordinates since after
+                   // hitting a func key, the computer centers the screen
+  SetAllPal(colors);
+
+  if (mx<chr.x[0]) tx=(chr.x[0]-mx)*BLEN;
+  else tx=(MLEN+(chr.x[0]-mx))*BLEN;
+  tx+=chr.x[1];
+  ci.nextx=ci.scrx = tx;         // Save the new char x coord
+ 
+  if (my<chr.y[0]) ty=(chr.y[0]-my)*BLEN;
+  else ty=(MWID+(chr.y[0]-my))*BLEN;
+  ty+=chr.y[1];
+  ci.nexty=ci.scry = ty;         // Save the new char y coord
+
+  chr.cseq       = IDLESEQ;
+  chr.cframe     = 0;
+  ci.topthere    = FALSE;
+  ci.bottomthere = FALSE;
+  drawchars();
+
+  disable();
+  StealKbd();
+  SndClock     = ClockPause;     // Set clock to value before the user hit Fn key.
+  clock        = TimerCounter = SlowClockPause;
+  enable();
+  }
+
+boolean SelectGameToLoad(char *FileName,RGBdata *colors)
+  {
+  FILE *fp;
+  int Choice;
+  Pixel Col  = RGBYellow.Match(colors);
+  Pixel Col1 = RGBRed.Match(colors);
+  MakeFileName(FileName,WorkDir,"SavNames",".dat");
+  if ((fp=fopen(FileName,"rb"))!=NULL)
+    {
+    for (uint i=0;i<10;i++)
+      {
+      fread(FileName,sizeof(char),21,fp);
+      GWrite(80,40+(i*14),Col,FileName);
+      }
+    fclose(fp);
+    }
+  Choice=GVertMenu(60,35,14,10,Col1);
+  if (Choice)
+    {
+    sprintf(FileName,"%sgame%d.sav",WorkDir,Choice-1);
+    return(True);
+    }
+  FileName[0]=0;
+  return(False);
+  }
+
+boolean SelectGameToSave(char *FileName,RGBdata *colors)
+  {
+  FILE *fp;
+  int Choice;
+  char Entries[10][21];
+  uint i;
+
+  Pixel Col  = RGBYellow.Match(colors);
+  Pixel Col1 = RGBRed.Match(colors);
+
+  MakeFileName(FileName,WorkDir,"SavNames",".dat");
+
+  if ((fp=fopen(FileName,"rb"))!=NULL)
+    { fread(Entries,sizeof(char),210,fp); fclose(fp); }
+  else for (i=0;i<210;i++) *(&(Entries[0][0])+i)=0;
+
+  for (i=0;i<10;i++) GWrite(80,40+(i*14),Col,Entries[i]);
+
+  Choice=GVertMenu(60,35,14,10,Col1);
+  if (Choice)
+    {
+    Choice--;
+    Pixel BackCol=GetCol(79,40+(Choice*14));
+    if (GGet(80,40+(Choice*14),Col,BackCol,Entries[Choice],20) != -1)
+      {
+      if ((fp=fopen(FileName,"wb"))!=NULL)
+        {
+        fwrite(Entries,sizeof(char),210,fp);
+        fclose(fp);
+        }
+      sprintf(FileName,"%sgame%d.sav",WorkDir,Choice);
+      return(True);
+      }
+    }
+  FileName[0]=0;
+  return(False);
+  }
+
+
+
+static ulongi LoadGame(void)
+  {
+  Pixel    Yellow;
+  FILE    *fp;
+  char     loadname[MAXFILENAMELEN];
+  register int i;
+  uchar   *temp,*temp2;
+  ulongi   SavedTime=SndClock;
+  RGBdata  Cols[256];
+  RGBdata  *CurCols;
+
+  if (Game.FileExists(0,9))
+    {
+    ShowGraphic(Game.File(0,9),Cols,0);
+    Yellow=RGBBlue.Match(Cols);    // Get the closest color to bright blue.
+    CurCols=Cols;
+    }
+  else
+    {
+    Yellow=RGBBlue.Match(colors);  // Get the closest color to bright Blue.
+    BoxFill(0,0,SIZEX,SIZEY,0);
+    GWrite(124,10,Yellow,"Load Game");
+    CurCols=colors;
+    }
+
+  if (SelectGameToLoad(loadname,CurCols))
+    {
+    if ( (fp = fopen(loadname,"rb")) == NULL )
+      GWrite(40,185,Yellow,"This game has not been saved!");
+    else
+      {
+      GWrite(88,185,Yellow,"Old Game Loaded!");
+
+      temp =ci.savetop;
+      temp2=ci.savebottom;
+
+      if (BlkMon!=NULL) { delete BlkMon; BlkMon=NULL; MaxBlkMon=0; }
+
+          // Load stuff specific to this game
+
+      fread((char *)&MaxBlkMon,sizeof(uchar)    ,1,        fp);
+      if (MaxBlkMon!=0) if ((BlkMon=new BlkMonStruct [MaxBlkMon])==NULL) return(SavedTime);
+
+      fread(&prevscene,        sizeof(int),      1,        fp);
+      fread(&doscene,          sizeof(int),      1,        fp);
+      fread(&linkin,           sizeof(int),      1,        fp);
+      fread((char *)&SavedTime,sizeof(ulongi)   ,1,        fp);
+      fread((char *)&nxtchg[0],sizeof(ulongi)   ,BACKBL,   fp);
+      fread((char *)&blkmap[0],sizeof(uchar)    ,BACKBL,   fp);
+      fread((char *)&ci       ,sizeof(cinfo)    ,1,        fp);
+      fread((char *)&chr      ,sizeof(chrstruct),1,        fp);
+      fread((char *)&mx       ,sizeof(int),      1,        fp);
+      fread((char *)&my       ,sizeof(int),      1,        fp);
+      fread((char *)&mi[0]    ,sizeof(minfo),LASTMM,       fp);
+      fread((char *)&mm[0]    ,sizeof(monmapstruct),LASTMM,fp);
+      fread((char *)&map[0][0],sizeof(mapstruct),MLEN*MWID,fp);
+      fread((char *)&NoMons   ,sizeof(uchar)    ,1        ,fp);
+      if (MaxBlkMon>0)
+        fread((char *)BlkMon,sizeof(BlkMonStruct),MaxBlkMon,fp);
+      Rec->LoadGame(fp);
+      fclose(fp);
+
+      oldscene = prevscene;
+      curscene = doscene;
+
+      // Load unchanging data up.
+      if (Game.FileExists(doscene,0)) loadspecany(Game.File(doscene,0) ,"","",sizeof(RGBdata)*256,(char *) &colors);
+      if (Game.FileExists(doscene,2)) loadspecblk(Game.File(doscene,2),BACKBL,blks[0]);
+      if (Game.FileExists(doscene,3)) loadspecmon(Game.File(doscene,3),LASTMON);
+      if (Game.FileExists(doscene,4)) loadspecblk(Game.File(doscene,4),MONBL,blks[1]);
+      if (Game.FileExists(doscene,6)) loadspecblk(Game.File(doscene,6),CHARBL,blks[2]);
+      if ((Game.FileExists(doscene,7))&&(loadspecsnd(Game.File(doscene,7)))) anysound=TRUE;
+      else anysound=FALSE;
+      PlaySong(Game.File(doscene,8));
+      scroll.up   = Game.scns[doscene].Scroll.down;
+      scroll.down = Game.scns[doscene].Scroll.up;
+      scroll.left = Game.scns[doscene].Scroll.right;
+      scroll.right= Game.scns[doscene].Scroll.left;
+      scroll.Clear();
+      ChangeScroll();
+
+      for (i=0;i<LASTMM; i++) mi[i].save = NULL;   // Zero Memory Pointers
+
+      ci.topthere      = FALSE;
+      ci.bottomthere   = FALSE;
+      ci.scrx=ci.nextx = OFFSCRN;
+      ci.scry=ci.nexty = OFFSCRN;
+      ci.savetop       = temp;
+      ci.savebottom    = temp2;
+      }
+    PauseTimeKey(2);
+    disable();
+    SndClock = SavedTime;
+    clock    = SavedTime>>3;
+    HandleJStick(1); // Set static variables to the new clock value
+    MoveCharGrav(1);
+    enable();
+    }
+  BoxFill(0,0,SIZEX,SIZEY,0);
+  Rec->UnPause();
+  return(SavedTime);
+  }
+
+static void SaveGame(ulongi ClockAt)
+  {
+  FILE *fp;
+  char  savename[MAXFILENAMELEN];
+  Pixel Yellow=0;
+  register int i;
+  RGBdata Cols[256];
+
+#ifdef RECORDER
+  uint OldRecIndex;
+  if (Rec->RecFlag==RECORD)       // Get rid of all keypresses that occur
+    {
+    Rec->RecIndex--;
+    Rec->Pause();
+    }
+#endif
+
+  if (Game.FileExists(0,10))
+    {
+    ShowGraphic(Game.File(0,10),Cols,0);
+    Yellow=RGBBlue.Match(Cols);  // Get the closest color to bright yellow.
+    if (!SelectGameToSave(savename,Cols)) return;
+    }
+  else
+    {
+    Yellow=RGBBlue.Match(colors);  // Get the closest color to bright yellow.
+    BoxFill(0,0,SIZEX,SIZEY,0);
+    GWrite(124,10,Yellow,"Save Game");
+    for (uchar i=0;i<10;i++) GWrite(73,40+(i*14),Yellow,">");
+    if (!SelectGameToSave(savename,colors)) return;
+    }
+
+
+  if ( (fp = fopen(savename,"wb")) == NULL )
+    GWrite(40,185,Yellow,"I cannot save your game!");
+  else
+    {
+    GWrite(112,185,Yellow,"Game Saved!");
+    fwrite((char *)&MaxBlkMon,sizeof(uchar)       ,1        ,fp);
+    fwrite(&prevscene        ,sizeof(int)         ,1        ,fp);
+    fwrite(&doscene          ,sizeof(int)         ,1        ,fp);
+    fwrite(&linkin           ,sizeof(int)         ,1        ,fp);
+    fwrite((char *)&ClockAt  ,sizeof(ulongi)      ,1        ,fp);
+    fwrite((char *)&nxtchg[0],sizeof(ulongi)      ,BACKBL   ,fp);
+    fwrite((char *)&blkmap[0],sizeof(uchar)       ,BACKBL   ,fp);
+    fwrite((char *)&ci       ,sizeof(cinfo)       ,1        ,fp);
+    fwrite((char *)&chr      ,sizeof(chrstruct)   ,1        ,fp);
+    fwrite((char *)&mx       ,sizeof(int)         ,1        ,fp);
+    fwrite((char *)&my       ,sizeof(int)         ,1        ,fp);
+    fwrite((char *)&mi[0]    ,sizeof(minfo)       ,LASTMM   ,fp);
+    fwrite((char *)&mm[0]    ,sizeof(monmapstruct),LASTMM   ,fp);
+    fwrite((char *)&map[0][0],sizeof(mapstruct)   ,MLEN*MWID,fp);
+    fwrite((char *)&NoMons   ,sizeof(uchar)       ,1        ,fp);
+    if (MaxBlkMon>0) fwrite((char *)&BlkMon[0],sizeof(BlkMonStruct),MaxBlkMon,fp);
+    Rec->SaveGame(fp);
+    fclose(fp);  
+    }
+  PauseTimeKey(2);
+  #ifdef RECORDER
+  if (Rec->RecFlag==RECORD) Rec->UnPause();  // Start the recording back up.
+  #endif
+  }
+
+static void GMabout(void)
+  {
+  Pixel Yellow,Blue;
+  Blue   = RGBBlue  .Match(colors);
+  Yellow = RGBYellow.Match(colors);
+  Box(10,10,310,190,Blue);
+  Box(15,15,305,185,Blue);
+  while (GetKey(1)) GetKey(0);
+  GWrite(40,40,Yellow,"      G A M E - M A K E R");
+  GWrite(40,48,Yellow,"          Version "GMVER"   ");
+  GWrite(40,64,Yellow,"Recreational Software Designs");
+  GWrite(40,72,Yellow,"Box 1163,  Amherst, NH, 03031");
+  GWrite(40,88,Yellow,"This game was made with GAME-");
+  GWrite(40,96,Yellow,"MAKER.  No programming needed!");
+  GWrite(40,104,Yellow,"Design your own worlds, mon-  ");
+  GWrite(40,112,Yellow,"sters, characters, sounds...  ");
+  GWrite(40,128,Yellow,"Game-Maker software, documen- ");
+  GWrite(40,136,Yellow,"tation, and data files are    ");
+  GWrite(40,144,Yellow,"COPYRIGHTED and may be copied ");
+  GWrite(40,152,Yellow,"only as allowed by the license");
+  GWrite(40,160,Yellow,"agreement.");
+  GWrite(40,168,Yellow,"                      MORE... ");
+  PauseTimeKey(60);
+  BoxFill(16,16,304,184,0);
+  GWrite(40,40,Yellow, "Order from your local         ");
+  GWrite(40,48,Yellow, "computer store or:            ");
+  GWrite(40,64,Yellow, " KD Software                  ");
+  GWrite(40,72,Yellow, " Rochester, NH, 03867         ");
+  GWrite(40,80,Yellow, "            1-603-332-8164    ");
+  GWrite(40,96,Yellow, "            Visa/MC           ");
+  GWrite(40,104,Yellow," Call for the latest price!   ");
+  GWrite(40,112,Yellow,"                              ");
+  PauseTimeKey();
+  }
+
+static void HelpFiles(void)
+  {
+
+#ifndef TRANSFER
+  Pixel yellowcol = RGBYellow.Match(colors);
+  Pixel bluecol   = RGBBlue  .Match(colors);
+  MakeFileName(TempFname,"","gmhelp",".txt");
+  Box(10,10,310,190,bluecol);
+  Box(15,15,305,185,bluecol);
+  Display_File(TempFname,yellowcol,30);
+#endif
+
+  if (Game.FileExists(0,6)) ShowGraphic(Game.File(0,6),NULL);
+  else
+    {
+    Pixel redcol = RGBRed.Match(colors);
+    GWrite(40,80,redcol,"No game-specific help included.");
+    PauseTimeKey(5);
+    }
+  }
+
+static void Display_Invent(void)
+  {
+  Pixel        Blue   = RGBBlue  .Match(colors);
+  register int j,k;
+  char         lineofinfo[41];
+  ulongi       time;
+  
+  Box(10,10,310,190,Blue);
+  Box(15,15,305,185,Blue);
+  Box(30,30,35+(5*(BLEN+5)),35+(2*(BLEN+5)),Blue);
+  for (k=0;k<2;k++)
+    for (j=0;j<5;j++)
+      {
+      Box(34+j*(BLEN+5),34+k*(BLEN+5),35+BLEN+j*(BLEN+5),35+BLEN+k*(BLEN+5),Blue);
+      if ( ci.inv[(5*k)+j] != BACKBL )
+        drawblk(35+j*(BLEN+5),35+k*(BLEN+5),blks[0][ci.inv[(5*k)+j]].p[0]);
+      }
+  sprintf(lineofinfo,"Score:     %ld",ci.score);
+  GWrite(40,88,Blue,lineofinfo);
+  if (ci.meter[3] != INF_REPEAT)
+    {
+    sprintf(lineofinfo,"Money:     %d",ci.meter[3]-1);
+    GWrite(40,96,Blue,lineofinfo);
+    }
+  sprintf(lineofinfo,"Hitpoints: %d",ci.hitpts);
+  GWrite(40,112,Blue,lineofinfo);
+  sprintf(lineofinfo,"Lives:     %d",ci.lives);
+  GWrite(40,120,Blue,lineofinfo);
+  time = (clock/18) - (clock/1818);
+  sprintf(lineofinfo,"Elapsed Time: %02ld:%02ld:%02ld.%02ld",time/3600,(time %3600)/60,(time%60),(clock*100/18-clock*100/1818)%100);
+  GWrite(40,152,Blue,lineofinfo);
+  PauseTimeKey();
+  }
+
+static boolean Display_File(char *filen,Pixel col,uint PauseLen)
+  {
+  FILE *fp;
+  char lineoftext[41];
+  char vertpos=5;
+  int mx,my,mbuts=0;
+  Pixel *Scrn = new Pixel [64000];
+  int done=FALSE;
+
+  if (Scrn) GetScrn(Scrn);
+
+  Pixel redcol=RGBRed.Match(colors);
+  while (GetKey(1)) GetKey(0);
+  mouclearbut();
+  if ((fp=fopen(filen,"rt")) == NULL) 
+    {
+    GWrite(40,80,redcol,"Missing File:");
+    sprintf(lineoftext,"The file %s is",filen);
+    GWrite(40,96,redcol,lineoftext);
+    GWrite(40,104,redcol,"missing or cannot be opened.");
+    }
+  else
+    {
+    while ((fgets(lineoftext,32,fp) != NULL)&&(done!=3))
+      {
+      done=FALSE;
+      if (vertpos > 20)
+        {
+        GWrite(224,168,redcol,"MORE...");
+        uint inkey = PauseTimeKey(PauseLen);
+        if ((inkey&255)==27) done = 3;
+        else done=2;
+        vertpos=5;
+        if (Scrn) RestoreScrn(Scrn);
+        else BoxFill(40,40,280,176,0);  // Clear the text
+        }
+      if (done!=3)
+        {
+        mbuts = strlen(lineoftext);
+        if (lineoftext[mbuts]=='\n') lineoftext[mbuts-1]=0;
+        GWrite(5*8,vertpos*8,col,lineoftext);
+        vertpos+=1;
+        }
+      }
+    fclose(fp);
+    }
+
+  if (done!=3) PauseTimeKey(PauseLen);
+  if (Scrn) RestoreScrn(Scrn);
+  else BoxFill(0,0,SIZEX,SIZEY,0);
+  if (Scrn) delete Scrn;
+  if (done==3) return(False);
+  return(True);
+  }
+
+static void Joy_Config(ConfigStruct *cs)
+  {
+  char tempstr[41];
+  int  mx,my;
+  unsigned int  x=0,y=0,butn=0;
+  Pixel redcol = RGBRed .Match(colors);
+  Pixel bluecol= RGBBlue.Match(colors);
+  Box(10,10,310,190,bluecol);
+  Box(15,15,305,185,bluecol);
+
+  ReadJoyStick(&x,&y,&butn);
+  if ((x==0xFFFF)&&(y==0xFFFF))
+    {
+    GWrite(40,80, redcol,"This machine does not have a ");
+    GWrite(40,88, redcol,"game port installed!     You ");
+    GWrite(40,96, redcol,"cannot configure a joystick  ");
+    GWrite(40,104,redcol,"until you have installed a   ");
+    GWrite(40,112,redcol,"game port and joystick.      ");
+    PauseTimeKey(10);
+    return;
+    }
+  joyinstall=TRUE;
+  GWrite(40,40,bluecol,"Move joystick all the way Left");
+  GWrite(40,48,bluecol,"and Forward.  Press either    ");
+  GWrite(40,56,bluecol,"joystick button when there.   ");
+  if (!getjoydat(&x,&y,&butn)) return;
+
+  cs->joyy[0]=y;
+  cs->joyx[0]=x;
+  sprintf(tempstr,"Stick minimum (%3d,%3d)",x,y);
+  GWrite(64,80,bluecol,tempstr);
+  BoxFill(40,40,280,64,0);
+  delay(500);
+  joyclearbuts();
+
+  GWrite(40,40,bluecol,"Move joystick all the way Back");
+  GWrite(40,48,bluecol,"and Right.  Press either      ");
+  GWrite(40,56,bluecol,"joystick button when there.   ");
+  butn=0;
+  if (!getjoydat(&x,&y,&butn)) return;
+  cs->joyy[4]=y;
+  cs->joyy[2]=(((cs->joyy[4]-cs->joyy[0])/2)+cs->joyy[0]);
+  cs->joyy[1]=(((cs->joyy[2]-cs->joyy[0])/2)+cs->joyy[0]);
+  cs->joyy[3]=(((cs->joyy[4]-cs->joyy[2])/2)+cs->joyy[2]);
+  cs->joyx[4]=x;
+  cs->joyx[2]=(((cs->joyx[4]-cs->joyx[0])/2)+cs->joyx[0]);
+  cs->joyx[1]=(((cs->joyx[2]-cs->joyx[0])/2)+cs->joyx[0]);
+  cs->joyx[3]=(((cs->joyx[4]-cs->joyx[2])/2)+cs->joyx[2]);
+
+  sprintf(tempstr,"Stick maximum (%3d,%3d)",x,y);
+  BoxFill(64,80,250,88,0);
+  GWrite(64,80,bluecol,tempstr);
+  delay(500);
+  joyclearbuts();
+  if (SaveConfigData(cs)!=TRUE) GWrite(40,120,redcol,"Unable to write data to disk! ");
+  jstickon=TRUE;
+  }
+
+static char getjoydat(unsigned int far *x,unsigned int far *y, unsigned int far *butn)
+  {
+  char key=0;
+  while (((*butn)==0)&&(key!=27))
+    {
+    ReadJoyStick(x,y,butn);
+    key=GetKey(1)&255;
+    if (key) GetKey(0);
+    delay(50);
+    }
+  if (key==27) return(FALSE);
+  return(TRUE);
+  }
+
+static int PickupBloc(void)
+  {
+  register int j;
+  char spot=0;
+  touchblk t;
+  char tempor;
+
+  if (ci.inv[9]!=BACKBL) return(FALSE);
+  while (ci.inv[spot]!=BACKBL) spot++;
+  GetTouchbl(&t);
+  for (j=0;j<6;j++)
+    if (t.blks[j][0]!=MLEN)
+      if (blks[0][ t.blknum[j] ].obj)
+        {
+        tempor=really_checktouch(t.blks[j][0],t.blks[j][1],t.blknum[j]);
+        if (tempor != 2)
+          {
+          ci.inv[spot] = t.blknum[j];
+          checkseq_fortie(t.blknum[j],TRUE);
+          return(TRUE);
+          }
+        }
+  return(FALSE);
+  }
+
+static char DropBloc(void)
+  {
+  char done=0;
+  register int k,j;
+  char chosen;
+  int x,y,keytyp;
+  unsigned long int ClockPause;
+
+  ClockPause=clock;                   // Save so no time passes when fn key hit.
+  setvect(0x9,OldKbd);                // Reset old keyboard handler address
+  nosound();
+  MoveWindow(0);                      // Just clear it all and use the whole
+  BoxFill(0,0,SIZEX-1,SIZEY-1,0);     // screen. No time for fancy
+  MoveViewScreen(0,0);
+  zeroaddon=0; zeropage=0;
+  ci.topthere=FALSE;
+  ci.bottomthere=FALSE;
+
+  Pixel Yellow = RGBRed .Match(colors);
+  Pixel Blue   = RGBBlue.Match(colors);
+  Box(10,10,310,190,Blue);
+  Box(15,15,305,185,Blue);
+
+  Box(30,30,35+(5*(BLEN+5)),35+(2*(BLEN+5)),Blue);
+  for (k=0;k<2;k++)
+    for (j=0;j<5;j++)
+      {
+      Box(34+j*(BLEN+5),34+k*(BLEN+5),35+BLEN+j*(BLEN+5),35+BLEN+k*(BLEN+5),Blue);
+      if ( ci.inv[(5*k)+j] != BACKBL )
+        drawblk(35+j*(BLEN+5),35+k*(BLEN+5),blks[0][ci.inv[(5*k)+j]].p[0]);
+      }
+  j=0; k=0;
+  Box(33+j*(BLEN+5),33+k*(BLEN+5),36+BLEN+j*(BLEN+5),36+BLEN+k*(BLEN+5),Yellow);
+  GWrite(40,104,Blue,"Choose object to drop");
+  GWrite(40,120,Blue,"Use arrow keys to select,");
+  GWrite(40,128,Blue,"<Enter> to accept, <ESC> ");
+  GWrite(40,136,Blue,"to quit without dropping.");
+
+  while (!done)
+   {
+   keytyp=GetKey(0);
+   switch(keytyp&0x00FF)
+     {
+     case 0:
+       Box(33+j*(BLEN+5),33+k*(BLEN+5),36+BLEN+j*(BLEN+5),36+BLEN+k*(BLEN+5),0);
+       switch(keytyp>>8)
+        {
+        case 72:  // Up Arrow
+        case 80:  // Down Arrow
+           k ^= 1;
+           break;
+        case 75:  // Left Arrow
+           j = (j+4)%5;
+           break;
+        case 77:  // Right Arrow
+           j = (j+1)%5;
+           break;
+        }
+       Box(33+j*(BLEN+5),33+k*(BLEN+5),36+BLEN+j*(BLEN+5),36+BLEN+k*(BLEN+5),Yellow);
+       break;
+     case 13:
+       chosen = k*5+j;
+       if (ci.inv[chosen] == BACKBL) break;
+       map[chr.y[0]][chr.x[0]].blk=ci.inv[chosen];
+       checkseq_fortie(ci.inv[chosen],FALSE);
+       for (k=0;k<2;k++)
+         for (j=0;j<5;j++)
+           if ( (k*5+j) == 9) ci.inv[9]=BACKBL;
+           else if ( (k*5+j) >= chosen) ci.inv[k*5+j]=ci.inv[k*5+j+1];
+       done=2;
+       break;
+     case 27:
+       done=1;
+       break;
+     }
+   }
+  // End Stuff
+  scroll.zero=0;        // Set Page scrolling variable to initial states
+  scroll.nx=scroll.ny=0;
+  scroll.Totalx=scroll.Totaly=0;
+  drawmap(mx,my);       // Draw the display map
+  StealKbd();
+  keydn[chr.sq[DROPSEQ].key>>8]=0;
+  TimerCounter=ClockPause;
+  return(done-1);
+  }
+
+static void checkseq_fortie(unsigned char block,char setting)
+ {
+  register int i;
+   
+  for (i=0;i<MAXSEQ;i++)
+    if (chr.sq[i].bloc == block)
+      ci.seqon[i] = setting;
+ }
+
+static void drawchars(void)
+  {
+#ifndef NOCHAR
+  ci.update=FALSE;
+  if (ci.scrx>OFFSCRN) // scrx has not yet been calculated
+    {
+    ci.EraseAddr=zeroaddon+(ci.scrx)+(ci.scry*SIZEX);
+    ci.oldx=ci.scrx; ci.oldy=ci.scry;
+    if (ci.curtop<CHARBL)  // &(ci.curbottom< CHARBL)
+      {
+        // Get and save block behind character
+      ci.topthere=TRUE;
+      BufGetBlk(ci.scrx,ci.scry-BLEN,ci.savetop);
+        // draw character top
+      Sdrawspbloc(ci.scrx,ci.scry-BLEN,CHRFRAME.orient&15,&blks[2][ci.curtop]);
+      }
+    else ci.topthere=FALSE;
+    if (ci.curbottom<CHARBL)
+      {
+      ci.bottomthere=TRUE;
+      BufGetBlk(ci.scrx,ci.scry,ci.savebottom);
+      Sdrawspbloc(ci.scrx,ci.scry,CHRFRAME.orient>>4,&blks[2][ci.curbottom]);
+      }
+    else ci.bottomthere=FALSE;
+    }
+#endif
+  }
+
+static void erasechars(void)
+  {
+#ifndef NOCHAR
+  if (ci.topthere)
+    {
+    BufDrawBlkAddr(ci.EraseAddr-(BLEN*SIZEX),ci.savetop);
+    AddDirtyRect(ci.EraseAddr-(BLEN*SIZEX),BLEN,BLEN);
+    }
+  if (ci.bottomthere)
+    {
+    BufDrawBlkAddr(ci.EraseAddr,ci.savebottom);
+    AddDirtyRect(ci.EraseAddr,BLEN,BLEN);
+    }
+#endif
+  }
+
+inline boolean minfo::CalcDraw(void)
+  {
+  boolean RetVal = onscrn(curx[0],cury[0],&ScrPos);
+  if (RetVal)
+    {
+    ScrPos.x += curx[1]; ScrPos.y += cury[1];
+    DrawAddr=ScrPos.x+(SIZEX*ScrPos.y)+zeroaddon;
+    }
+  return RetVal;
+  }
+
+void minfo::Draw(int MMnum)
+  {
+  int temp;
+  int num;
+
+  if (Coord2d_In(ScrPos,ScrnLowBnd,ScrnUpBnd)&&((temp=MonPicNum(MMnum))<MONBL))
+    {
+    save=MonsterMem+(MonsOnScrn*(BLEN*BLEN));
+    MonsOnScrn++;
+    PicDrawn=TRUE;
+    BufGetBlkAddr(DrawAddr,save);
+    AddDirtyRect(DrawAddr,BLEN,BLEN);
+    BufDrawSpBlkAddr(DrawAddr,orient,(unsigned char *) &blks[1][temp]);
+    OldPos=ScrPos;
+    EraseAddr=DrawAddr;
+    }
+  else PicDrawn=FALSE;
+  }
+
+void minfo::Erase(void)
+  {
+  if (PicDrawn)        // Monster being used
+    {                  // -1 = not saved flag, so don't erase
+    BufDrawBlkAddr(EraseAddr,save);
+    AddDirtyRect(EraseAddr,BLEN,BLEN);
+    PicDrawn=FALSE;
+    }
+  Coord2d_Set(OldPos,OFFSCRN,OFFSCRN);
+  }
+
+static void changeblks(void)
+  {
+  register int lp;
+  int lx,ly;
+  int tx,ty;
+  int tmap;
+  char Changed[32]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+  for (lp=0;lp<BACKBL;lp++)
+    {
+    tmap=blkmap[lp];                           // Fetch displayed block num
+    if ((nxtchg[lp]<=clock)&&(blks[0][tmap].nextbl != tmap)) // Time to change a block?
+      {                                        // to the next one blk[].nextbl
+      blkmap[lp]=blks[0][tmap].nextbl;         // Save the next block number
+      Changed[lp>>3]|=1<<(lp&7);
+      if (blks[0][tmap].ntime<=0)              // Will block EVER change?
+        nxtchg[lp]=0;                          // No, so set time as NEVER.
+      else 
+        nxtchg[lp]+=blks[0][blkmap[lp]].ntime; // set the next time to change
+      }
+    }
+
+  for (lx=mx+1;lx<mx+SCRNBLEN;lx++)        // Go through looking for
+    for (ly=my+1;ly<my+SCRNBWID;ly++)      // changed blocks.
+      {
+      lp=map[ly%MWID][lx%MLEN].blk;
+      if (Changed[lp>>3]&(1<<(lp&7)))
+        {
+        tx=((lx-mx)*BLEN)-scroll.nx;
+        ty=((ly-my)*BLEN)-scroll.ny;
+        BufDrawBlk(tx,ty,blks[0][blkmap[lp]].p[0]);
+        AddDirtyRect(tx,ty,tx+BLEN-1,ty+BLEN-1);
+        }
+      }
+  }
+
+static boolean movechars(void)
+  {
+  int  retval=0;
+  int  tx=0,ty=0;
+  char oldseq,oldframe;
+  int  charmoved   = FALSE;
+  int  gravmoved   = FALSE;
+  char ZeroBefore = FALSE;
+  touchblk t;   // Array telling what blocks are touching character
+  
+  ci.scrx   = ci.nextx;
+  ci.scry   = ci.nexty;
+  gravmoved = MoveCharGrav(0); // Test to see if character should be affected by gravity
+
+  ci.update|=HandleJStick(0);  // See if joystick is giving info
+
+  if (clock>=ci.NextAni)
+    {
+    oldframe=chr.cframe;
+    oldseq  =chr.cseq;
+    if (chr.cframe==-1)        // FIRST FRAME in a sequence - key just pressed.
+      {
+      if ((ci.meter[chr.cseq]<INF_REPEAT)&&(chr.cseq>4))
+        ci.meter[chr.cseq]--;   // If seq has a rep ctr, then decrement the counter by 1
+
+      if (chr.cseq==DROPSEQ)   // First frame, drop sequence,
+        {
+        if (!DropBloc())       // so drop the block.
+          {
+          chr.cseq =IDLESEQ;
+          keystkptr=0;         // Reset all Keyboard and character stuff
+          curkey   =0;
+          }
+        }
+      if (chr.cseq==PICKUPSEQ) // First frame, pickup sequence
+        {
+        if (!PickupBloc())     // so pick up a block.
+          {
+          chr.cseq =IDLESEQ;
+          keystkptr=0;         // Reset all Keyboard and character stuff
+          curkey   =0;
+          }
+        }
+      // Sound after pickup and drop so that sound will only be done if
+      // pickup/drop successful.
+      if (chr.sq[chr.cseq].sound<LASTSND) DoSound(chr.sq[chr.cseq].sound);
+      }
+    do
+      {
+      if (chr.cframe==0) ZeroBefore++;
+      chr.cframe++;
+      while ((CHRFRAME.pic2 == CHARBL+1)||(chr.cframe>=MAXFRAME))
+        {                                 // ONE AFTER LAST FRAME
+        if (chr.cseq==DIESEQ)
+          { chr.cframe--; return(TRUE); } // End after last frame of die seq
+
+        // To make key work only once, add to this if statement
+        if (((ci.meter[chr.cseq]<=0)&&(chr.cseq>4))||
+           (chr.cseq==HURTSEQ)||      // Only do these sequences once
+           (chr.cseq==DROPSEQ)||
+           (chr.cseq==PICKUPSEQ)||
+           (chr.sq[chr.cseq].norepeat)||
+           ((keydn[(chr.sq[chr.cseq].key>>8)]==0)&&  // Quit if key lifted
+            (curkey != JSTICKKEY))||
+           (ZeroBefore>1)   // gone 2 times around w/ out getting out - inf loop, force break out.
+           )
+          {
+          PopKey(curkey);   // Do The Previous sequence
+          ZeroBefore=FALSE;
+          }
+        else
+          {
+          chr.cframe=0;
+          if ((ci.meter[chr.cseq]<INF_REPEAT)&&(chr.cseq>4)) ci.meter[chr.cseq]--;  // Sub 1 from the rep counter.
+          if (CHRFRAME.pic2 == CHARBL+1)
+            {
+            if (chr.cseq==IDLESEQ) CHRFRAME.pic2=0;
+            else PopKey(curkey);       // Do The Previous sequence
+            ZeroBefore=FALSE;
+            }
+          }
+        }
+      ci.NextAni=clock+CHRFRAME.pause;
+      if ((CHRFRAME.pic2 == MONBL)&&(!NoMons))  // Birth a monster
+        {
+        CharBirthMon(chr.x[0],chr.y[0]+(CHRFRAME.y/BLEN)-1,CHRFRAME.pic1);
+        ty=0;
+        }
+      else // Move character
+        {  
+        ci.curtop=CHRFRAME.pic1;
+        ci.curbottom=CHRFRAME.pic2;
+        if(CHRSEQ.Momentum)
+          {
+          tx=CHRFRAME.x;  // tx,ty = temporary variables
+          ty=CHRFRAME.y;
+          ci.gravx+=tx;   // through gravx and gravy.
+          ci.gravy+=ty;
+          if (!((tx==0)&&(ty==0)))  // Remember the character's last direction and speed
+            { ci.netx=tx; ci.nety=ty; } // For monsters going "away"
+          tx=0;ty=0;  // Don't add it to tx,ty, cause it will be added below
+          }
+        else
+          {
+          tx=CHRFRAME.x;  // tx,ty = the char's next displacement
+          ty=CHRFRAME.y;
+          if (!((tx==0)&&(ty==0)))  // Remember the character's last direction and speed
+            { charmoved=TRUE; ci.netx=tx; ci.nety=ty; } // For monsters going "away"
+          }
+        }
+      } while (CHRFRAME.pic2>CHARBL); // Keep going until you find a picture to draw (verses a monster being birthed).
+    if ((chr.cseq!=oldseq)||(chr.cframe!=oldframe)) ci.update=TRUE;
+    }
+ 
+  tx+=ci.gravx;  // Add Gravity's effect to the displacement
+  ty+=ci.gravy;
+
+  if ((charmoved)||(gravmoved)||(monsolid)||(ci.update))
+    {
+    int oldcx,oldcy,oldy,oldx;
+
+    oldcx = chr.x[1];  // Remember the last position inside current block
+    oldcy = chr.y[1];
+    oldy  = chr.y[0];
+    oldx  = chr.x[0];
+
+    if (tx>MAXGRAV)       tx = MAXGRAV;     // Limit the character's maximum
+    if (tx< (-1*MAXGRAV)) tx = -1*MAXGRAV;  // speed.
+    if (ty>MAXGRAV)       ty = MAXGRAV;
+    if (ty< (-1*MAXGRAV)) ty = -1*MAXGRAV; 
+    chkscrnbounds(&tx,&ty);  // Change displacement if character is about to
+                             // Run off the screen
+
+    chr.x[1]+=tx;         // Move the character's x position variable
+    chr.y[1]+=ty;         // Move y var for Checktouch
+            // Has character gone off the edge of the block
+    while (chr.x[1]<0)     { chr.x[1]+=BLEN; chr.x[0]--; }
+    while (chr.x[1]>=BLEN) { chr.x[1]-=BLEN; chr.x[0]++; }
+    while (chr.y[1]<0)     { chr.y[1]+=BLEN; chr.y[0]--; }
+    while (chr.y[1]>=BLEN) { chr.y[1]-=BLEN; chr.y[0]++; }
+    chkmapbounds();
+    GetTouchbl(&t);
+    CheckTouch();
+    chr.y[1]=oldcy;
+    chr.y[0]=oldy;
+    chr.x[1]=oldcx;
+    chr.x[0]=oldx;
+
+    if (!NoMons)
+      {
+      if ((monsolid&SOLRIG)&&(!(monsolid&SOLLEF)))
+        {
+        chr.x[1]=mi[MMsolid].curx[1];
+        chr.x[0]=mi[MMsolid].curx[0]-1;
+        tx=0;
+        }
+      if ((monsolid&SOLLEF)&&(!(monsolid&SOLRIG)))
+        {
+        chr.x[1]=mi[MMsolid].curx[1];
+        chr.x[0]=mi[MMsolid].curx[0]+1;
+        tx=0;
+        }
+      if ((monsolid&SOLTOP)&&(!(monsolid&SOLBOT)))
+        {
+        chr.y[1]=mi[MMsolid].cury[1];
+        chr.y[0]=mi[MMsolid].cury[0]+1;
+        ty=0;
+        }
+      if ((monsolid&SOLBOT)&&(!(monsolid&SOLTOP)))
+        {
+        chr.y[1]=mi[MMsolid].cury[1];
+        chr.y[0]=mi[MMsolid].cury[0]-1;
+        ty=0;
+        }
+      }
+    chr.x[1]+=tx;         // Move the character's x position variable
+    while (chr.x[1]<0)     { chr.x[1]+=BLEN; chr.x[0]--; }
+    while (chr.x[1]>=BLEN) { chr.x[1]-=BLEN; chr.x[0]++; }
+    while (chr.y[1]<0)     { chr.y[1]+=BLEN; chr.y[0]--; }
+    while (chr.y[1]>=BLEN) { chr.y[1]-=BLEN; chr.y[0]++; }
+    chkmapbounds();
+
+    GetTouchbl(&t);
+    retval=chksolids(tx,0,&t);
+    OnGround(retval); 
+    #ifdef SOLDEBUG    
+    Gwritestr(1,12,25,"     ",5);
+    Gwritestr(1,11,25,"    ",4);
+    Gwritestr(1,13,25,"   ",3);
+    Gwritestr(1,14,25,"      ",6);
+    #endif
+//    CheckTouch();
+   
+    if (retval&SOLRIG) // Right
+      { 
+      #ifdef SOLDEBUG    
+      Gwritestr(1,12,25,"Right",5);
+      #endif
+      chr.x[1]=0;
+      }
+    if (retval&SOLLEF) // Left
+      { 
+      #ifdef SOLDEBUG    
+      Gwritestr(1,11,25,"Left",4);
+      #endif
+      chr.x[0]++;
+      chr.x[1]=0;
+      }
+
+    chr.y[1]+=ty;
+
+            // Has character gone off the edge of the block
+    while (chr.y[1]<0)     { chr.y[1]+=BLEN; chr.y[0]--; }
+    while (chr.y[1]>=BLEN) { chr.y[1]-=BLEN; chr.y[0]++; }
+    chkmapbounds();
+    GetTouchbl(&t);
+    retval=chksolids(0,ty,&t);
+    OnGround(retval); 
+  
+    if (retval&SOLBOT)  // Bottom
+      {
+      #ifdef SOLDEBUG    
+      Gwritestr(1,14,25,"Bottom",4);
+      #endif
+      chr.y[1]=0;
+      }
+    if (retval&SOLTOP) // Top
+      { 
+      #ifdef SOLDEBUG    
+      Gwritestr(1,13,25,"Top",3);
+      #endif
+      chr.y[0]++;
+      chr.y[1]=0;
+      }
+                 // Calculate new coordinates
+    if (mx<chr.x[0]) tx=(chr.x[0]-mx)*BLEN;
+    else tx=(MLEN+(chr.x[0]-mx))*BLEN;
+    tx+=chr.x[1];
+    ci.nextx = tx-scroll.nx;     // Save the new char x coord
+ 
+    if (my<chr.y[0]) ty=(chr.y[0]-my)*BLEN;
+    else ty=(MWID+(chr.y[0]-my))*BLEN;
+    ty+=chr.y[1];
+    ci.nexty = ty-scroll.ny;     // Save the new char y coord
+    }
+  return (FALSE);  // False means that Character is not dead
+  } 
+
+static char MonInRange(int MMnum) // Return TRUE if monster should be in its
+  {                               // Attack pattern.
+  if ((abs(mi[MMnum].curx[0]-chr.x[0])<ATTACKX)&&
+      (abs(mi[MMnum].cury[0]-chr.y[0])<ATTACKY))
+    { return (TRUE); }
+  return (FALSE);
+  }
+
+boolean minfo::ChkHorizWalls(Coord2d *Move, Coord2d *Temp)
+  {
+  unsigned char chk;
+  char walls;
+  char flag;
+
+  if (curx[1]+Move->x <  0)    { Temp->x--;  chk=SOLRIG; flag=1; }
+// Theoretically it should work better w/ this but in practice it does
+// not work well at all:
+//  if (curx[1]+Move->x >= BLEN) { Temp->x+=2; chk=SOLLEF; flag=2; }
+  else                         { Temp->x++;  chk=SOLLEF; flag=3; }
+
+  Coord2d_Wrap((*Temp),MLEN,MWID);
+  //Temp->Wrap(MakeCoord2d(MLEN,MWID));
+
+  walls=blks[0][blkmap[map[Temp->y][Temp->x].blk]].solid;
+
+  if (cury[1]+Move->y > BLEN/4)
+    walls= walls | blks[0][blkmap[map[(Temp->y+1)%MWID][Temp->x].blk]].solid;
+  if (cury[1]+Move->y < -BLEN/4)
+    walls= walls | blks[0][blkmap[map[(Temp->y-1+MWID)%MWID][Temp->x].blk]].solid;
+
+  walls &= chk;
+  if (walls!=0)
+    {
+    switch(flag)
+      {
+      case 1: Move->x = -curx[1];     Temp->x++; break;  // No Room to move left.
+      case 2: Move->x = BLEN-curx[1]; Temp->x--; break;  // Room to move only to block end.
+      case 3: Move->x = -curx[1];     Temp->x--; break;  // No Room to move right.
+      }
+    return(TRUE);
+    }
+  return(FALSE);
+  }
+
+boolean minfo::ChkVertWalls(Coord2d *Move, Coord2d *Temp)
+  {
+  unsigned char chk;
+  char walls;
+  char flag;
+
+  if (cury[1]+Move->y <  0)    { Temp->y--;  chk=SOLBOT; flag=1; }
+// Theoretically it should work better w/ this but in practice it does
+// not work well at all:
+//  if (cury[1]+Move->y >= BLEN) { Temp->y+=2; chk=SOLTOP; flag=2; }
+  else                         { Temp->y++;  chk=SOLTOP; flag=3; }
+  Coord2d_Wrap((*Temp),MLEN,MWID);
+  //Temp->Wrap(MakeCoord2d(MLEN,MWID));
+
+  walls=blks[0][blkmap[map[Temp->y][Temp->x].blk]].solid;
+
+  if (curx[1]+Move->x > BLEN/4)
+    walls = walls | blks[0][blkmap[map[Temp->y][(Temp->x+1)%MLEN].blk]].solid;
+  if (curx[1]+Move->x < -BLEN/4)
+    walls = walls | blks[0][blkmap[map[Temp->y][(Temp->x-1+MLEN)%MLEN].blk]].solid;
+
+
+  walls &= chk;
+  if (walls!=0)
+    {
+    switch(flag)
+      {
+      case 1: Move->y = -cury[1]; Temp->y++;   break;  // No Room to move left.
+      case 2: Move->y = BLEN-cury[1]; Temp->y--; break;  // Room to move only to block end.
+      case 3: Move->y = -cury[1]; Temp->y--;     break;  // No Room to move right.
+      }
+    return(TRUE);
+    }
+  return(FALSE);
+  }
+
+
+boolean minfo::ChkWalls(Coord2d *Move)
+  {
+  Coord2d Temp;
+  boolean Blocked = FALSE;
+
+  Temp.x=curx[0];
+  Temp.y=cury[0];
+
+  if (abs(Move->x)>abs(Move->y))
+    {
+    Blocked |= ChkHorizWalls(Move,&Temp);
+    if (abs(Move->y)) Blocked|=ChkVertWalls(Move,&Temp);
+    }
+  else
+    {
+    if (abs(Move->y)) Blocked|=ChkVertWalls(Move,&Temp);
+    if (abs(Move->x)) Blocked|=ChkHorizWalls(Move,&Temp);
+    }
+  return(Blocked);
+  }
+
+
+static int MonPicNum(int MMnum)
+  {
+  int temp;
+  if ((mi[MMnum].CurPic>=0)&&(mi[MMnum].CurPic<LASTSL))
+    {
+    temp=mon[mm[MMnum].monnum].pic[mi[MMnum].CurPic][0];
+
+    if ((temp<MONBL)&&(temp>=0)) return(temp);
+    else return(MONBL);
+    }
+  else return (MONBL);
+  }
+
+static int ChkMonChr(int MMnum)
+  {
+  int retval=FALSE;
+  Coord2d Mon,Chr,Maxx,Least;
+  int mons;
+  minfo *moni = &mi[MMnum];
+
+  if (mi[MMnum].ScrPos.x==OFFSCRN) return(FALSE);
+
+  Least.x=Min(moni->ScrPos.x,ci.scrx);
+  Least.y=Min(moni->ScrPos.y,ci.scry);
+
+  Chr.x = ci.scrx - Least.x;
+  Chr.y = ci.scry - Least.y;
+  Mon.x = moni->ScrPos.x - Least.x;
+  Mon.y = moni->ScrPos.y - Least.y;
+
+  Maxx.x = Max(Chr.x,Mon.x);
+  Maxx.y = Max(Chr.y,Mon.y);
+
+  if (((Mon.x<=Chr.x+BLEN)&&(Mon.x+BLEN>=Chr.x))&&
+      ((Mon.y<=Chr.y+BLEN)&&(Mon.y+(BLEN*2)>=Chr.y)))  // *2 for 2-high chars
+    {  // Monsters and character might be touching
+    #ifdef GENDEBUG
+    Gwritestr(20,20,15,"      ",6);
+    #endif
+    if ( (mons=MonPicNum(MMnum))>=MONBL) return(FALSE);
+    retval=0;
+    if (CHRFRAME.pic2<CHARBL) retval=PicChkTouch(Chr.x,Chr.y,(char*)blks[2][CHRFRAME.pic2].p,Mon.x,Mon.y,(char*)blks[1][mons].p);
+    if (CHRFRAME.pic1<CHARBL) retval|=PicChkTouch(Chr.x,Chr.y,(char*)blks[2][CHRFRAME.pic1].p,Mon.x,Mon.y+BLEN,(char*)blks[1][mons].p);
+    if (retval)
+      {
+      mons=blks[1][mons].solid;
+      if (mons>0)
+        {
+        if (Maxx.x>=Maxx.y)   // Push horizontzally
+          {
+          if (Chr.x==0) monsolid|=(SOLRIG&mons);
+          else          monsolid|=(SOLLEF&mons);
+          }
+        else        // Push Vertically
+          {
+          if (Chr.y==0) monsolid|=(SOLBOT&mons);
+          else          monsolid|=(SOLTOP&mons);
+          }
+        MMsolid=MMnum;
+        }
+      }
+    if ((monsolid&SOLRIG)&&(monsolid&SOLLEF))  // 2 monster stuff
+      {
+      if (Chr.y==0) monsolid|=(SOLBOT&mons);      // Push him in the Y
+      else          monsolid|=(SOLTOP&mons);      // 'Cause no where to go in x
+      }
+    if ((monsolid&SOLBOT)&&(monsolid&SOLTOP))  // 2 monster stuff
+      {
+      if (Chr.x==0) monsolid|=(SOLRIG&mons);      // Push him in X 'Cause no Y
+      else          monsolid|=(SOLLEF&mons);
+      }
+    }
+    #ifdef HITDEBUG
+    if (retval)
+      {
+      DoSound(1); Gwritestr(30,10,clock%256,"HIT!",4);
+      while(keydn[46]==0);
+      while(keydn[46]==1);
+      }
+    else Gwritestr(30,10,19,"MISS",4);
+    #endif
+  return(retval);
+  }  
+
+static int DoCollision(int mm1,int mm2,int where)
+  {
+  char tch=FALSE;
+  int mon1,mon2;
+  int monpic1,monpic2;
+  int addx=0,addy=0;
+  
+  #ifdef HITDEBUG
+  Gwritestr(5,4,(clock%128),"DoColl",6);
+  #endif
+
+  mon1=mm[mm1].monnum;
+  mon2=mm[mm2].monnum;
+  
+  if ((mon1<LASTMON)&&(mon2<LASTMON))
+    {
+    if(mon[mon1].power!=mon[mon2].power)
+      {
+      if (where&1) addx=BLEN;
+      if (where&2) addy=BLEN;
+     
+      if ((monpic1=MonPicNum(mm1))>=MONBL) return(mm2);
+      if ((monpic2=MonPicNum(mm2))>=MONBL) return(mm1);
+
+      tch=PicChkTouch(mi[mm1].curx[1]+addx,mi[mm1].cury[1]+addy,blks[1][monpic1].p[0],mi[mm2].curx[1],mi[mm2].cury[1],blks[1][monpic2].p[0]);
+      if (tch)
+        {
+        if (mon[mon1].power<mon[mon2].power)
+          {
+          KillMon(mm1);
+          if (mi[mm2].fromchar>0) 
+            {
+            ci.score += mon[mon1].upscore;
+            DoSound(KILLSOUND);
+            KillMon(mm2);
+            return(LASTMM);
+            }
+          return(mm2);
+          }
+        if (mon[mon1].power>mon[mon2].power)
+          { 
+          KillMon(mm2);
+          if (mi[mm1].fromchar>0) 
+            {
+            ci.score += mon[mon2].upscore;
+            DoSound(KILLSOUND);
+            KillMon(mm1);
+            return(LASTMM);
+            }
+          return(mm1);
+          }
+        }
+      }
+    }
+  return(mm2);
+  }
+
+static char PicChkTouch(int x1,int y1,unsigned char far *pic1, int x2,int y2,unsigned char far *pic2)
+  {
+  register int lx,ly;
+  int dx,dy;
+  int ctr1,ctr2;
+
+  #ifdef HITDEBUG
+  static unsigned char col=0;
+  #endif
+  
+  dx=abs(x2-x1);
+  dy=abs(y2-y1);
+  x2-=dx; x1-=dx;
+  y2-=dy; y1-=dy;
+
+  #ifdef HITDEBUG
+  Gwritestr(20,20,col++,"IN Check ",9);
+  drawblk(100+x1,100+y1,pic1);
+  drawblk(100+x2,100+y2,pic2);
+  #endif
+  if (dx>BLEN) return(FALSE); // Can't touch if blks not touching
+  if (dy>BLEN) return(FALSE);
+
+  if ((x2>=x1)&&(y2>=y1))
+    {
+    #ifdef HITDEBUG
+    Gwritestr (30,20,col,"1",1);
+    #endif
+    ctr1=BLEN*dy;
+    ctr2=0;
+    for (ly=0;ly< (y1+BLEN)-y2; ly++)
+      {
+      ctr1+=dx;
+      for (lx=0;lx< (x1+BLEN)-x2; lx++,ctr1++,ctr2++)
+        {
+        if (( (*(pic1+ctr1))!=TRANSCOL)&((*(pic2+ctr2)) !=TRANSCOL))
+          {
+          return(TRUE);
+          }
+        }
+      ctr2+=dx;
+      }
+    return(FALSE);
+    }
+  if ((x2>=x1)&&(y2<=y1))
+    {
+    #ifdef HITDEBUG
+    Gwritestr (30,20,col,"2",1);
+    #endif
+    ctr1=0;
+    ctr2=dy*BLEN;
+    for (ly=0;ly< (y2+BLEN)-y1; ly++)
+      {
+      ctr1+=dx;
+      for (lx=0;lx< (x1+BLEN)-x2; lx++,ctr1++,ctr2++)
+        {
+        if (( *(pic1+ctr1)!=TRANSCOL)&(*(pic2+ctr2) !=TRANSCOL))
+          {
+          return(TRUE);
+          }
+        }
+      ctr2+=dx;
+      }
+    return(FALSE);
+    }
+  if ((x2<=x1)&&(y2>=y1))
+    {
+    #ifdef HITDEBUG
+    Gwritestr (30,20,col,"3",1);
+    #endif
+    ctr2=0;
+    ctr1=dy*BLEN;
+    for (ly=0;ly< (y1+BLEN)-y2; ly++)
+      {
+      ctr2+=dx;
+      for (lx=0;lx< (x2+BLEN)-x1; lx++,ctr1++,ctr2++)
+        {
+        if (( *(pic1+ctr1)!=TRANSCOL)&(*(pic2+ctr2) !=TRANSCOL))
+          {
+          return(TRUE);
+          }
+        }
+      ctr1+=dx;
+      }
+    return(FALSE);
+    }
+  if ((x2<=x1)&&(y2<=y1))
+    {    
+    #ifdef HITDEBUG
+    Gwritestr (30,20,col,"4",1);
+    #endif
+    ctr2=(BLEN*dy);
+    ctr1=0;
+
+    for (ly=0;ly< (y2+BLEN)-y1; ly++)
+      {
+      ctr2+=dx;
+      for (lx=0;lx< (x2+BLEN)-x1; lx++,ctr1++,ctr2++)
+        {
+        if (( *(pic1+ctr1)!=TRANSCOL)&&(*(pic2+ctr2) !=TRANSCOL))
+          {
+          return(TRUE);
+          }
+        }
+      ctr1+=dx;
+      }
+    return(FALSE);
+    }
+  return(FALSE);
+  }
+
+static int moveallmons(void)
+  {
+  int MMnum=0;
+  int MONnum=0;  
+  Coord2d Temp;
+  Coord2d Move;
+  int anymoved=FALSE;
+  int survivor;
+  int speed;
+  minfo *Minfo;
+  monstruct *Mon;
+
+  Minfo=&mi[0];
+  for (MMnum=0;MMnum<LASTMM;MMnum++,Minfo++)
+    {
+    MONnum=mm[MMnum].monnum;
+    Mon   =&mon[MONnum];
+    if (MONnum<LASTMON)                // Monster being used
+      {
+      if (clock>=Minfo->NextAni)
+        {                              // It's time to change the picture 
+        survivor=Minfo->CurPic;        // Save old to see if change
+        Minfo->CurPic++;               // Inc curpic and check bounds.
+        if ((Minfo->CurPic>=LASTSL)||(Mon->pic[Minfo->CurPic][0]>=MONBL))
+           {
+           if (Mon->pic[0][0]<MONBL) Minfo->CurPic=0;
+           else Minfo->CurPic=LASTSL;
+           }
+        if (Minfo->CurPic<LASTSL) // Set next animation time
+          Minfo->NextAni=clock+Mon->pic[Minfo->CurPic ][1];
+        else Minfo->NextAni=clock+100000; // No picture, never try to change
+
+        if ((Minfo->NextAni!=survivor)&&(onscrn(Minfo->curx[0],Minfo->cury[0],&Minfo->ScrPos)))
+          anymoved=TRUE; // Redraw everything if pic has changed and on scrn
+        }
+
+      if (clock>=Minfo->NextMove)              //Time to move monster?
+        {
+        speed=(clock-Minfo->NextMove+1)/MONMOVESPEED;  // How far?
+        Minfo->NextMove=clock+MONMOVESPEED;    //Set next time to move
+
+        if ( (Mon->activate!=FALSE)            // If near the character and
+           &&(Minfo->CurMarch!=ATTACKMOVEMENT) //   and attack path is set
+           &&(MonInRange(MMnum)) )             //   start using it.
+          { 
+          Minfo->CurMarch= ATTACKMOVEMENT;
+          Minfo->dest    = 1;
+          }
+        if ( (Minfo->CurMarch==ATTACKMOVEMENT)    // Currently attacking
+           &&(Mon->activate==2) )                 // Relative to player
+          {
+          Coord2d_Set(Minfo->Target,
+             (Mon->march[ATTACKMOVEMENT][Minfo->dest].x+chr.x[0]+MLEN)%MLEN,
+             (Mon->march[ATTACKMOVEMENT][Minfo->dest].y+chr.y[0]+MWID)%MWID);
+          Minfo->DistToPlace(Minfo->Target);
+          Minfo->offl=0;
+          Move=Minfo->Bresenhams((Mon->march[ATTACKMOVEMENT][Minfo->dest].pic)*speed);
+          if (Minfo->offl==-1)
+            {
+            Minfo->dest++;
+            Minfo->offs=0;
+            if ( (Minfo->dest==MAXMARCH)||(Mon->march[ATTACKMOVEMENT][Minfo->dest].pic==0) )
+              {                                 // End of march, so
+              Minfo->CurMarch=NORMALMOVEMENT;   // go back to normal pattern
+              Minfo->dest=0;
+              }
+            else Minfo->orient=Mon->march[ATTACKMOVEMENT][Minfo->dest].orient;
+            }
+          }
+        else if (Mon->towards==0)   // monster in any sort of set path.
+          {
+          if (Minfo->offl==-1) if (MonEndPath(MMnum,MONnum)) { anymoved=TRUE; continue;}
+          Move=Minfo->Bresenhams((Mon->march[Minfo->CurMarch][Minfo->dest-1].pic)*speed);
+          }
+        else if (Mon->towards<64)  // Move mon always towards or away from char
+          {
+          if (!Minfo->fromchar)
+            {
+            Minfo->DistToPlace(chr.x[0],chr.y[0]);
+            Minfo->Delta.x+=(chr.x[1]-Minfo->curx[1]);
+            Minfo->Delta.y+=(chr.y[1]-Minfo->cury[1]);
+            if (Mon->towards<0)    // If moving away, reverse the sign
+              {
+              Minfo->Delta.x = -Minfo->Delta.x;
+              Minfo->Delta.y = -Minfo->Delta.y;
+              }
+            if (Minfo->Delta.x<0) Minfo->orient |= 4;  // Keep monster facing
+            else                  Minfo->orient = 0;   // correctly.
+            }
+          Move=Minfo->Bresenhams(abs(Mon->towards)*speed);
+          }
+        else                       // random movement
+          {
+          if ((Minfo->curx[0]==Minfo->Target.x)&&(Minfo->cury[0]==Minfo->Target.y))
+            {
+            if (random(2)) Minfo->Target.x = (Minfo->Target.x+random(7)+5)%MLEN;
+            else
+              {
+              Minfo->Target.x -= (random(7)+5);
+              if (Minfo->Target.x<0) Minfo->Target.x += MLEN;
+              }
+            if (random(2)) Minfo->Target.y = (Minfo->Target.y+random(7)+5)%MWID;
+            else
+              {
+              Minfo->Target.y -= (random(7)+5);
+              if (Minfo->Target.y<0) Minfo->Target.y += MWID;
+              }
+            Minfo->DistToPlace(Minfo->Target);
+            Minfo->offl=0;
+            Minfo->offs=0;
+            }
+          Move=Minfo->Bresenhams((Mon->towards>>6)*speed);
+          }
+
+
+        if (Mon->thru)
+          if (Minfo->ChkWalls(&Move))
+            if (Minfo->fromchar>0)
+              if (KillMon(MMnum)) continue;  // Don't do monster since its dead.
+
+        if ( (Move.x==0)&&(Move.y==0) )      // Keep monsters moving
+          {
+          Coord2d_Set(Minfo->Target,Minfo->curx[0],Minfo->cury[0]);
+          }
+        else
+          {
+          Minfo->curx[1]+=Move.x;
+          Minfo->cury[1]+=Move.y;
+          }
+
+          // Erase the monster from the old map location.
+        if (map[Minfo->cury[0]][Minfo->curx[0]].mon==MMnum)
+          map[Minfo->cury[0]][Minfo->curx[0]].mon=LASTMM;
+   
+        while (Minfo->curx[1]>=BLEN) { Minfo->curx[1]-=BLEN; Minfo->curx[0]++; }
+        while (Minfo->curx[1]<0)     { Minfo->curx[1]+=BLEN; Minfo->curx[0]--; }
+        while (Minfo->cury[1]>=BLEN) { Minfo->cury[1]-=BLEN; Minfo->cury[0]++; }
+        while (Minfo->cury[1]<0)     { Minfo->cury[1]+=BLEN; Minfo->cury[0]--; }
+        if (Minfo->curx[0]<0)          Minfo->curx[0]+=MLEN;
+        if (Minfo->cury[0]<0)          Minfo->cury[0]+=MWID;
+        if (Minfo->curx[0]>=MLEN)      Minfo->curx[0]-=MLEN;
+        if (Minfo->cury[0]>=MLEN)      Minfo->cury[0]-=MWID;
+   
+        Temp = Minfo->ScrPos;
+        if (Minfo->CalcDraw())
+          {      
+          if (Coord2d_NotEq(Temp,Minfo->ScrPos)) anymoved=TRUE;
+          }
+        else Coord2d_Set(Minfo->ScrPos,OFFSCRN,OFFSCRN);  // Monster off of screen
+
+        // Check to see if monster has touched a character
+
+        if ((Minfo->CurPic>=0)&&(Minfo->CurPic<LASTSL)&&(ChkMonChr(MMnum)))
+          {
+          if (Minfo->fromchar!=1)
+            {
+            int PlaySnd,temp;
+            if ( (temp=MonPicNum(MMnum))<=MONBL) PlaySnd=DoBlockTouchChar(&blks[1][temp])-1;
+            if ((mon[mm[MMnum].monnum].power<CHARPOWER)&&KillMon(MMnum))
+              {
+              if (!PlaySnd) DoSound(KILLSOUND);
+              anymoved=TRUE;
+              continue;
+              }
+            }
+          }
+
+        survivor=MMnum;  // check for one monster killing another
+
+        if (map[Minfo->cury[0]][Minfo->curx[0]].mon<LASTMM)
+          survivor=DoCollision(map[Minfo->cury[0]][Minfo->curx[0]].mon,MMnum,0);
+        if (map[Minfo->cury[0]][Minfo->curx[0]+1].mon<LASTMM)
+          survivor=DoCollision(map[Minfo->cury[0]][Minfo->curx[0]+1].mon,MMnum,1);
+        if (map[Minfo->cury[0]+1][Minfo->curx[0]+1].mon<LASTMM)
+          survivor=DoCollision(map[Minfo->cury[0]+1][Minfo->curx[0]+1].mon,MMnum,3);
+        if (map[Minfo->cury[0]+1][Minfo->curx[0]].mon<LASTMM)
+          survivor=DoCollision(map[Minfo->cury[0]+1][Minfo->curx[0]].mon,MMnum,2);
+
+     // Put monster into map array at new location
+        if (survivor<LASTMM) map[mi[survivor].cury[0]][mi[survivor].curx[0]].mon=survivor;
+        if ((Mon->end>0)&&(Minfo->BirthTime+Mon->end<=clock))
+          { anymoved=TRUE; KillMon(MMnum); }
+        }
+      }
+    }
+  return(anymoved);
+  }
+
+
+static boolean MonEndPath(int MMnum,int MONnum)
+  {
+  int l;
+  minfo *moni;  
+
+  moni=&mi[MMnum];
+
+  if ((moni->dest==MAXMARCH)||(mon[MONnum].march[moni->CurMarch][moni->dest].pic==0))
+    {                         // End of march.
+    if ((mon[MONnum].end==-1)&&(moni->CurMarch==NORMALMOVEMENT))
+       if (KillMon(MMnum)) return(TRUE);  // Kill monster after path
+    moni->dest=0;
+    moni->CurMarch=NORMALMOVEMENT;
+    }
+
+  Coord2d_Set(moni->Target,
+      mon[MONnum].march[moni->CurMarch][moni->dest].x+moni->curx[0],
+      mon[MONnum].march[moni->CurMarch][moni->dest].y+moni->cury[0]);
+
+  if (moni->dest!=0)  // Other then the first, the data struct is Deltas, so subtract the previous
+    {
+    moni->Target.x -= mon[MONnum].march[moni->CurMarch][(moni->dest)-1].x;
+    moni->Target.y -= mon[MONnum].march[moni->CurMarch][(moni->dest)-1].y;
+    }
+
+  moni->orient=mon[MONnum].march[moni->CurMarch][moni->dest].orient;
+  Coord2d_Wrap((moni->Target),MLEN,MWID);
+  //moni->Target.Wrap(MakeCoord2d(MLEN,MWID));
+  moni->DistToPlace(moni->Target);
+
+  moni->offl=0;     // Set up the Bresenhams' counters.
+  moni->offs=0;
+  moni->dest++;
+  return(FALSE);    // False means monster not dead.
+  }
+  
+
+Coord2d minfo::Bresenhams(int speed)
+  {
+  Coord2d Move= {0,0};
+  register int l;
+
+  if (abs(Delta.x)>=abs(Delta.y))
+    {
+    for (l=0; l<speed; l++)
+      {
+      if (offl >= abs(Delta.x)) { offl=-1; break; }  // At destination.
+      offl++;
+      Move.x += Sign(Delta.x);
+      offs   +=  Abs(Delta.y);
+      if (offs >= Abs(Delta.x))
+        {
+        offs   -= Abs(Delta.x);
+        Move.y += Sign(Delta.y);
+        }
+      }
+    }
+  else
+    {
+    for (l=0;l<speed;l++)
+      {
+      if ( offl >= Abs(Delta.y)) { offl=-1; break; }
+      offl++;
+      offs   += Abs(Delta.x);
+      Move.y += Sign(Delta.y);
+      if (offs >= Abs(Delta.y))
+        {
+        offs   -= Abs(Delta.y);
+        Move.x += Sign(Delta.x);
+        }
+      }
+    }
+  return(Move);
+  }
+
+void minfo::DistToPlace(Coord2d Spot)  // Calc shortest dist, incl wrap around
+  {                                    // sign indicates direction.
+  Delta.x = Spot.x - curx[0];
+  Delta.y = Spot.y - cury[0];
+  if (Delta.x >  MLEN/2) Delta.x -= MLEN;    // Wrap around handling code.
+  if (Delta.x < -MLEN/2) Delta.x += MLEN;
+  if (Delta.y >  MWID/2) Delta.y -= MWID;
+  if (Delta.y < -MWID/2) Delta.y += MWID;
+  Delta.x*=BLEN;  // Convert block distance to pixel distance.
+  Delta.y*=BLEN;
+  }
+
+void minfo::DistToPlace(int x,int y )  // Calc shortest dist, incl wrap around
+  {                                    // sign indicates direction.
+  Delta.x = x - curx[0];
+  Delta.y = y - cury[0];
+  if (Delta.x >  MLEN/2) Delta.x -= MLEN;    // Wrap around handling code.
+  if (Delta.x < -MLEN/2) Delta.x += MLEN;
+  if (Delta.y >  MWID/2) Delta.y -= MWID;
+  if (Delta.y < -MWID/2) Delta.y += MWID;
+  Delta.x*=BLEN;  // Convert block distance to pixel distance.
+  Delta.y*=BLEN;
+  }
+
+
+
+static boolean KillMon(int MMnum)
+  {
+  if (mon[mm[MMnum].monnum].end!=-2)  // -2 means never kill monster
+    {
+    if (mon[mm[MMnum].monnum].newmon==LASTMON)   // Really Kill it.
+      {
+      mm[MMnum].monnum=LASTMON;
+      if (MMnum<FirstEmptyMM) FirstEmptyMM=MMnum-1; // Birth monster optimization
+      return(TRUE);
+      }
+    else  // Change to new Monster
+      {
+      BirthMon(MMnum,mon[mm[MMnum].monnum].newmon,mi[MMnum].curx[0],mi[MMnum].cury[0]);
+      mi[MMnum].offl     = -1;   // Force a call which sets up a new path.
+      mi[MMnum].CurMarch = NORMALMOVEMENT;  // Set the path to be the first
+      mi[MMnum].dest     = 0;               // in the normal motion seq.
+      mi[MMnum].CurPic   = 0;
+      if (mi[MMnum].fromchar>0) mi[MMnum].fromchar++;
+      }
+    }
+  return(FALSE);
+  }
+
+
+static void BlocBirthMon(void)
+  {
+  register int lp;
+  int lx,ly;
+  int tmap,MMslot,yinmap,xinmap;
+
+  for (lp=0;lp<BACKBL;lp++) blks[0][lp].Birthtime &= 0xBFFF; // Clear flag
+
+  for (lp=0;lp<MaxBlkMon;lp++)
+    {
+    tmap=BlkMon[lp].blnum;
+    if (BlkMon[lp].nexttime<=clock)                 // Time to birth a mon?
+      {
+      BlkMon[lp].nexttime+=blks[0][tmap].Birthtime; // set next birthing time
+      blks[0][tmap].Birthtime |= 0x4000;            // Set flag to birth monster
+      }
+    }
+  for (lx=mx-(SCRNBLEN)/2;lx<mx+(SCRNBLEN)*3/2;lx++)
+    {
+    for (ly=my-(SCRNBWID)/2;ly<my+(SCRNBWID)*3/2;ly++)
+      {
+      xinmap=(lx+MLEN)%MLEN;
+      yinmap=(ly+MWID)%MWID;
+      tmap=blkmap[map[yinmap][xinmap].blk];
+      if (blks[0][tmap].Birthtime & 0x4000)         // If flag bit set
+        {
+        if ((MMslot=BirthMon(LASTMM,blks[0][tmap].Birthmon,xinmap,yinmap)) < LASTMM)
+          {
+          mi[MMslot].fromchar =         0;          // Birth monster
+          mi[MMslot].Reset();
+          }
+        }
+      }
+    }
+  }
+
+void minfo::Reset(void)
+  {
+  Coord2d_Set(Delta,0,0);
+  Coord2d_Set(ScrPos,OFFSCRN,OFFSCRN);
+  OldPos   = ScrPos;
+  PicDrawn = FALSE;
+  curx[1]  = 0;
+  cury[1]  = 0;
+  CurPic   = -1;
+  offl     = -1;
+  offs     = 0;
+  CurMarch = NORMALMOVEMENT;
+  orient   = 0;
+  dest     = 0;  // Index to Next Pos & pic of Monster
+  }
+
+static int BirthMon(int MMnum,char mon,int x,int y)
+  {
+  int t;
+  if (MMnum>=LASTMM)
+    {
+    t=FirstEmptyMM;
+    do
+      {
+      if (mm[t].monnum==LASTMON) { MMnum=t; break; }
+      t++;
+      if (t>=LASTMM) t=0;
+      } while (t!=FirstEmptyMM);
+    FirstEmptyMM=t;
+    }
+
+  if ((MMnum<LASTMM)&&(MMnum>=0))          // Empty Monster Slot found
+    {
+    mm[MMnum].monnum   =           mon;
+    mi[MMnum].BirthTime=         clock;
+    mi[MMnum].NextAni  =         clock;
+    mi[MMnum].NextMove =         clock;
+    mi[MMnum].curx[0]  =             x;
+    mi[MMnum].cury[0]  =             y;
+    Coord2d_Set(mi[MMnum].Target,x,y);
+    }
+  else MMnum=LASTMM;
+  return(MMnum);
+  }
+
+static void CharBirthMon(int x,int y,int MonNum)
+  {
+  int MMslot;
+  minfo *moni;
+
+  if ( (MMslot=BirthMon(LASTMM,MonNum,x,y)) >= LASTMM) return; // No empty Monster Slots */
+  moni=&mi[MMslot];
+
+  moni->Reset();
+  moni->fromchar = 1;
+  moni->curx[1]  = chr.x[1];
+  moni->cury[1]  = chr.y[1];
+  moni->offl     = -1;
+  if (mon[MonNum].towards<64)  
+    {
+    Coord2d_Set(moni->Delta,ci.netx*BLEN,ci.nety*BLEN);  // Make monster go away from char
+
+    if (abs(ci.netx)-abs(ci.nety)>0)    // Set orientation so goes away from char
+      {
+      if (ci.netx<0) moni->orient = 4;
+      else           moni->orient = 0;
+      }
+    else
+      {
+      if (ci.nety<0) moni->orient = 3;
+      else           moni->orient = 1;
+      }
+    }
+  }
+
+static void chkmapbounds(void) // Check to see if outside of map boundaries
+  {
+  if (chr.x[0]>=MLEN)      chr.x[0]-=MLEN;
+  if (chr.x[0]<0)          chr.x[0]+=MLEN;
+  if (chr.y[0]>=MWID)      chr.y[0]-=MWID;
+  if (chr.y[0]<0)          chr.y[0]+=MWID;
+  }
+
+   // Makes sure char stays within screen bounds
+static void chkscrnbounds(int *tx, int *ty)
+  {
+  int cx,cy;
+  int tmx,tmy;
+  int temp[2];
+
+
+  cx=mx;
+  cy=my;
+
+  temp[0]=cx-chr.x[0];  // Straight Dist from top left to char
+  if (temp[0]>0) temp[1]=-1*((MLEN-cx)+chr.x[0]); // Dist. other way
+  else temp[1]= (MLEN-chr.x[0])+cx;
+  if (abs(temp[1])>abs(temp[0])) tmx=temp[0];
+  else tmx=temp[1];
+    
+  temp[0]=cy-chr.y[0];  // Straight dist
+  if (temp[0]>0) temp[1]=-1*((MWID-cy)+chr.y[0]); // Dist wrapped around/
+    else temp[1]= (MWID-chr.y[0])+cy;
+  if (abs(temp[1])>abs(temp[0])) tmy=temp[0];
+  else tmy=temp[1];
+
+  tmx*=-1;
+  tmy*=-1;
+
+  if (*tx<0)
+    {
+    if (tmx<2) if (chr.x[1]<=abs(*tx)) *tx=-1*(chr.x[1]);
+    if (tmx<1) *tx=0;
+    }
+
+  if ((tmx>SCRNBLEN-2)&&(*tx>0)) *tx=0;
+
+  if (*ty<0)
+    {
+    if (tmy<2) if (chr.y[1]<=abs(*ty)) *ty=-1*(chr.y[1]);
+    if (tmy<1) *ty=0;
+    }
+
+  if ((tmy>SCRNBWID-2)&&(*ty>0)) *ty=0;
+  }
+
+static unsigned char DoBlockTouchChar(blkstruct *blk)
+  {
+  unsigned char Snded=FALSE;
+  if ( (blk->effect >= 20) || (blk->effect == 3))  // Don't let a touch happen
+    if (ci.meter[blk->effect]+blk->eamt <= 0)      // if you don't have enough
+      return(FALSE);                               // in a counter.
+
+  if (chr.cseq!=DIESEQ)  // only execute this code once per death
+    {
+    if (blk->chhitpt<=0) ci.hitpts+=blk->chhitpt;
+    else
+      {
+      if ( ((unsigned int) (((unsigned int)ci.hitpts)+blk->chhitpt)) <INF_REPEAT)
+        ci.hitpts+=blk->chhitpt;    // Add or Sub hitpoints
+      else ci.hitpts=INF_REPEAT-1;
+      }
+    if (blk->chhitpt>0) Snded=DoSound(HELPSOUND);
+    else if ((blk->chhitpt<0)&&(chr.cseq!=HURTSEQ))  // Do injure seq.
+      {
+      PushKey();
+      ci.NextAni = clock;
+      chr.cseq   = HURTSEQ;
+      chr.cframe = -1;
+      curkey     = 0xFF;
+      if (chr.sq[HURTSEQ].sound<LASTSND) Snded=DoSound(chr.sq[HURTSEQ].sound);
+      }
+    if (ci.hitpts<=0)
+      {
+      ci.NextAni = clock;
+      chr.cseq   = DIESEQ;         // Set up to do death sequence
+      chr.cframe = -1;
+      curkey     = 0;
+      }
+    }
+
+  if (blk->effect==1)
+    {
+    if (blk->eamt>0) Snded=DoSound(ADDLIFESOUND);
+    ci.lives+=blk->eamt;
+    }
+
+  if ((blk->effect>2)&&(ci.meter[blk->effect]!=INF_REPEAT))
+    {
+    if (!Snded)
+      {
+      if (blk->effect == 3)
+        {
+        if (blk->eamt>0)      Snded=DoSound(ADDMONEYSOUND);
+        else if (blk->eamt<0) Snded=DoSound(SUBMONEYSOUND);
+        }
+      else
+        {
+        if (blk->eamt>0)      Snded=DoSound(ADDOTHERSOUND);
+        else if (blk->eamt<0) Snded=DoSound(SUBOTHERSOUND);
+        }
+      }
+    if (((unsigned int) (((unsigned int) ci.meter[blk->effect])+blk->eamt))<INF_REPEAT)  // Stop any wrap-around
+      {
+      if (ci.meter[blk->effect]+blk->eamt < -1*(INF_REPEAT-128))
+        ci.meter[blk->effect] = -1*(INF_REPEAT-128);
+      else ci.meter[blk->effect]+=blk->eamt;
+      }
+    else ci.meter[blk->effect]=INF_REPEAT-1;
+    } 
+
+  ci.score+=blk->scorepts;      // Add or sub score
+  if (!Snded)
+    {
+    if (blk->scorepts>0)      Snded=DoSound(ADDSCORESOUND);
+    else if (blk->scorepts<0) Snded=DoSound(SUBSCORESOUND);
+    }
+  Snded++;
+  return(Snded);
+  }
+
+static void CheckTouch(void)
+  {
+  register int l;
+  touchblk t;
+
+  GetTouchbl(&t);
+
+  for (l=0;l<6;l++)
+    {
+    if (!blks[0][t.blknum[l]].obj)     // if not an object
+      really_checktouch(t.blks[l][0],t.blks[l][1],t.blknum[l]);
+    }      /* either true or false -- A two is returned for use by pickup */
+  }
+ 
+static char really_checktouch(int x,int y,unsigned char bnum)
+  {
+  Coord2d Tmp;
+
+  if (x != MLEN)   // Touching this block
+    {
+    if (!DoBlockTouchChar(&blks[0][bnum])) return(2);
+    else
+      {
+      if (bnum != blks[0][bnum].touchbl)
+        {
+        if (onscrn(x,y,&Tmp))
+          {
+          map[y][x].blk=blks[0][bnum].touchbl;          // Update in mem
+          BufDrawBlk(Tmp.x,Tmp.y,(char*)blks[0][blkmap[blks[0][bnum].touchbl]].p);
+          AddDirtyRect(Tmp.x,Tmp.y,Tmp.x+BLEN-1,Tmp.y+BLEN-1);
+          }
+        }
+      }
+    }
+  return(TRUE);
+  }
+
+static int chksolids(int dx,int dy,touchblk *t)
+  {
+  unsigned int retstatus=0;
+
+  if (dy>0) retstatus = chkdowns(t);
+  if (dy<0) retstatus = chkups(t);
+
+  if (dx>0) retstatus |= chkrights(t);
+  if (dx<0) retstatus |= chklefts(t);
+
+  return(retstatus);
+  } 
+
+static unsigned int chklefts(touchblk *t)
+  {
+  unsigned int retval=FALSE;
+  unsigned char spots[4]={0,0,0,0};
+  int twohigh=2;
+
+  if ((t->blks[0][0]) !=MLEN) twohigh=0;  // Two high character
+
+  if (t->blknum[twohigh+1] != BACKBL)
+    spots[1] |= blks[0][t->blknum[twohigh+1]].solid&SOLBOT;
+  spots[0] |= blks[0][t->blknum[twohigh]].solid&SOLRIG;
+  if (twohigh==0)  // Actually, this means that the character IS two high!
+    {              // Stop char from going left when only one block stops him
+    spots[0] |= blks[0][t->blknum[2]].solid&SOLRIG;
+    }
+  if (t->blknum[4] !=BACKBL)
+    {
+    if (t->blknum[5] != BACKBL) spots[3] |= blks[0][t->blknum[5]].solid&SOLTOP;
+    if (!(spots[3]&SOLTOP)) spots[2] |= blks[0][t->blknum[4]].solid&SOLRIG;
+    }
+
+  if ((spots[0]&SOLRIG)&&(!(spots[2]&SOLRIG)))  // Code that moves him into 1
+    if (chr.y[1]>((BLEN*2)/4)) chr.y[1]=BLEN;
+    
+  if ((!(spots[0]&SOLRIG))&&(spots[2]&SOLRIG))  // Code that moves him into 1
+    if (chr.y[1]<(BLEN/2)) chr.y[1]=0;
+    
+  if ((spots[0]&SOLRIG)||(spots[2]&SOLRIG)) retval |=SOLLEF;
+  return(retval);
+  }
+
+static unsigned int chkrights(touchblk *t)
+  {
+  unsigned int retval=FALSE;
+  unsigned char spots[4]={0,0,0,0};
+  int twohigh=2;
+
+  if ((t->blks[0][0]) !=MLEN) twohigh=0;
+
+  if (t->blknum[twohigh+1] !=BACKBL)
+    {
+    if (t->blknum[twohigh] !=BACKBL) spots[0] |= blks[0][t->blknum[twohigh]].solid&SOLBOT;
+    if (!(spots[0]&SOLBOT)) spots[1] |= (blks[0][t->blknum[twohigh+1]].solid&SOLLEF);
+    }
+  if (twohigh==0)  // Actually, this means that the character IS two high!
+    {              // Stop char from going left when only one block stops him
+    spots[1] |= blks[0][t->blknum[3]].solid&SOLLEF;
+    }
+
+  if (t->blknum[5] !=BACKBL)
+    {
+    if (t->blknum[4] !=BACKBL) spots[2] |= blks[0][t->blknum[4]].solid&SOLTOP;
+    if (!(spots[2]&SOLTOP)) spots[3] |= (blks[0][t->blknum[5]].solid&SOLLEF);
+    }
+
+  if ((spots[1]&SOLLEF)&&(!(spots[3]&SOLLEF)))  // Code that moves him into 1
+    if (chr.y[1]>((BLEN*2)/4)) chr.y[1]=BLEN;
+   
+  if ((!(spots[1]&SOLLEF))&&(spots[3]&SOLLEF))  // Code that moves him into 1
+    if (chr.y[1]<(BLEN/2)) chr.y[1]=0;
+    
+  if ((spots[1]&SOLLEF)|(spots[3]&SOLLEF)) retval |=SOLRIG;
+  return(retval);
+  }
+
+
+static unsigned int chkups(touchblk *t)
+  {
+  unsigned int retval=FALSE;
+  unsigned char spots[4]={0,0,0,0};
+  int twohigh=2;
+
+  if ((t->blks[0][0]) !=MLEN) twohigh=0;
+  
+  if (t->blknum[twohigh] !=BACKBL)
+    {
+    if (t->blknum[4] !=BACKBL) spots[2] |= blks[0][t->blknum[4]].solid&SOLRIG;
+    if (!(spots[2]&SOLRIG)) spots[0] |= (blks[0][t->blknum[twohigh]].solid&SOLBOT);
+    }
+  if (t->blknum[twohigh+1] !=BACKBL)
+    {
+    if (t->blknum[5] !=BACKBL) spots[3] |= blks[0][t->blknum[5]].solid&SOLLEF;
+    if (!(spots[3]&SOLLEF)) spots[1] |= (blks[0][t->blknum[twohigh+1]].solid&SOLBOT);
+    }
+
+  if ((spots[0]&SOLBOT)&&(!(spots[1]&SOLBOT)))  // Code that moves him into 1
+    if (chr.x[1]>((BLEN*2)/4)) chr.x[1]=BLEN;
+    
+  if ((!(spots[0]&SOLBOT))&&(spots[1]&SOLBOT))  // Code that moves him into 1
+    if (chr.x[1]<(BLEN/2)) chr.x[1]=0;
+   
+  if ((spots[0]&SOLBOT)|(spots[1]&SOLBOT)) retval |=SOLTOP;
+  return(retval);
+  }
+
+
+static unsigned int chkdowns(touchblk *t)
+  {
+  unsigned int retval=FALSE;
+  unsigned char spots[4]={0,0,0,0};
+  int twohigh=2;
+
+  if ((t->blks[0][0]) !=MLEN) twohigh=0; 
+
+  if (t->blknum[4] !=BACKBL)  // Don't do if not even touching
+    { 
+    spots[2] |= blks[0][t->blknum[4]].solid&SOLRIG; 
+    if (t->blknum[twohigh] != BACKBL) spots[0] |= blks[0][t->blknum[twohigh]].solid&SOLRIG;
+    if (!((spots[2]&SOLRIG)&&(spots[0]&SOLRIG))) 
+      spots[2] |= (blks[0][t->blknum[4]].solid&SOLTOP);
+    }
+
+  if (t->blknum[5] !=BACKBL)
+    {
+    if (t->blknum[twohigh+1] !=BACKBL) spots[1] |= blks[0][t->blknum[twohigh+1]].solid&SOLLEF;
+    spots[3] |= blks[0][t->blknum[5]].solid&SOLLEF;
+    if (!((spots[1]&SOLLEF)&(spots[3]&SOLLEF)))
+      spots[3] |= (blks[0][t->blknum[5]].solid&SOLTOP);
+    }
+
+  if ((spots[2]&SOLTOP)&&(!(spots[3]&SOLTOP)))  // Code that moves him into 1
+    {                                           // wide corridors
+    if (chr.x[1]>((BLEN*2)/4)) chr.x[1]=BLEN;
+    }
+  if ((!(spots[2]&SOLTOP))&&(spots[3]&SOLTOP))  // Code that moves him into 1
+    {                                           // wide corridors
+    if (chr.x[1]<(BLEN/2)) chr.x[1]=0;
+    }
+    
+  if ((spots[2]&SOLTOP)|(spots[3]&SOLTOP)) retval |=SOLBOT;
+  return(retval);
+  }
+
+static void OnGround(int Solid)
+  {
+  int gravdir=0;
+  int tempx=0;
+  int tempy=0;
+  
+  tempy=chr.y[0];                 //   Use as grav the block the char is
+  if (chr.y[1]>BLEN/2) tempy+=1;  // mostly on.
+  tempx=chr.x[0];
+  if (chr.x[1]>BLEN/2) tempx+=1;
+  if (tempy>=MLEN) tempy-=MLEN;
+  if (tempx>=MLEN) tempx-=MLEN;
+
+  gravdir=blks[0][blkmap[map[tempy][tempx].blk]].grav;
+
+  //    Only stop gravity if there is a solid block opposing gravity's
+  //    direction.
+  if (((monsolid&SOLBOT)||(Solid&SOLBOT))&&(ci.gravy>0))   // Gravity Down
+    ci.gravy=0;
+  if (((monsolid&SOLTOP)||(Solid&SOLTOP))&&(ci.gravy<0))   // Gravity Up
+    ci.gravy=0;
+  if (((monsolid&SOLRIG)||(Solid&SOLRIG))&&(ci.gravx>0))   // Gravity Right
+    ci.gravx=0;
+  if (((monsolid&SOLLEF)||(Solid&SOLLEF))&&(ci.gravx<0))   // Suck Left
+    ci.gravx=0;
+  
+  // Slow down grav momentum if no more gravity in that dir
+  if (!CHRSEQ.Momentum)
+    {
+    if (!((gravdir&SOLBOT)||(gravdir&SOLTOP))) { ci.gravy*=5; ci.gravy/=6; }
+    if (!((gravdir&SOLLEF)||(gravdir&SOLRIG))) { ci.gravx*=5; ci.gravx/=6; }
+    }
+  }
+
+static int MoveCharGrav(int fn)
+  {
+  static unsigned long int gclk=1;
+  int retval=FALSE;
+  int tempx=0;
+  int tempy=0;
+  
+  if (fn==1) { gclk=clock; return(TRUE); }
+
+  if (clock>=gclk+GRAVSPEED)
+    {
+    gclk=clock;
+
+    tempy=chr.y[0];                 //   Use as grav the block the char is
+    if (chr.y[1]>BLEN/2) tempy+=1;  // mostly on.
+    tempx=chr.x[0];
+    if (chr.x[1]>BLEN/2) tempx+=1;
+    if (tempy>=MWID) tempy-=MWID;
+    if (tempx>=MLEN) tempx-=MLEN;
+
+
+    if (((blks[0][blkmap[map[tempy][tempx].blk]].grav)&4)==4)   
+      ci.gravy+=1;
+    if (((blks[0][blkmap[map[tempy][tempx].blk]].grav)&1)==1)   
+      ci.gravy-=1;
+    if (((blks[0][blkmap[map[tempy][tempx].blk]].grav)&2)==2) 
+      ci.gravx+=1;
+    if (((blks[0][blkmap[map[tempy][tempx].blk]].grav)&8)==8) 
+      ci.gravx-=1;
+
+    if ((ci.gravx)||(ci.gravy)) retval=TRUE; // Since gravity still has an effect, redraw
+     
+    if (ci.gravx>MAXGRAV*4)      ci.gravx=MAXGRAV*4;
+    if (ci.gravx<(-1*MAXGRAV*4)) ci.gravx= -1*MAXGRAV*4;
+    if (ci.gravy>MAXGRAV*4)      ci.gravy=MAXGRAV*4;
+    if (ci.gravy<(-1*MAXGRAV*4)) ci.gravy= -1*MAXGRAV*4;
+    }
+
+  return(retval);
+  }
+
+static void GetTouchbl(touchblk *t)
+  {
+  register int l;
+
+  for (l=0;l<6;l++)         // Initalize tblks array
+    { 
+    t->blks[l][0]=MLEN;     // Put on extra lines just for Pete
+    t->blks[l][1]=MWID;
+    t->blknum[l]=BACKBL;
+    } 
+
+  if (ci.topthere)          // Top block does exist
+    {
+    int temp=0;
+
+    if (chr.y[0]-1<0) temp=chr.y[0]-1+MWID; /* Wrap around boundary */
+    else temp=chr.y[0]-1;
+
+    t->blks[0][0] = chr.x[0]; t->blks[0][1] = temp;  /* Top left */
+    t->blknum[0] = blkmap[map[t->blks[0][1] ][t->blks[0][0] ].blk];
+
+    if (chr.x[1]>0)
+      { 
+      t->blks[1][0]=(chr.x[0]+1)%MLEN; t->blks[1][1]=temp;  /* Top Right */
+      t->blknum[1] = blkmap[map[t->blks[1][1]][t->blks[1][0]].blk];
+      } 
+    }
+
+  t->blks[2][0] = chr.x[0];   t->blks[2][1] = chr.y[0];  /* Mid Left */
+  t->blknum[2] = blkmap[ map[ t->blks[2][1] ][ t->blks[2][0] ].blk ];
+
+  if (chr.x[1]>0)                                      /* Mid Right */
+    { 
+    t->blks[3][0]=(chr.x[0]+1)%MLEN; t->blks[3][1]=chr.y[0];
+    t->blknum[3] = blkmap[  map[ t->blks[3][1] ][ t->blks[3][0] ].blk  ];
+    } 
+  if (chr.y[1]>0)                                      /* Bottom left */
+    { 
+    t->blks[4][0]=chr.x[0]; t->blks[4][1]=(chr.y[0]+1)%MWID;
+    t->blknum[4] = blkmap[  map[ t->blks[4][1] ][ t->blks[4][0] ].blk  ];
+    } 
+  if ((chr.x[1]>0)&&(chr.y[1]>0))                    /* Bottom Right */
+    { 
+    t->blks[5][0]=(chr.x[0]+1)%MLEN; t->blks[5][1]=(chr.y[0]+1)%MWID;
+    t->blknum[5] = blkmap[  map[ t->blks[5][1] ][ t->blks[5][0] ].blk  ];
+    } 
+  }
+
+
+static boolean onscrn(int x,int y,Coord2d *Ret)
+  {
+  Ret->x  =  x-mx;
+  if (mx>x) Ret->x +=MLEN;
+  Ret->x *= BLEN;
+  Ret->x -= scroll.nx;
+  Ret->y= y-my;
+  if (my>y) Ret->y += MWID;
+  Ret->y*=BLEN;
+  Ret->y-=scroll.ny;
+  return(Coord2d_In((*Ret),ScrnLowBnd,ScrnUpBnd));
+  //return( (Ret->x >=0)&&(Ret->y>=0)&&(Ret->x<=SIZEX-BLEN)&&(Ret->y<=SIZEY-BLEN));
+  }
+
+
+/**********************************************************/
+/*      Function to check if time to change the scene     */
+/**********************************************************/
+static int chklnk(int cursc)
+  {
+  register int tloop,loo;
+  touchblk t;
+
+  GetTouchbl(&t);
+
+  for (loo=0;loo<MAXSCENELINKS;loo++)
+    {
+    for (tloop=0;tloop<6;tloop++)
+      {
+      if ((Game.scns[cursc].links[loo].ToScene!=NOSCENE)
+        &&(Game.scns[cursc].links[loo].From.x==t.blks[tloop][0])
+        &&(Game.scns[cursc].links[loo].From.y==t.blks[tloop][1]))
+        {  
+        chr.x[0]=Game.scns[cursc].links[loo].To.x;
+        chr.y[0]=Game.scns[cursc].links[loo].To.y;
+        return (loo);
+        }
+      }
+    }
+  return (MAXSCENELINKS);
+  }
+
+static void Sdrawspbloc(int x,int y,char dir,blkstruct *b)
+  {
+  register int j,k;
+
+  AddDirtyRect(x,y,x+BLEN-1,y+BLEN-1);
+  BufDrawSpBlk(x,y,dir,(char*)b->p);
+
+/*
+  for (j=0;j<BLEN;j++)
+    for (k=0;k<BLEN;k++)
+      switch(dir) 
+        {
+        case 1:       
+          if (b->p[BLEN-j-1][k]!=255)
+            BufPoint (x+j,y+k,b->p[BLEN-j-1][k]);
+          break;
+        case 2: 
+          if (b->p[BLEN-k-1][BLEN-j-1]!=255)
+            BufPoint (x+j,y+k,b->p[BLEN-k-1][BLEN-j-1]);
+          break;
+        case 3:
+          if (b->p[j][BLEN-k-1]!=255)
+            BufPoint (x+j,y+k,b->p[j][BLEN-k-1]);
+          break;
+        case 4: 
+          if (b->p[k][BLEN-j-1]!=255)
+            BufPoint (x+j,y+k,b->p[k][BLEN-j-1]);
+          break;
+        case 5: 
+          if (b->p[j][k]!=255)
+            BufPoint (x+j,y+k,b->p[j][k]);
+          break;
+        case 6: 
+          if (b->p[BLEN-k-1][j]!=255)
+            BufPoint (x+j,y+k,b->p[BLEN-k-1][j]);
+          break;
+        case 7: 
+          if (b->p[BLEN-j-1][BLEN-k-1]!=255)
+            BufPoint (x+j,y+k,b->p[BLEN-j-1][BLEN-k-1]);
+          break;
+        case 0:
+        default:
+          if (b->p[k][j]!=255)
+            BufPoint (x+j,y+k,b->p[k][j]);
+          break;
+        }
+*/
+  }
+
+static int ChangeScroll(void)
+  {
+  int l;
+  int tmx,tmy;
+
+  scroll.Totalx=scroll.Totaly=0;
+  tmx=(ci.nextx+(BLEN/2))-(SIZEX/2);
+  tmy=(ci.nexty+(BLEN/2))-(SIZEY/2);
+
+  scroll.distx=tmx;
+  scroll.disty=tmy;
+
+  if ((scroll.left==0xFF)&&(tmx>scroll.MaxX))         // Scroll map Left
+    scroll.InMotion|=SOLLEF;
+  if ((scroll.right==0xFF)&&(tmx<scroll.MinX))        // Scroll map right
+    scroll.InMotion|=SOLRIG;
+
+  if ((scroll.up==0xFF)&&(tmy>scroll.MaxY))           // Scroll map up
+    scroll.InMotion|=SOLTOP;
+  if ((scroll.down==0xFF)&&(tmy<scroll.MinY))         // Scroll map down
+    scroll.InMotion|=SOLBOT;
+
+  if (scroll.InMotion&SOLLEF)
+    {
+    if (tmx<scroll.LeftStop) scroll.InMotion &= ~SOLLEF;
+    else scroll.Totalx= ((tmx-scroll.LeftStop)*SCRSPDX)/(scroll.MaxX-scroll.LeftStop);
+    //                ^this formula is distributes the speed 1-SCRSPDX across
+    //                the Screen distance (scroll.LeftStop -> scroll.MaxX)
+    //                linearly. (ie it is really (X*MAXSPEED)/MAXX)
+    }
+  if (scroll.InMotion&SOLRIG)
+    {
+    if (tmx>scroll.RightStop) scroll.InMotion &= ~SOLRIG;
+    else scroll.Totalx=-((-tmx+scroll.RightStop)*SCRSPDX)/(scroll.RightStop-scroll.MinX);
+    }
+  if (scroll.InMotion&SOLTOP)
+    {
+    if (tmy<scroll.UpStop) scroll.InMotion &= ~SOLTOP;
+    else scroll.Totaly= ((tmy-scroll.UpStop)*SCRSPDY)/(scroll.MaxY-scroll.UpStop);
+    }
+  if (scroll.InMotion&SOLBOT)
+    {
+    if (tmy>scroll.DownStop) scroll.InMotion &= ~SOLBOT;
+    else scroll.Totaly=- ((-tmy+scroll.DownStop)*SCRSPDY)/(scroll.DownStop-scroll.MinY);
+    }
+
+  if (scroll.Totaly>28)  scroll.Totaly=28;
+  if (scroll.Totaly<-28) scroll.Totaly=-28;
+  if (scroll.Totalx>28)  scroll.Totalx=28;
+  if (scroll.Totalx<-28) scroll.Totalx=-28;
+
+  scroll.Movx.DScroll=scroll.Totalx;
+  scroll.Movx.Ctr=0;
+  scroll.Movx.Iters=SCROLLPERMOVE;
+
+  scroll.Movy.DScroll=scroll.Totaly;
+  scroll.Movy.Ctr=0;
+  scroll.Movy.Iters=SCROLLPERMOVE;
+
+  return(scroll.InMotion);
+  }
+
+static void DrawScroll(int speed)
+  {
+  union
+    {
+    unsigned char c[4];
+    unsigned long int li;
+    unsigned int i[2];
+    } wb;  
+
+  unsigned char dir=0;
+  int temp;
+  int oldmx,oldmy, oldnx,oldny;
+  boolean MoveChar=FALSE;
+  Coord2d Shift={0,0};
+
+  oldmx=mx;
+  oldmy=my;
+  oldnx=scroll.nx;
+  oldny=scroll.ny;
+
+  temp=BresenhamScroll(&scroll.Movx,1);  //speed);
+  scroll.movx+=temp;
+  temp=BresenhamScroll(&scroll.Movy,1);  //speed);
+  scroll.movy+=temp;
+
+  if (scroll.movx<0)        // MAP GOES -> (right)
+    {
+    while (scroll.movx<0)
+      {
+      Shift.x+=4; scroll.movx+=4; scroll.nx-=4; scroll.zero--;
+      dir=SOLRIG;
+      }
+    }
+  else if (scroll.movx>0)   // MAP GOES <- (left)
+    {
+    while (scroll.movx>3)
+      {
+      Shift.x-=4; scroll.movx-=4; scroll.nx+=4; scroll.zero++;
+      dir|=SOLLEF;
+      }
+    }
+  if (scroll.movy<0)        // MAP GOES v (down)
+    {
+    while (scroll.movy<0)
+      {
+      Shift.y+=4; scroll.movy+=4; scroll.ny-=4; scroll.zero-=SIZEX;
+      dir|=SOLBOT;
+      }
+    }
+  else if (scroll.movy>0)   // MAP GOES ^ (UP)
+     {
+    while (scroll.movy>3)
+      {
+      Shift.y-=4; scroll.movy-=4; scroll.ny+=4; scroll.zero+=SIZEX;
+      dir|=SOLTOP;
+      }
+    }
+
+  scroll.LittleShiftx=scroll.movx&3;
+  scroll.LittleShifty=scroll.movy&3;
+    
+  if (scroll.nx>=BLEN) { scroll.nx-=BLEN; mx++; if (mx>=MLEN) mx-=MLEN; }
+  if (scroll.ny>=BLEN) { scroll.ny-=BLEN; my++; if (my>=MWID) my-=MWID; }
+  if (scroll.nx<0)     { scroll.nx+=BLEN; mx--; if (mx<0)     mx+=MLEN; }
+  if (scroll.ny<0)     { scroll.ny+=BLEN; my--; if (my<0)     my+=MWID; }
+  
+  wb.li=scroll.zero;     // Calculate zeroaddon before actually moving the
+  wb.li<<=2;             // screen, so we can draw to the screen as if it
+  zeroaddon=wb.i[0];     // was in the new location.
+  zeropage= (wb.c[2]&0x0F);
+  wb.li>>=2;
+
+  if (Shift.x|Shift.y) MoveChar=ShiftEverything(Shift);
+
+  if (dir&SOLTOP)
+    {
+    int l,tempny,tempmy;
+    for (l=4,tempny=oldny,tempmy=oldmy;l<=-Shift.y;l+=4)
+      {
+      tempny+=4;
+      if (tempny>=BLEN) { tempny-=BLEN; tempmy++; if (tempmy>=MLEN) tempmy-=MLEN; }
+      drawhorizside(zeroaddon+64000+(SIZEX*(Shift.y+l-4)),mx,(tempmy+10)%MLEN,scroll.nx,tempny-4);
+      }
+    }
+
+  if (dir&SOLBOT)
+    {
+    int l,tempny,tempmy;
+    for (l=4,tempny=oldny,tempmy=oldmy;l<=Shift.y;l+=4)
+      {
+      tempny-=4;
+      if (tempny<0) { tempny+=BLEN; tempmy--; if (tempmy<0) tempmy+=MLEN; }
+      drawhorizside(zeroaddon+(SIZEX*(Shift.y-l)),mx,tempmy,scroll.nx,tempny);
+      }
+    }
+
+  if (dir&SOLLEF)
+    {
+    int l,tempnx,tempmx;
+    for (l=4,tempnx=oldnx,tempmx=oldmx;l<=-Shift.x;l+=4)
+      {
+      tempnx+=4;
+      if (tempnx>=BLEN) { tempnx-=BLEN; tempmx++; if (tempmx>=MLEN) tempmx-=MLEN; }
+      drawvertside(zeroaddon+SIZEX+Shift.x+l-4,(tempmx+16)%MLEN,my,tempnx-4,scroll.ny);
+      }
+    }
+  if (dir&SOLRIG)
+    {
+    int l,tempnx,tempmx;
+    for (l=4,tempnx=oldnx,tempmx=oldmx;l<=Shift.x;l+=4)
+      {
+      tempnx-=4;
+      if (tempnx<0)     { tempnx+=BLEN; tempmx--; if (tempmx<0) tempmx+=MLEN; }
+      drawvertside(zeroaddon+Shift.x-l,tempmx,my,tempnx,scroll.ny);
+      }
+    }
+
+
+  if (Vcard != SoftwareSim)
+    {
+    if (dir&SOLRIG) SvgaBufScrnBox(0,0,Shift.x,SIZEY);
+    if (dir&SOLTOP) SvgaBufToScrn(SIZEX*(-Shift.y),zeroaddon+64000+(SIZEX*Shift.y));
+    if (dir&SOLBOT) SvgaBufToScrn(SIZEX*Shift.y,zeroaddon);
+    MoveViewScreen(scroll.zero+(80*scroll.LittleShifty),scroll.LittleShiftx);   // Actual VGA scroll (updates dirty ptr too)
+    }
+
+  if ((MoveChar)||(scroll.LittleShiftx)||(scroll.LittleShifty))
+    {  // Scroll.LittleShiftx is a absolute location, not whether it has moved in x or not!
+    erasechars();
+    drawchars();
+    if (Vcard == SoftwareSim)
+      {
+      zeroaddon+=scroll.LittleShiftx+(scroll.LittleShifty*320);
+      SoftwareScroll();
+      zeroaddon-=scroll.LittleShiftx+(scroll.LittleShifty*320);
+      ClearDirtyRects();
+      }
+    else DrawDirtyRects();
+    }
+
+  // This is below so that the scrolling does not show on the wrong side.
+  if ((Vcard != SoftwareSim)&&(dir&SOLLEF)) SvgaBufScrnBox(319+Shift.x,0,319,SIZEY);
+  }
+
+static void drawvertside(unsigned int offset,int mx,int my,int nx,int ny)
+  {        
+  register int ly;
+
+  if (nx<0) { nx+=BLEN; mx--; if (mx<0) mx+=MLEN; }
+  for (ly=0;ly<SIZEY;ly+=4)
+    {
+    BufDraw4x4Addr(offset+(ly*SIZEX),&blks[0][blkmap[map[my][mx].blk]].p[ny][nx]);
+    ny+=4;
+    if (ny>=BLEN) { ny-=BLEN; my++; if (my>=MWID) my-=MWID; } 
+    }
+  }
+
+static void drawhorizside(unsigned int offset,int mx,int my,int nx,int ny)
+  {
+  register int lx;
+
+  if (ny<0) { ny+=BLEN; my--; if (my<0) my+=MWID; }
+
+  for (lx=0;lx<SIZEX;lx+=4)
+    {
+    BufDraw4x4Addr(offset+lx,&blks[0][blkmap[map[my][mx].blk]].p[ny][nx]);
+    nx+=4;
+    if (nx>=BLEN) { nx-=BLEN; mx++; if (mx>=MLEN) mx-=MLEN; }
+    }
+  }
+  
+static int BresenhamScroll(BresScroll *b,int speed)
+  {
+  int l,Amt=0;
+
+   for (l=0;l<speed;l++)
+    {
+    if (abs(b->DScroll)>b->Iters)
+      {
+      while (b->Ctr<abs(b->DScroll))
+        {
+        Amt+=Sign(b->DScroll);
+        b->Ctr+=b->Iters;
+        }
+      b->Ctr -= Abs(b->DScroll);
+      }
+    else
+      {
+      b->Ctr += Abs(b->DScroll);
+      if (b->Ctr>=b->Iters)
+        {
+        b->Ctr-=b->Iters;
+        Amt+=Sign(b->DScroll);
+        }
+      }
+    }
+  return (Amt);
+  }
+
+
+static boolean ShiftEverything(Coord2d Shift)
+  {
+  register int l;
+  boolean retval=FALSE;
+  minfo *moni;
+
+#ifndef NOMONS
+  moni=&mi[0];
+  for (l=0;l<LASTMM;l++,moni++)
+    {
+    if (mm[l].monnum<LASTMON)
+      {
+      if (moni->ScrPos.x!=OFFSCRN) Coord2d_SelfAdd(moni->ScrPos,Shift);
+
+      if (moni->OldPos.x!=OFFSCRN)
+        {
+        Coord2d_SelfAdd(moni->OldPos,Shift); // Shift b4 erase OK, since erase uses EraseAddr variable.
+        if (!Coord2d_In(moni->OldPos,ScrnLowBnd,ScrnUpBnd)) moni->Erase();
+        }
+      }
+    }
+#endif
+  if ((ci.nexty-ci.oldy==0)||(Sign(Shift.y)==Sign(ci.nexty-ci.oldy)))
+    {
+    if (ci.scry!=OFFSCRN) ci.scry+=Shift.y;  // don't move rel to background.
+    }
+  else
+    {
+    retval=TRUE;
+    if (abs(ci.nexty-ci.oldy)<4) ci.scry+= (ci.nexty-ci.oldy)+Shift.y;
+    }
+  if ((ci.nextx-ci.oldx==0)||(Sign(Shift.x)==Sign(ci.nextx-ci.oldx)))
+    {
+    if (ci.scrx!=OFFSCRN) ci.scrx+=Shift.x;
+    }
+  else
+    {
+    retval=TRUE;
+    if (abs(ci.nextx-ci.oldx)<4) ci.scrx+= (ci.nextx-ci.oldx)+Shift.x;
+    }
+
+  if (ci.nextx!=OFFSCRN) { ci.nextx+=Shift.x; ci.nexty+=Shift.y; }
+  if (ci.oldx!=OFFSCRN)  { ci.oldx +=Shift.x; ci.oldy +=Shift.y; }
+  return(retval);
+  }
+
+static boolean InitBirthArray(void)
+  {
+  uint lx,ly=0;
+ 
+  MaxBlkMon=0;
+  for (lx=0;lx<BACKBL;lx++) if (blks[0][lx].Birthtime>0) MaxBlkMon++;
+  if (BlkMon) { delete BlkMon; BlkMon=NULL; }
+
+  if (MaxBlkMon!=0)
+    {
+    if ((BlkMon = new BlkMonStruct [MaxBlkMon])==NULL) return(False);
+    for (lx=0;lx<BACKBL;lx++)
+      if (blks[0][lx].Birthtime>0)
+        {
+        BlkMon[ly].blnum=lx;
+        ly++;
+        }
+    }
+  return(True);
+  }
+
+static int loadscene(int scnum)
+  {
+  int result=0;
+  NoMons=FALSE;
+
+  if (BlkMon!=NULL) { delete BlkMon; BlkMon=NULL; }
+  if (Game.FileExists(scnum,0)) result = !loadspecany(Game.File(scnum,0) ,"","",sizeof(RGBdata)*256,(char *) &colors);
+  if (Game.FileExists(scnum,1)) result|= (!loadspecmap(Game.File(scnum,1)))<<1;
+  if (Game.FileExists(scnum,2)) result|= (!loadspecblk(Game.File(scnum,2),BACKBL,blks[0]))<<2;
+  if (Game.FileExists(scnum,3)) result|= (!loadspecmon(Game.File(scnum,3),LASTMON))<<3;
+  else NoMons=TRUE;
+  if (Game.FileExists(scnum,4)) result|= (!loadspecblk(Game.File(scnum,4),MONBL,blks[1]))<<4;
+  else NoMons=TRUE;
+  if (Game.FileExists(scnum,5)) result|= (!loadspecany(Game.File(scnum,5),"","",sizeof(chrstruct),(char *) &chr))<<5;
+  if (Game.FileExists(scnum,6)) result|= (!loadspecblk(Game.File(scnum,6),CHARBL,blks[2]))<<6;
+  if (result)
+    {
+    int loop=0,cury=0;
+    Palette(1,63,63,0);   // Yellow
+    Palette(2,63,0,33);   // MAGENTA
+    Palette(3,0,58,58);   // Turquoise
+    Palette(4,63,0,0);    // Red
+
+    MoveWindow(0);
+    MoveViewScreen(0,0);
+    zeroaddon=0; zeropage=0;
+    BoxFill(0,0,319,199,0);
+    Box(10,10,310,190,4);
+    Box(15,15,305,185,4);
+
+    GWrite(40,20,1,"I am missing these game files:");
+    for(loop=0,cury=9;loop<SCENEFILES;loop++,result>>=1)
+      {
+      if (result&1)  // The file is missing
+        {
+        GWrite(4*8,cury*8,2,Game.File(scnum,loop));
+        cury++;
+        }
+      }
+    GWrite(120,168,3,"Hit any key...");
+    PauseTimeKey(20);
+    return(FALSE);
+    }
+
+                                                        // Load Sound Set
+  if ((Game.FileExists(scnum,7))&&(loadspecsnd(Game.File(scnum,7))))
+    anysound=TRUE;
+  else anysound=FALSE;
+                                                        // Load Music
+  if ((SongInfo&CARDEXIST)&&(Game.FileExists(scnum,8)))
+    if (!InitMusic(&Instruments,Game.File(scnum,8))) SongInfo|=SONGLOADED; // Song is valid
+
+  return(TRUE);
+  }
+
+static int loadspecsnd(const char *file)
+  {
+  FILE *fp;
+  register int loop;
+
+  if ((fp=fopen(file,"rb"))==NULL) return(FALSE);
+  fread((unsigned char *)snd,sizeof(sndstruct),LASTSND,fp);
+  for (loop=0;loop<9*LASTSND;loop++) *(DigiSnd[0]+loop)=0;
+  fread(DigiSnd,9*LASTSND,1,fp);
+  fclose(fp);
+  return(TRUE);
+  }
+
+
+static int loadspecmon(const char *file,int nummons)
+  {
+  FILE *fp;
+  if ((fp=fopen(file,"rb"))==NULL) return(FALSE);
+  fread((unsigned char *)mon,sizeof(monstruct),nummons,fp); 
+  fclose(fp);
+  return(TRUE);
+  }
+
+static int loadspecblk(const char *file,int numblks,blkstruct *bl)
+  {
+  FILE *fp;
+  if (bl!=NULL)
+    {
+    if ((fp=fopen(file,"rb"))==NULL) return(FALSE);
+    fread((uchar *)bl,sizeof(blkstruct),numblks,fp);
+    fclose(fp);
+    return(TRUE);
+    }
+  return(False);
+  }
+
+static int loadspecmap(const char *file)
+  {
+  FILE *fp;
+  if  ((fp=fopen(file,"rb"))==NULL) return(FALSE);
+  fread( (char*) &map,sizeof(mapstruct),MLEN*MWID,fp);
+  fread( (char*) &mm,sizeof(monmapstruct),LASTMM,fp); 
+  fclose(fp);
+  return(TRUE);
+  }
+
+static void drawmap(int x,int y)
+  {
+  register int lx,ly;
+
+  for (lx=0;lx<16;lx++)
+    for (ly=0;ly<10;ly++)
+      BufDrawBlk(lx*BLEN,ly*BLEN,blks[0][map[(ly+y)%100][(lx+x)%100].blk].p[0]);
+
+  SoftwareScroll();
+//  SvgaBufToScrn(65535,zeroaddon);
+  ClearDirtyRects();
+  }
+
+static void initalldata(void)
+  {
+  unsigned register int loop;
+ 
+  ci.score=0;
+
+  for (loop=0; loop<BACKBL;loop++)
+    {
+    nxtchg[loop]=0;
+    blkmap[loop]=loop;
+    }    
+  for (loop=0;loop<LASTMM;loop++) mi[loop].save = NULL;
+  }
+
+static char HandleJStick(int fn)
+  {
+  register int loop;
+  char retval=FALSE;
+  char joypos=0;
+  int joybut=0;
+  static char oldbut=0;
+  static unsigned long oldtime=1;
+
+  if (fn==RESETTIMER) { oldtime=clock; return(FALSE); }
+
+  if ((jstickon)&&(joyinstall)&&(oldtime+JSTICKPOLLSPEED<=clock))
+    {
+    oldtime=clock;
+    GetJoyPos(&joypos, &joybut, &cs);
+    if ((joypos==0)&&(joybut==0)) 
+      {
+      oldbut=0;
+      if (curkey==JSTICKKEY) PopKey(JSTICKKEY);
+      return(FALSE);
+      }
+
+    if (chr.cseq!=DIESEQ)
+      {
+      for (loop=3;loop<MAXSEQ;loop++)
+        { 
+        if ((chr.sq[loop].jstk_mov!=0)    // = 0 no joystick sequence
+         && ((chr.sq[loop].jstk_mov==9)||(chr.sq[loop].jstk_mov==joypos))
+         && (!chr.sq[chr.cseq].ground)    // Interruptible?
+         && (ci.meter[loop]>0)            // Shot left?
+         && (ci.seqon[loop])              // Sequence enabled?
+         && ((chr.sq[loop].jstk_but==0)                // Any button
+         ||  ((joybut==0)&&(chr.sq[loop].jstk_but==4)) // No buttons
+         ||    ((joybut!=oldbut)&&(chr.sq[loop].jstk_but==joybut))))
+          {   /* J-stick matches w/ a sequence - do the sequence */
+          oldbut=joybut;
+          if (chr.cseq!=loop)
+            { // New Sequence - switch to it
+            if (curkey!=JSTICKKEY) PushKey(); // Joystick does not stack like keys, but completely replaces
+            curkey=JSTICKKEY;  // Remember the input device
+            chr.cframe=-1;     // Set up info to do the sequence
+            chr.cseq=loop;
+            ci.NextAni=clock;  // Force the char to move or draw the new sequence
+            if (chr.sq[loop].sound<LASTSND) DoSound(chr.sq[loop].sound);
+            retval=TRUE;
+            }
+          break;
+          }
+        }   //  End of For loop 
+      }
+    }
+  return(retval);
+  }
+
+static void interrupt NewTimer(...)
+  {
+  if ((SndClock&7)==0)
+    { 
+    (*OldTimer)();
+#ifndef REALLYFAST
+    TimerCounter++;
+#endif
+    }
+  else
+    {
+    enable();
+    outportb(0x20,0x20); // Tell 8259 PIC controller to enable interrupts
+    }
+#ifdef REALLYFAST
+  if ((SndClock%4)==0) TimerCounter++;
+#endif
+  if ((CurSnd<LASTSND)&&(AtNote<NUMFREQ))
+    {
+    sound(snd[CurSnd].freq[AtNote]);
+    AtNote++;
+    }
+  else if (AtNote==NUMFREQ) { AtNote++; nosound(); }
+  if (SongInfo==(CARDEXIST|SONGLOADED)) PlayIt();
+  SndClock++;
+  return;
+  }
+
+static void SimKeyPress(uchar key)
+  { 
+  int loop=0;
+  if (key < 0x80)        // Key Pushed (if high bit set key was released)
+    {
+    if (keydn[key]==0)
+      {
+      for (loop=0;loop<MAXSEQ;loop++)
+        if ((chr.sq[loop].key>>8)==key)
+          {
+          if ((chr.cseq!=DIESEQ)&&
+              (!chr.sq[chr.cseq].ground)&&   //Interruptible=!.ground
+              (ci.meter[loop]>0)&&
+              (ci.seqon[loop])&&
+              (keystkptr<MAXKEYS))
+            {
+            keystack[keystkptr].key   = curkey;
+            keystack[keystkptr].seq   = chr.cseq;
+            keystack[keystkptr].frame = chr.cframe;
+            keystkptr++;
+            if (keystkptr>=MAXKEYS) CleanKeyStk();
+            chr.cseq   = loop;
+            chr.cframe = -1;
+            ci.NextAni = clock;  // Force the char to move or draw the new sequence.
+            loop       = MAXSEQ;
+            curkey     = key;
+            }
+          }
+      keydn[key]=1;
+      }
+    }
+  else
+    {
+    key &=127;
+    if (keydn[key]!=0)
+      {
+      keydn[key]=0;
+      for (loop=0;loop<keystkptr;loop++)
+        if (keystack[loop].key==key) { keystack[loop].key=0xFF; }
+      if ((key==curkey)&&(keystkptr>0)&&(!chr.sq[chr.cseq].ground))
+        {
+        while (keystack[keystkptr-1].key==0xFF) keystkptr--;
+        curkey     = keystack[keystkptr-1].key;
+        chr.cseq   = keystack[keystkptr-1].seq;
+        chr.cframe = keystack[keystkptr-1].frame;
+        ci.update  = TRUE;
+        ci.NextAni = clock;
+        keystkptr--;
+        }
+      if (chr.cseq==IDLESEQ) chr.cframe = 0;     // Kludge to restart the idle
+      }
+    }
+  }
+
+static void CleanKeyStk(void)
+  {
+  int from,to;
+
+  for(from=0,to=0;from<keystkptr;from++)
+    {
+    if (keystack[from].key!=0xFF)  // Move this valid stack entry
+      {
+      if (from!=to)
+        {
+        keystack[to].key  =keystack[from].key;
+        keystack[to].seq  =keystack[from].seq;
+        keystack[to].frame=keystack[from].frame;
+        }
+      to++;
+      }
+    }
+  keystkptr=to;
+  }
+
+static void PushKey(void)
+  {
+  keystack[keystkptr].key  =curkey;
+  keystack[keystkptr].seq  =chr.cseq;
+  keystack[keystkptr].frame=chr.cframe;
+  keystkptr++;
+  }
+
+static void PopKey(unsigned char key)
+  {
+  int loop;
+
+  for(loop=0;loop<keystkptr;loop++)
+    if (keystack[loop].key==key) keystack[loop].key=0xFF;
+  while ( (keystack[keystkptr-1].key==0xFF)&&(keystkptr>0)) keystkptr--;
+
+  if (keystkptr==0)
+    {
+    curkey=0;
+    chr.cseq=IDLESEQ;
+    chr.cframe=0;
+    }
+  else
+    {
+    curkey    = keystack[keystkptr-1].key;
+    chr.cseq  = keystack[keystkptr-1].seq;
+    chr.cframe= keystack[keystkptr-1].frame;
+    keystkptr--;
+    if (chr.cseq==IDLESEQ) chr.cframe = 0;     // Kludge to restart the idle
+                                               // seq every time 'cause users
+                                               // wanted it like this.
+    }
+  ci.update=TRUE;
+  ci.NextAni=clock;
+  }
+
+static void cleanup(void)
+  {
+  delete mon;
+  delete ci.savetop;
+  delete ci.savebottom;
+  delete MonsterMem;
+//  if (BlkMon) delete BlkMon;
+  #ifdef RECORDER
+  if (Rec)    delete Rec;
+  #endif
+  UnInitDirty();
+  #ifdef DIGITALSND
+  if (SongInfo) ShutSbVocDriver();
+  #endif
+  }
+
+static void SlowKeys(void)
+  {
+  _AX = 0x0305;
+  _BH = 3;
+  _BL = 0x1F;
+  geninterrupt(0x16);
+  }
+
+static void FastKeys(void)
+  {
+  _AX = 0x0305;
+  _BH = 0;
+  _BL = 0;
+  geninterrupt(0x16);
+  }
+
+static unsigned char DoSound(unsigned char sndnum)
+  {
+  if (anysound&&soundon&&(sndnum<LASTSND))
+    {
+    #ifdef DIGITALSND
+    if ((DigiSnd[sndnum][0]==0) || (DigiSnd[sndnum][0]==' ') || (!(SongInfo&CARDEXIST)))
+      {
+    #endif
+      CurSnd=sndnum;
+      AtNote=0;
+    #ifdef DIGITALSND
+      }
+    else PlaySbVocFile((char far *) DigiSnd[sndnum]);
+    #endif
+    return(TRUE);
+    }
+  return(FALSE);
+  }
+
+static void SlowTimer(void)
+  {
+  outportb(0x43,0x36);    // Control reg., write LSB then MSB to counter 0
+  outportb(0x40,65535%256); // Write the LSB - 18.2X/sec = 65535
+  outportb(0x40,65535/256); // Write the MSB
+
+  }
+
+static void FastTimer(void)
+  {
+#ifndef WAYSLOW
+  outportb(0x43,0x36);  // Control reg., write LSB then MSB to counter 0
+  outportb(0x40,(65535/8)%256);  // Write the LSB - 18.2X/sec = 65535
+  outportb(0x40,(65535/8)/256);  // Write the MSB - so / 8 for much faster
+#endif
+  }
+
+static void StartGameInits(void)
+  {
+  register int l1;
+
+  TimerCounter = clock = SndClock = 1;
+  MoveCharGrav(1); // Reset gravity  timer
+  HandleJStick(1); // Reset joystick timer
+
+  ci.hitpts=-1;
+  ci.lives=-1;
+  ci.score=0;
+  for (l1=0;l1<MAXINV;l1++) ci.inv[l1]=BACKBL+1;
+  for (l1=0;l1<MAXSEQ+10;l1++) ci.meter[l1]=-1;
+  }
+
+static void StartSceneInits(Coord2d Start)
+  {
+  int loop;
+  /**********************************************************/
+  /* Init. all scene specific stuff about character         */
+  /**********************************************************/
+
+  if (ci.inv[0]==BACKBL+1)
+    for (loop=0;loop<MAXINV;loop++)
+      ci.inv[loop] = chr.inv[loop];
+      
+  for(loop=0;loop<MAXSEQ;loop++)  // Set all untied sequences to on.
+    {
+    ci.seqon[loop] = (chr.sq[loop].bloc==BACKBL);
+    if (ci.meter[loop] == -20000) ci.meter[loop]=chr.meter[loop]; // Copy the meter over if the previous character's sequence was undefined in this place.
+    }
+
+      // Set the tied sequences for which we have stuff to on.
+  for (loop=0;loop<MAXINV;loop++) checkseq_fortie(ci.inv[loop],TRUE);
+
+
+  if (ci.meter[0]==-1)  // Impossible (would be dead) - so means init. data struct from chr.meter[]
+    {
+    for (loop=0;loop<5;loop++) ci.meter[loop]=chr.meter[loop];
+    for (loop=5;loop<MAXSEQ;loop++)
+      {
+      if (chr.sq[loop].key>0) ci.meter[loop]=chr.meter[loop];
+      else ci.meter[loop]=-20000;
+      }
+    for (loop=MAXSEQ;loop<MAXSEQ+10;loop++) ci.meter[loop]=chr.meter[loop];
+    }
+  chr.x[0]   = Start.x; //   Start Character in
+  chr.y[0]   = Start.y; // proper spot.
+  chr.x[1]   = 0;       //   Start Character in
+  chr.y[1]   = 0;       // proper spot.
+  chr.cseq   = 0;       // idle sequence
+  chr.cframe = -1;      // Current frame is the first one
+  if (ci.hitpts==-1) ci.hitpts=ci.meter[0];
+  if (ci.lives==-1)  ci.lives =ci.meter[1];
+  ci.netx  = 5;         // Delta of character's last 2 moves
+  ci.nety  = 0;
+  ci.gravx = 0;         // Current velocity due to gravity
+  ci.gravy = 0;
+  ci.scrx  = ci.oldx=ci.nextx=OFFSCRN; // Where character is located on the screen
+  ci.scry  = ci.oldy=ci.nexty=OFFSCRN;
+  ci.topthere   = FALSE; // Char not on screen, top+bottom not there
+  ci.bottomthere= FALSE;
+  ci.curtop     = CHARBL; // Not on screen, so no current block to draw
+  ci.curbottom  = CHARBL;
+  ci.NextAni    = clock;
+
+  mx=Start.x-(SCRNBLEN/2);  // Set up screen variables around character
+  my=Start.y-(SCRNBWID/2);
+  if (mx<0) mx+=MLEN;      // Contend for the map wrap around
+  if (my<0) my+=MWID;
+  scroll.nx=scroll.ny     = 0;
+  scroll.movx=scroll.movy = 0;
+  scroll.InMotion         = 0;
+
+/***************************************************/
+/*      Loop to initialize monster array           */
+/***************************************************/
+  for (loop=0;loop<LASTMM;loop++)
+    {
+    mi[loop].Reset();
+    BirthMon(loop,mm[loop].monnum,mm[loop].curx,mm[loop].cury);
+    mi[loop].save     =          NULL;
+    mi[loop].fromchar =         FALSE; // If birthed from char, can't hurt it
+    }
+
+/**********************************************************/
+/*      Loop to initialize the next time change array     */
+/**********************************************************/
+  for (loop=0;loop<BACKBL;loop++)       // Setup to loop for every block
+    {                                  
+    blkmap[loop]=loop;                        // Set current block index to itself
+    if (blks[0][loop].ntime>0)                // Does block change over time?
+      nxtchg[loop]=clock+blks[0][loop].ntime; // Set abs time, next block change
+    else                                      // When block does not change on time
+      nxtchg[loop]=0xFFFFFFFF;                // Set to change time to infinite
+    }
+
+  if (!NoMons)
+    {
+    if (InitBirthArray()) for (loop=0;loop<MaxBlkMon;loop++)
+      {
+      if (blks[0][BlkMon[loop].blnum].Birthtime == 0)
+         BlkMon[loop].nexttime=0xFFFFFFFF;
+      else BlkMon[loop].nexttime=clock+blks[0][BlkMon[loop].blnum].Birthtime;
+      }
+    else MaxBlkMon=0;
+    }
+/**********************************************************/
+/*      Loop to initialize the key down array             */
+/**********************************************************/
+  for (loop=0;loop<128;loop++)         /* Setup to loop key array */
+    {                                  /* Start of "for" loop */
+    keydn[loop]=0;                     /* Initialize the array element */
+    }                                  /* End of "for" loop */
+/**********************************************************/
+/*      Loop to initialize the key stack array            */
+/**********************************************************/
+  for (loop=0;loop<20; loop++)         /* Setup to loop the key stack array */
+    {                                  /* Start of "for" loop */
+    keystack[loop].seq=0;              /* Zero "seq" array element field */
+    keystack[loop].frame=0;            /* Zero "frame" array element field */
+    keystack[loop].key=-1;             /* Seed "key" array element field */
+    }                                  /* End of "for" loop */
+  keystkptr=0;                         /* Zero the key stack pointer */
+  keydn[CHRSEQ.key] = 1;
+  curkey=0;
+  TimerCounter=clock;
+  }
+
+static void ShowVidMem(void)
+  {
+  char far *memspot = (char far *) 0xC0000000;
+  int l=0;  
+  int done=0;
+  char s[81];
+
+  while (!done)
+    {
+    GetMem(s,memspot+(80*l));
+    writestr(0,l%24,1,s);
+    l++;
+    if ((GetKey(0)&255)==27) done=1;
+    }
+  }
+
+void GetMem(char *s,char *mem)
+  {
+  int l;
+  for (l=0;l<80;l++) s[l]=mem[l];
+  }
+
+#define SNDCARDX 35
+#define SNDCARDY 20
+#define VGACARDX 192
+#define VGACARDY 25
+#define PORTX    22
+#define PORTY    75
+#define INTX     110
+#define INTY     75
+#define VGACARDSEP 0x0E
+const char *VgaTypes[14]={"Auto-Detect","Standard VGA","Paradise","Trident 8800","Trident 8900","Tseng ET3000","Tseng ET4000","ATI","ATI Wonder","Simulate"};
+
+
+static void DrawConfigScrn(ConfigStruct *cs,int Vga,char *DrvrName,char *DrvrPath)
+  {
+  int l;
+  int inkey;
+  char str[5];
+
+  DrawSurf(5,5,150,190);    // Sound and Music background
+  DrawSurf(170,5,140,160);  // VGA Card background
+  DrawSurf(170,180,40,10);  // Done button
+  DrawSurf(220,180,40,10);  // Help button
+
+
+  GWrite(190,8,7,"VGA Chip Type");
+  GWrite(20,8,7,"Sound And Music");
+  GWrite(20,60,7,"Port  Interrupt");
+  GWrite(20,155,7,"Sound Driver");
+  BoxFill(9,169,150,178,3);
+  Line(9,169,150,169,1);
+  Line(9,169,9,178,1);
+  BoxFill(9,181,150,190,3);
+  Line(9,181,150,181,1);
+  Line(9,181,9,190,1);
+
+  inkey=50;
+  GWrite(SNDCARDX,SNDCARDY,inkey++,"None");
+  GWrite(SNDCARDX,SNDCARDY+16,inkey++,"Sound Blaster");
+
+  for(l=0;l<5;l++,inkey++)
+    {
+    sprintf(str,"%x",(l*0x10)+0x220);
+    GWrite(PORTX,PORTY+(l*0x10),inkey,str);
+    }
+  GWrite(10,170,inkey++,DrvrName);
+  GWrite(10,182,inkey++,DrvrPath);
+
+  GWrite(INTX,INTY,inkey++,"2");
+  for(l=0;l<3;l++,inkey++)
+    {
+    sprintf(str,"%d",(l*2)+3);
+    GWrite(INTX,INTY+((l+1)*0x10),inkey,str);
+    }
+  GWrite(INTX,INTY+((l+1)*0x10),inkey++,"10");
+
+  for (l=0;l<10;l++,inkey++) GWrite(VGACARDX,VGACARDY+(l*VGACARDSEP),inkey,(char *) VgaTypes[l]);
+
+  GWrite(171,181,inkey++,"Help");
+  GWrite(221,181,inkey++,"Done");
+
+  CuteBox(PORTX-3,PORTY-3+(cs->SndPort-0x220),PORTX+25,PORTY+9+(cs->SndPort-0x220),8,9);
+  CuteBox(INTX-3,INTY-3+((cs->SndInt-1)*8),INTX+18,INTY+9+((cs->SndInt-1)*8),8,9);
+  CuteBox(VGACARDX-3,VGACARDY-3+(Vga*VGACARDSEP),VGACARDX+(12*8)+3,VGACARDY+9+(Vga*VGACARDSEP),8,9);
+  CuteBox(SNDCARDX-3,SNDCARDY-3+(cs->ForceSnd*16),SNDCARDX+(13*8)+3,SNDCARDY+9+(cs->ForceSnd*16),8,9);
+  }
+
+
+static int AskConfigData(ConfigStruct *cs)
+  {
+  unsigned char Cols[4];
+  int  DelayTimer=0;
+  char str[5];
+  int l;
+  int Vga=0;
+  int Cursor=0,OldC=0;
+  int inkey;
+  char DrvrName[21]="";
+  char DrvrPath[21]="";
+  int PortC,IntC,DrvrC,VCardC,ButC;
+  int mx=0,my=0,mbuts=0;
+  int ox=0,oy=0,obuts=0;
+
+  SetAllPalTo(&colors[0]);
+
+  if (strcmpi((const char far *) cs->SndDrvr,"NotInit")==0)
+    DetectCard(&cs->ForceSnd,&cs->SndPort,&cs->SndInt,cs->SndDrvr);
+
+
+  if (cs->ForceVGA==SoftwareSim)    Vga=9;
+  else if (cs->ForceVGA==ATIWonder) Vga=8;
+  else if (cs->ForceVGA==ATI)       Vga=7;
+  else if (cs->ForceVGA==NoType)    Vga=0;
+  else if (cs->ForceVGA==Unknown)   Vga=1;
+  else if (cs->ForceVGA>=Paradise)  Vga= cs->ForceVGA-Paradise+2;
+
+  if ((cs->SndPort<0x220)||(cs->SndPort>0x260)) cs->SndPort=0x220;
+
+  if (cs->SndInt==2) cs->SndInt =1;  // Translate interrupts to an even count
+  if (cs->SndInt==10) cs->SndInt=9;  // from 1 to 9.
+
+  if ((cs->SndInt<1)||(cs->SndInt>9)||((cs->SndInt%2)==0)) cs->SndInt=7;
+
+  for(l=strlen(cs->SndDrvr);l>=0;l--)
+    {
+    if (cs->SndDrvr[l]=='\\')
+      {
+      strcpy(DrvrName,&cs->SndDrvr[l+1]);
+      cs->SndDrvr[l+1]=0;
+      l=-100;
+      }
+    }
+  if (l==-101) strcpy(DrvrPath,cs->SndDrvr);
+  else
+    {
+    strcpy(DrvrName,cs->SndDrvr);
+    DrvrPath[0]=0;
+    }
+
+  DrawSurf(5,5,150,190);    // Sound and Music background
+  DrawSurf(170,5,140,160);  // VGA Card background
+  DrawSurf(170,180,40,10);  // Done button
+  DrawSurf(220,180,40,10);  // Help button
+
+  GWrite(190,8,7, "VGA Chip Type");
+  GWrite(20,8,7,  "Sound And Music");
+  GWrite(20,60,7, "Port  Interrupt");
+  GWrite(20,155,7,"Sound Driver");
+
+  BoxFill(9,169,150,178,3);
+  Line(9,169,150,169,1);
+  Line(9,169,9,178,1);
+  BoxFill(9,181,150,190,3);
+  Line(9,181,150,181,1);
+  Line(9,181,9,190,1);
+
+  inkey=50;
+  GWrite(SNDCARDX,SNDCARDY,inkey++,"None");
+  GWrite(SNDCARDX,SNDCARDY+16,inkey++,"Sound Blaster");
+
+  PortC=inkey-50;
+  for(l=0;l<5;l++,inkey++)
+    {
+    sprintf(str,"%x",(l*0x10)+0x220);
+    GWrite(PORTX,PORTY+(l*0x10),inkey,str);
+    }
+  DrvrC=inkey-50;
+  GWrite(10,170,inkey++,DrvrName);
+  GWrite(10,182,inkey++,DrvrPath);
+
+  IntC=inkey-50;
+  GWrite(INTX,INTY,inkey++,"2");
+  for(l=0;l<3;l++,inkey++)
+    {
+    sprintf(str,"%d",(l*2)+3);
+    GWrite(INTX,INTY+((l+1)*0x10),inkey,str);
+    }
+  GWrite(INTX,INTY+((l+1)*0x10),inkey++,"10");
+
+  VCardC=inkey-50;
+  for (l=0;l<10;l++,inkey++) GWrite(VGACARDX,VGACARDY+(l*VGACARDSEP),inkey,(char*)VgaTypes[l]);
+
+  ButC=inkey-50;
+  GWrite(171,181,inkey++,"Help");
+  GWrite(221,181,inkey++,"Done");
+
+  CuteBox(PORTX-3,PORTY-3+(cs->SndPort-0x220),PORTX+25,PORTY+9+(cs->SndPort-0x220),8,9);
+  CuteBox(INTX-3,INTY-3+((cs->SndInt-1)*8),INTX+18,INTY+9+((cs->SndInt-1)*8),8,9);
+  CuteBox(VGACARDX-3,VGACARDY-3+(Vga*VGACARDSEP),VGACARDX+(12*8)+3,VGACARDY+9+(Vga*VGACARDSEP),8,9);
+  CuteBox(SNDCARDX-3,SNDCARDY-3+(cs->ForceSnd*16),SNDCARDX+(13*8)+3,SNDCARDY+9+(cs->ForceSnd*16),8,9);
+
+  Cursor=ButC;
+  for(l=50;l<76;l++)   // Set the color of the writing.
+    {
+    colors[l].blue =63-(abs((l-50)-Cursor))*2;
+    colors[l].green=30;
+    colors[l].red  =0;
+    }
+
+  colors[Cursor+50].Set(63,63,63);
+
+  colors[7].Set(10,50,63);
+  colors[8].Set(60,60,20);
+  colors[9] = (colors[8]+colors[5])/2;
+  colors[10].Set(20,60,20);
+  colors[11].Set(10,40,10);
+
+  for (l=0;l<4;l++) colors[l+1].Set(10+(l*4),0,10+(l*4));
+  FadeTo(colors);
+
+  DelayTimer=0;
+  if (mouinstall)
+    {
+    moustats(&ox,&oy,&obuts);
+    setmoupos(100,100);
+    }
+  while(1)
+    {
+    inkey=0;
+    do
+      {
+      #ifdef MOUSE
+      if (mouinstall)
+        {
+        moustats(&mx,&my,&mbuts);
+        // Translate mouse into keyboard movements
+        if (mx<60)        inkey=(LEFTKEY<<8);
+        else if (mx>140)  inkey=(RIGHTKEY<<8);
+        else if (my<90)   inkey=(UPKEY<<8);
+        else if (my>110)  inkey=(DOWNKEY<<8);
+        else if ((mbuts>0)&&(obuts==0)) inkey=13;
+        if (inkey) { mx=100; my=100; }
+        obuts=mbuts;
+        setmoupos(mx,my);
+        }
+      #endif
+      if (!inkey) if ((inkey=bioskey(1))!=0) bioskey(0);  // only do if mouse not changed
+      delay(1);
+      DelayTimer++;
+      if (DelayTimer==400) Palette(Cursor+50,0,30,63);
+      if (DelayTimer==900) { Palette(Cursor+50,63,63,63); DelayTimer=0; }
+      } while (!inkey);
+    OldC=Cursor;
+    switch(inkey&255)
+      {
+      case 0:
+        switch(inkey>>8)
+          {
+          case RIGHTKEY:
+            if (Cursor>ButC)           Cursor=DrvrC+1;
+            else if (Cursor==ButC)     Cursor=ButC+1;
+            else if (Cursor>=VCardC+3) Cursor=PortC-3+Cursor-VCardC;
+            else if (Cursor>=VCardC)   Cursor=Cursor-VCardC;
+            else if (Cursor>=IntC)     Cursor=VCardC+3+(Cursor-IntC);
+            else if (Cursor>=DrvrC+1)  Cursor=ButC;
+            else if (Cursor>=DrvrC)    Cursor=VCardC+9;
+            else if (Cursor>=PortC)    Cursor=IntC+(Cursor-PortC);
+            else                       Cursor=VCardC+Cursor;
+            break;
+          case DOWNKEY:
+            Cursor++;
+            break;
+          case LEFTKEY:
+            if (Cursor>ButC)         Cursor=ButC;
+            else if (Cursor==ButC)   Cursor=DrvrC+1;
+            else if (Cursor>=VCardC+8) Cursor=DrvrC;
+            else if (Cursor>=VCardC+3) Cursor=IntC-3+(Cursor-VCardC);
+            else if (Cursor>=VCardC+2) Cursor=IntC;
+            else if (Cursor>=VCardC)   Cursor=Cursor-VCardC;
+            else if (Cursor>=IntC)     Cursor=PortC+(Cursor-IntC);
+            else if (Cursor>=DrvrC+1)  Cursor=ButC+1;
+            else if (Cursor>=DrvrC)    Cursor=VCardC+9;
+            else if (Cursor>=PortC)    Cursor=VCardC+(Cursor-PortC)+3;
+            else                       Cursor=VCardC+Cursor;
+            break;
+          case UPKEY:
+            Cursor--;
+            break;
+          }
+        break;
+      case 13:
+        int Sel;
+        if (Cursor==DrvrC) { GGet(10,170,DrvrC+50,3,DrvrName,12); break;        }
+        else if (Cursor==DrvrC+1) { GGet(10,182,DrvrC+51,3,DrvrPath,17); break; }
+        else if (Cursor==ButC)
+          {
+          BoxFill(0,0,SIZEX,SIZEY,0);
+          for(l=0;l<5;l++) Box(40-(64*4)/10-l,100-64-l,280+(64*4)/10+l,180+(64*2)/10+l,l);
+          if (mouinstall) mouclearbut();
+          Display_File("config.hlp",7);
+          BoxFill(0,0,SIZEX,SIZEY,0);
+          DrawConfigScrn(cs,Vga,DrvrName,DrvrPath);
+          break;
+          }
+        else if ((Cursor!=ButC+1))
+          {
+          if (Cursor>=VCardC)     CuteBox(VGACARDX-3,VGACARDY-3+(Vga*VGACARDSEP),VGACARDX+(12*8)+3,VGACARDY+9+(Vga*VGACARDSEP),4,4);
+          else if (Cursor>=IntC)  CuteBox(INTX-3,INTY-3+((cs->SndInt-1)*8),INTX+18,INTY+9+((cs->SndInt-1)*8),4,4);
+          else if (Cursor>=PortC) CuteBox(PORTX-3,PORTY-3+(cs->SndPort-0x220),PORTX+25,PORTY+9+(cs->SndPort-0x220),4,4);
+          else                    CuteBox(SNDCARDX-3,SNDCARDY-3+(cs->ForceSnd*16),SNDCARDX+(13*8)+3,SNDCARDY+9+(cs->ForceSnd*16),4,4);
+
+          if (Cursor==0) cs->ForceSnd=None;
+          else if (Cursor==1) cs->ForceSnd=SndBlaster;
+          else if (Cursor>=VCardC) Vga=(Cursor-VCardC);
+          else if (Cursor>=IntC)   cs->SndInt=((Cursor-IntC)*2)+1;
+          else if (Cursor>=PortC)  cs->SndPort=((Cursor-PortC)*0x10)+0x220;
+
+          if (Cursor>=VCardC)     CuteBox(VGACARDX-3,VGACARDY-3+(Vga*VGACARDSEP),VGACARDX+(12*8)+3,VGACARDY+9+(Vga*VGACARDSEP),8,9);
+          else if (Cursor>=IntC)  CuteBox(INTX-3,INTY-3+((cs->SndInt-1)*8),INTX+18,INTY+9+((cs->SndInt-1)*8),8,9);
+          else if (Cursor>=PortC) CuteBox(PORTX-3,PORTY-3+(cs->SndPort-0x220),PORTX+25,PORTY+9+(cs->SndPort-0x220),8,9);
+          else                    CuteBox(SNDCARDX-3,SNDCARDY-3+(cs->ForceSnd*16),SNDCARDX+(13*8)+3,SNDCARDY+9+(cs->ForceSnd*16),8,9);
+          break;
+          }
+      case 27:
+         int t;
+         if (DrvrPath[0]==0) strcpy(DrvrPath,".\\");
+         t=strlen(DrvrPath);
+         if (DrvrPath[t-1]!='\\') { DrvrPath[t]='\\'; DrvrPath[t+1]=0; }
+         sprintf(cs->SndDrvr,"%s%s",DrvrPath,DrvrName);
+         if (Vga==0)      cs->ForceVGA=NoType;
+         else if (Vga==1) cs->ForceVGA=Unknown;
+         else if (Vga==8) cs->ForceVGA=ATIWonder;
+         else if (Vga==7) cs->ForceVGA=ATI;
+         else if (Vga==9) cs->ForceVGA=SoftwareSim;
+         else if (Vga>=2) cs->ForceVGA=Paradise+(Vga-((VideoCards)2));
+         if (cs->SndInt==1) cs->SndInt=2;   // Translate interrupts from an
+         if (cs->SndInt==9) cs->SndInt=10;  // even count to the real value.
+         return(TRUE);
+      }
+    if (Cursor>ButC+1) Cursor=0;
+    if (Cursor<0)  Cursor=ButC+1;
+
+    if (OldC!=Cursor)
+      {
+      for(l=50;l<76;l++)
+        {
+        colors[l].blue =63-(abs((l-50)-Cursor))*2;
+        colors[l].green=30;
+        colors[l].red  =0;
+        Palette(l,colors[l].red,colors[l].green,colors[l].blue);
+        }
+      Palette(Cursor+50,63,63,63);
+      }
+    }
+  }
+
+static void CuteBox(int x,int y,int x1,int y1,char col1,char col2)
+  {
+  Line(x+1,y,x1-1,y,col1);
+  Line(x+1,y-1,x1-1,y-1,col2);
+
+  Line(x+1,y1,x1-1,y1,col1);
+  Line(x+1,y1+1,x1-1,y1+1,col2);
+
+  Line(x,y+1,x,y1-1,col1);
+  Line(x-1,y+1,x-1,y1-1,col2);
+
+  Line(x1,y+1,x1,y1-1,col1);
+  Line(x1+1,y+1,x1+1,y1-1,col2);
+
+  Point(x+1,y+1,col1);
+  Point(x+1,y1-1,col1);
+  Point(x1-1,y+1,col1);
+  Point(x1-1,y1-1,col1);
+  Point(x,y,col2);
+  Point(x,y1,col2);
+  Point(x1,y,col2);
+  Point(x1,y1,col2);
+  }
+
+static void DrawSurf(int x,int y,int xlen,int ylen)
+  {
+  int l;
+  BoxFill(x,y,x+xlen,y+ylen,4);
+  for (l=3;l>0;l--) Box(x-l,y-l,x+xlen+l,y+ylen+l,((unsigned char)(4-l)));
+  }
+
+static void StealKbd(void)
+  {
+  if (MicroChnl) setvect(0x9,NewMicroKbd);
+  else setvect(0x9,NewATKbd);
+  }
+
+void Screen(int status)  // turns the screen on(1) or off(0)
+  {
+  static int scrn=1;
+  if (status !=scrn)
+    {
+    outportb(0x3C4,1);
+    if (status) { scrn=1; outportb(0x3C5,inportb(0x3C5)&223); }
+    else        { scrn=0; outportb(0x3C5,inportb(0x3C5)|32);  }
+    outportb(0x3C4,0);
+    }
+  }
+
+
+void GameClass::Init(void)
+  {  for (int lx=0;lx<MaxScenes;lx++) scns[lx].Clear(); }
+
+boolean GameClass::Load(FILE *fp)
+  {
+  GratorHeader   Head;
+  DataFileHeader Id;
+
+  Id.Load(fp);
+  if (!Id.Validate()) return(False);
+
+  fread((void *) &Head,sizeof(GratorHeader),1,fp);
+  NumScenes = Head.NumScenes;
+  MaxScenes = NumScenes;
+  if (scns!=NULL) delete scns;
+  if ((scns = new Scene [MaxScenes])==NULL) return(False);
+  if (fread(scns,sizeof(Scene),NumScenes,fp) != NumScenes) return(False);
+  return(Files.Load(fp));
+  }
+
+boolean SceneFiles::Load(FILE *fp)
+  {
+  fread(&FreePtr,sizeof(uint),1,fp);        // Read the buffer length
+  if (FreePtr>0xFFF0) FreePtr=0xFFF0;
+  if (Mem!=NULL) delete Mem;
+  MaxMem  = FreePtr;
+  if ( (Mem = new char [MaxMem])==NULL) return(False);
+  fread(Mem,sizeof(char),FreePtr,fp);       // Read the buffer.
+  return(TRUE);
+  }
+
+boolean GameClass::Load(char *Name)
+  {
+  boolean  retval;
+  FILE    *fp;
+
+  if ( (fp=fopen(Name,"rb"))==NULL) return(False);
+  retval=Game.Load(fp);
+  fclose(fp);
+  return(retval);
+  }
+
+/*
+boolean GameClass::Save(FILE *fp)
+  {
+  GratorHeader   Head;
+  DataFileHeader Id;
+
+  Id.FileType = GamFile;
+  Id.Save(fp);
+  Head.NumScenes=NumScenes;
+  fwrite((void *) &Head,sizeof(GratorHeader),1,fp);
+  if (fwrite(scns,sizeof(Scene),NumScenes,fp) != NumScenes) return(FALSE);
+  if (!Files.Save(fp)) return(FALSE);
+  return(TRUE);
+  }
+*/
+/*
+void GameClass::DrawLink(int from,int to,Pixel col) { }
+void GameClass::DrawSceneLinks(uint snum,Pixel col) { }
+void GameClass::DrawScene(uint scene, Pixel col)    { }
+void GameClass::Draw(void)                          { }
+void GameClass::Optimize(void)                      { }
+void GameClass::EraseScene(uint scene)              { }
+uint GameClass::SceneAt(int x,int y)     { return(NOSCENE); }
+uint GameClass::CreateScene(int x,int y) { return(NOSCENE); }
+*/
+
+

@@ -1,0 +1,30 @@
+KEYS
+
+7(Home), 8(Up Arrow), 9(PgUp):
+ Jump left, up, and right,
+ respectively.
+4(Left Arrow), 6(Right Arrow):
+ Roll to the left and right
+2(Down Arrow:
+ Speed fall downwards
+[Space]:
+ Emit wave of radiation
+[Enter]:
+ Rocket jump
+[Tab]:
+ Suicide
+
+HINTS & JUNK
+
+  When you touch an idol you
+get the ability to rocket jump
+once. Make sure you use it
+wisely.
+  If you're caught in a stale-
+mate, press [Tab] to kill
+yourself and start again from
+the beginning of the round.
+  The uranium needs to be kept
+cool. Roll over the pools left
+by the defeated enemies to re-
+gain some hitpoints.

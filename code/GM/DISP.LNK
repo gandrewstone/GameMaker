@@ -1,0 +1,16 @@
+startupl.obj+
+disp.obj+
+newgifc.obj+
+windio.obj+
+genc.obj+
+palc.obj+
+pala.obj+
+gena.obj+
+jsticka.obj+
+graphc.obj+
+oldmouse.obj+
+scrnrout.obj
+disp.exe
+disp.map
+cl.lib
+

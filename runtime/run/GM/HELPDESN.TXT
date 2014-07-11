@@ -1,0 +1,25 @@
+
+    
+    
+    USING GAME-MAKER'S DESIGN TOOLS
+    
+     Type the two letter menu command to run the following design tools.
+    
+    Palette   - to create  or  modify  sets  of colors which you can use to
+                paint picutre blocks.
+    Block     - to draw or modify pictures used as backgrounds, monsters,
+                or characters.
+    Monster   - to set up sequences of picture blocks that will display as
+                animated objects, and to assign powers to these objects.
+    Map       - to create scenes (worlds, mazes, dungeons, maps) containing
+                background pictures and monsters.
+    Character - to set up sequences of picture blocks that create the
+                game pieces (players, characters, good guys) and to assign
+                powers to these characters.
+    Image     - to incorporate portions of graphic images into games.
+    Sound     - to design sounds that characters make during game play.
+    Integrator- to combine maps, characters, and monsters into games.
+    Main      - to return to the main menu.
+    
+    
+    

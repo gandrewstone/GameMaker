@@ -1,0 +1,12 @@
+startupl.obj+
+menu.obj+
+oldmouse.obj+
+gma.obj+
+genc.obj+
+scrnrout.obj+
+windio.obj+
+Findfile.obj
+menu.exe
+menu.map
+cl.lib
+

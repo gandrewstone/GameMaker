@@ -1,0 +1,27 @@
+
+Version 1.06 Bug List
+
+
+        X   Xferplay - sound wrong directory
+        X   3 scene high beep and scroll hang
+        X   Restore game timer problem
+        X   Restore birth monster from block
+        X   NewKbd and play digitized conflicts
+        X   Interruptible sounds
+        X   Mon erases to Upper Left after restore
+        X   F3 music toggle not working
+        X   Block birth mon palette bug
+        X   Block birth mon # of blocks set to 100
+        X   Playgame pause for long time on DEC when hit quit at game menu.
+        X   Transfer - GMTITLE.GIF
+        X   Transfer - Need to xfer .voc files.
+        X   Says "Excellent" (increase hp sound) when killed!
+        X   Monster touch character memory error (adds tons of hitpts + score).
+        X   GM.bat does not send the word "register" if you type it after.
+        X   Charedit diagonal arrows are not named.
+        X   Charedit key which lets you "undefine" sequence key (any reserved key).
+        X   playgame shoot + momentum doesn't work.
+        X   Regardless of power level, monster block will always affect char.
+        X   Never-to-kill monsters playing kill sound when char touches.
+        X   Smooth 1 pixel scrolling
+

@@ -1,0 +1,9 @@
+startupl.obj+
+setargv.obj+
+setenvp.obj+
+dummy.obj
+dummy.exe
+dummy.map
+cl.lib
+
+

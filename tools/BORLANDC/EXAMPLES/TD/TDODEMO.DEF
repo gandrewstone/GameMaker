@@ -1,0 +1,13 @@
+;**********************************************************************
+;*          Copyright (c) 1992 by Borland International, Inc.         *
+;**********************************************************************
+
+NAME	        OWLApp
+DESCRIPTION	'An OWL app'
+EXETYPE         WINDOWS
+CODE            PRELOAD MOVEABLE DISCARDABLE
+DATA            PRELOAD MOVEABLE MULTIPLE
+HEAPSIZE        4096
+STACKSIZE       8192
+
+
