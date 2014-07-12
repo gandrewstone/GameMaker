@@ -43,7 +43,8 @@ To start working with the source code, run:
 
 This will mount the compiler into the "t:" directory, and the source code into "d:".
 
-Now to compile everything
+Now to compile everything:
+
     d:
     cd gm
     del *.obj
