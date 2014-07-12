@@ -2,3 +2,15 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15350336 bytes
 
+	tasm /ml/jP286N/m2 gm.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   gm.asm
+Error messages:    None
+Warning messages:  None
+Passes:            1
+Remaining memory:  419k
+
+	tlink /s/c gm.obj
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International
+Warning: No stack

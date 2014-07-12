@@ -1,0 +1,31 @@
+MAKE Version 3.7  Copyright (c) 1987, 1994 Borland International
+	bcc -c -C -ml -3 -O2 -P viddrvc.cpp
+Borland C++ Version 4.02 Copyright (c) 1994 Borland International
+viddrvc.cpp:
+Warning pal.h 46: Functions containing for are not expanded inline
+Warning pal.h 76: Functions containing for are not expanded inline
+Warning viddrvc.cpp 303: Parameter 'Pos' is never used in function RepColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 303: Parameter 'Num' is never used in function RepColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 303: Parameter 'cols' is never used in function RepColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 303: Parameter 'v' is never used in function RepColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 310: Function should return a value in function GetCols(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 313: Function should return a value in function GetColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 313: Parameter 'Pos' is never used in function GetColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 313: Parameter 'Num' is never used in function GetColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 313: Parameter 'cols' is never used in function GetColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 313: Parameter 'v' is never used in function GetColsRev(Coord2d,unsigned int,unsigned char *,VideoMode *)
+Warning viddrvc.cpp 322: Parameter 'Pos' is never used in function DrawBlock(Coord2d,int,VideoMode *)
+Warning viddrvc.cpp 322: Parameter 'b' is never used in function DrawBlock(Coord2d,int,VideoMode *)
+Warning viddrvc.cpp 322: Parameter 'v' is never used in function DrawBlock(Coord2d,int,VideoMode *)
+	tasmx /ml/jP386N/m2 viddrva.asm
+Turbo Assembler  Version 4.0  Copyright (c) 1988, 1993 Borland International
+
+Assembling file:   viddrva.asm
+Error messages:    None
+Warning messages:  None
+Passes:            1
+Remaining memory:  929k
+
+	del viddrv.lib
+	tlib viddrv.lib /C +viddrvc.obj +viddrva.obj
+TLIB 4.00 Copyright (c) 1987, 1994 Borland International

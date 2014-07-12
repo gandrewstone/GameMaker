@@ -2,3 +2,31 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15342112 bytes
 
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv blocedit.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+blocedit.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning blocedit.c 335: Parameter 'argc' is never used in function main(int,char * *)
+Warning blocedit.c 335: Parameter 'argv' is never used in function main(int,char * *)
+Warning blocedit.c 1447: Unreachable code in function birthmon(int)
+
+	Available memory 3564500
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv blocc.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+blocc.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning blocc.c 88: Parameter 'btype' is never used in function saveblks(int,char *)
+Warning blocc.c 88: Parameter 'buffer' is never used in function saveblks(int,char *)
+
+	Available memory 4072372
+	tasm /ml/jP286N/m2 bloca.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   bloca.asm
+Error messages:    None
+Warning messages:  None
+Passes:            1
+Remaining memory:  422k
+
+	tlink /s/c @blocedit.lnk
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International

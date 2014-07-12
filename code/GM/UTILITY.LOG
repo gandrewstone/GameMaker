@@ -2,38 +2,38 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15350336 bytes
 
-	BCC -f- -c -C -ml -1 -P -O2 -Ic:\drv /c utility.c
+	BCC -f- -c -C -ml -1 -P -O2 -I..\drv /c utility.c
 Borland C++  Version 3.1 Copyright (c) 1992 Borland International
 utility.c:
-Error utility.c 11: Unable to open include file 'd:\drv\gen.h'
-Error gmgen.h 8: Unable to open include file 'gen.h'
-Error gmgen.h 54: 'uint' cannot start a parameter declaration
 Warning gmgen.h 92: Functions containing for are not expanded inline
-Error gmgen.h 100: Type name expected
-Error gmgen.h 100: Declaration missing ;
-Error gmgen.h 96: Undefined symbol 'FALSE' in function DataFileHeader::DataFileHeader()
-Error gmgen.h 114: Declaration syntax error
-Error palette.h 2: Unable to open include file 'gen.h'
-Error palette.h 3: Unable to open include file 'Pixel.hpp'
-Error palette.h 9: Type name expected
-Error palette.h 9: Declaration missing ;
-Error palette.h 15: ) expected
-Error palette.h 12: Undefined symbol 'red' in function RGBdata::Set(unsigned char,unsigned char,unsigned char)
-Error palette.h 12: Undefined symbol 'green' in function RGBdata::Set(unsigned char,unsigned char,unsigned char)
-Error palette.h 12: Undefined symbol 'blue' in function RGBdata::Set(unsigned char,unsigned char,unsigned char)
-Error grator.h 1: Unable to open include file 'gen.h'
-Error coord2d.hpp 4: Unable to open include file 'gen.h'
-Error coord2d.hpp 29: Friends must be functions or classes
-Error coord2d.hpp 29: Declaration missing ;
-Error coord2d.hpp 48: Declaration does not specify a tag or an identifier
-Error coord2d.hpp 99: Type name expected
-Error coord2d.hpp 99: Declaration missing ;
-Error coord2d.hpp 104: Storage class 'inline' is not allowed here
-Error coord2d.hpp 104: Declaration syntax error
-Error grator.h 5: , expected
-Error grator.h 5: Too many error or warning messages
-*** 26 errors in Compile ***
+Warning grator.h 74: Functions containing for are not expanded inline
+Warning grator.h 182: Functions containing for are not expanded inline
+Warning grator.h 203: Functions containing for are not expanded inline
 
-	Available memory 4046700
+	Available memory 3987816
+	BCC -f- -c -C -ml -1 -P -O2 -I..\drv /c jstickc.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+jstickc.c:
+
+	Available memory 4078420
+	TASM  /ml/jP286N/m2 oldmouse.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
 
-** error 1 ** deleting utility.obj
+Assembling file:   oldmouse.asm
+*Warning* oldmouse.asm(87) Pointer expression needs brackets
+Error messages:    None
+Warning messages:  1
+Passes:            1
+Remaining memory:  418k
+
+	TASM  /ml/jP286N/m2 gma.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   gma.asm
+Error messages:    None
+Warning messages:  None
+Passes:            1
+Remaining memory:  424k
+
+	tlink /s/c @utility.lnk
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International

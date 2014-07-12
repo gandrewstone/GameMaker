@@ -2,3 +2,13 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15342112 bytes
 
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv monedit.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+monedit.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning monedit.c 217: Parameter 'argc' is never used in function main(int,char * *)
+Warning monedit.c 217: Parameter 'argv' is never used in function main(int,char * *)
+
+	Available memory 3760956
+	tlink /s/c @monedit.lnk
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International

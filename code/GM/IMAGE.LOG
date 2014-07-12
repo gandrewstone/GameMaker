@@ -2,3 +2,19 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15342112 bytes
 
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv image.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+image.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning image.c 221: Parameter 'argc' is never used in function main(int,char * *)
+Warning image.c 221: Parameter 'argv' is never used in function main(int,char * *)
+
+	Available memory 3865264
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv gifc.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+gifc.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+
+	Available memory 4066948
+	tlink /s/c @image.lnk
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International

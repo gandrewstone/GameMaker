@@ -1,0 +1,9 @@
+
+ Start  Stop   Length Name               Class
+
+ 00000H 001BCH 001BDH VGAOBJ_TEXT        CODE
+ 001BEH 002CCH 0010FH _DATA              DATA
+
+Program entry point at 0000:0000
+Warning: No stack
+

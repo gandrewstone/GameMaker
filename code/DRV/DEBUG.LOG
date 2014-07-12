@@ -1,0 +1,11 @@
+MAKE Version 3.6  Copyright (c) 1991 Borland International
+
+Available memory 6765936 bytes
+
+        bcc -f -c -C -ml -v -1 -P -N -O2 debug.cpp
+Borland C++  Version 3.00 Copyright (c) 1991 Borland International
+debug.cpp:
+
+        Available memory 3920668
+        tlink /m/s/c/v/3 @debug.lnk
+Turbo Link  Version 5.0 Copyright (c) 1991 Borland International

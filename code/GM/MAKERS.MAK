@@ -4,7 +4,7 @@ LINKER=tlink
 
 # NORMAL
 !if $(OPTION)==0
-CFLAGS=-f- -c -C -ml -1 -P -O2 -Ic:\drv
+CFLAGS=-f- -c -C -ml -1 -P -O2 -I..\drv
 AFLAGS=/ml/jP286N/m2
 LFLAGS=/s/c
 !endif

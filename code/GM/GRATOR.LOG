@@ -2,3 +2,26 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15342112 bytes
 
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv grator.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+grator.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning grator.h 74: Functions containing for are not expanded inline
+Warning grator.h 182: Functions containing for are not expanded inline
+Warning grator.h 203: Functions containing for are not expanded inline
+Warning grator.c 296: Parameter 'argc' is never used in function main(int,char * *)
+Warning grator.c 296: Parameter 'argv' is never used in function main(int,char * *)
+Warning grator.c 1414: Parameter 'fp' is never used in function GameClass::Save(FILE *)
+
+	Available memory 3802036
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv gramap.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+gramap.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning grator.h 74: Functions containing for are not expanded inline
+Warning grator.h 182: Functions containing for are not expanded inline
+Warning grator.h 203: Functions containing for are not expanded inline
+
+	Available memory 3892896
+	tlink /s/c @grator.lnk
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International

@@ -2,3 +2,28 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15342112 bytes
 
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv mapmaker.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+mapmaker.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning mapmaker.c 310: Parameter 'argc' is never used in function main(int,char * *)
+Warning mapmaker.c 310: Parameter 'argv' is never used in function main(int,char * *)
+
+	Available memory 3801708
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv mapc.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+mapc.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+
+	Available memory 4090440
+	tasm /ml/jP286N/m2 clrbloca.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   clrbloca.asm
+Error messages:    None
+Warning messages:  None
+Passes:            2
+Remaining memory:  422k
+
+	tlink /s/c @mapmaker.lnk
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International

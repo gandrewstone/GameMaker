@@ -12,5 +12,5 @@ call create gm %1
 REM bcc -ms linkchk.c
 REM call create chk %1
 REM call create playgame %1
-REM call create install %1
+call create install %1
 

@@ -2,39 +2,26 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15350336 bytes
 
-	BCC -f- -c -C -ml -1 -P -O2 -Ic:\drv /c soundc.c
+	BCC -f- -c -C -ml -1 -P -O2 -I..\drv /c charedit.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+charedit.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning charedit.c 230: Parameter 'argc' is never used in function main(int,char * *)
+Warning charedit.c 230: Parameter 'argv' is never used in function main(int,char * *)
+
+	Available memory 3748636
+	BCC -f- -c -C -ml -1 -P -O2 -I..\drv /c soundc.c
 Borland C++  Version 3.1 Copyright (c) 1992 Borland International
 soundc.c:
-Error soundc.c 15: Unable to open include file 'gen.h'
-Error gmgen.h 8: Unable to open include file 'gen.h'
-Error gmgen.h 54: 'uint' cannot start a parameter declaration
 Warning gmgen.h 92: Functions containing for are not expanded inline
-Error gmgen.h 100: Type name expected
-Error gmgen.h 100: Declaration missing ;
-Error gmgen.h 96: Undefined symbol 'FALSE' in function DataFileHeader::DataFileHeader()
-Error gmgen.h 114: Declaration syntax error
-Error soundc.c 24: Declaration syntax error
-Error soundc.c 25: Declaration syntax error
-Error soundc.c 50: Undefined symbol 'TRUE' in function DetectCard(enum *,unsigned int *,unsigned int *,char *)
-Error soundc.c 52: Undefined symbol 'FALSE' in function DetectCard(enum *,unsigned int *,unsigned int *,char *)
 Warning soundc.c 53: 'soundpointer' is assigned a value that is never used in function DetectCard(enum *,unsigned int *,unsigned int *,char *)
-Error soundc.c 67: Undefined symbol 'driverloaded' in function InitSbVocDriver(ConfigStruct *)
-Error soundc.c 67: Undefined symbol 'TRUE' in function InitSbVocDriver(ConfigStruct *)
-Error soundc.c 76: Undefined symbol 'FALSE' in function InitSbVocDriver(ConfigStruct *)
-Error soundc.c 156: Undefined symbol 'uint' in function PlaySbVocFile(char *)
-Error soundc.c 156: Statement missing ; in function PlaySbVocFile(char *)
-Error soundc.c 157: Statement missing ; in function PlaySbVocFile(char *)
-Error soundc.c 158: Statement missing ; in function PlaySbVocFile(char *)
-Error soundc.c 161: Undefined symbol 'driverloaded' in function PlaySbVocFile(char *)
-Error soundc.c 161: Undefined symbol 'FALSE' in function PlaySbVocFile(char *)
-Error soundc.c 186: Undefined symbol 'vocfilesize' in function PlaySbVocFile(char *)
-Error soundc.c 195: Ambiguity between 'operator new(unsigned int)' and 'operator new(unsigned long)' in function PlaySbVocFile(char *)
-Error soundc.c 204: Function call missing ) in function PlaySbVocFile(char *)
-Error soundc.c 212: If statement missing ) in function PlaySbVocFile(char *)
-Error soundc.c 221: Undefined symbol 'uchar' in function PlaySbVocFile(char *)
-Error soundc.c 221: Too many error or warning messages in function PlaySbVocFile(char *)
-*** 26 errors in Compile ***
+Error soundc.c 241: Undefined symbol 'mov' in function StopSound()
+Error soundc.c 241: Statement missing ; in function StopSound()
+Error soundc.c 247: Declaration syntax error in function StopSound()
+Error soundc.c 383: Declaration missing ; in function StopSound()
+Error soundc.c 383: Compound statement missing } in function StopSound()
+*** 5 errors in Compile ***
 
-	Available memory 4092896
+	Available memory 4078240
 
 ** error 1 ** deleting soundc.obj

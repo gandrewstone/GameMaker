@@ -2,3 +2,134 @@ MAKE Version 3.6  Copyright (c) 1992 Borland International
 
 Available memory 15342112 bytes
 
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv palchos.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+palchos.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning palchos.c 178: Parameter 'argc' is never used in function main(int,char * *)
+Warning palchos.c 178: Parameter 'argv' is never used in function main(int,char * *)
+Warning palchos.c 593: Initializing enum with int in function ResetCols(RGBdata *,unsigned char *)
+Warning palchos.c 598: Initializing enum with int in function ResetCols(RGBdata *,unsigned char *)
+Warning palchos.c 600: Initializing enum with int in function ResetCols(RGBdata *,unsigned char *)
+
+	Available memory 3883160
+	tasm /ml/jP286N/m2 /M /MX /Q /T /D__LARGE__ startup.asm, startupl.obj
+	tasm /ml/jP286N/m2 /M /MX /Q /T /D__LARGE__ setenvp.asm, setenvp.obj
+	tasm /ml/jP286N/m2 /M /MX /Q /T /D__LARGE__ setargv.asm, setargv.obj
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv genc.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+genc.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+
+	Available memory 4078508
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv palc.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+palc.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+
+	Available memory 4075320
+	tasm /ml/jP286N/m2 pala.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   pala.asm
+Error messages:    None
+Warning messages:  None
+Passes:            1
+Remaining memory:  421k
+
+	TASM  /ml/jP286N/m2 newmouse.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   newmouse.asm
+Error messages:    None
+Warning messages:  None
+Passes:            1
+Remaining memory:  417k
+
+	tasm /ml/jP286N/m2 jsticka.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   jsticka.asm
+Error messages:    None
+Warning messages:  None
+Passes:            1
+Remaining memory:  422k
+
+	tasm /ml/jP286N/m2 gena.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   gena.asm
+Error messages:    None
+Warning messages:  None
+Passes:            2
+Remaining memory:  421k
+
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv windio.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+windio.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+Warning windio.c 887: Function should return a value in function saveany(char *,char *,char *,unsigned int,char *)
+Warning windio.c 887: 'fp' is assigned a value that is never used in function saveany(char *,char *,char *,unsigned int,char *)
+Warning windio.c 887: Parameter 'prompt' is never used in function saveany(char *,char *,char *,unsigned int,char *)
+Warning windio.c 887: Parameter 'ext' is never used in function saveany(char *,char *,char *,unsigned int,char *)
+Warning windio.c 887: Parameter 'path' is never used in function saveany(char *,char *,char *,unsigned int,char *)
+Warning windio.c 887: Parameter 'bytes' is never used in function saveany(char *,char *,char *,unsigned int,char *)
+Warning windio.c 887: Parameter 'buffer' is never used in function saveany(char *,char *,char *,unsigned int,char *)
+
+	Available memory 3924220
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv facelift.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+facelift.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+
+	Available memory 4136908
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv graphc.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+graphc.c:
+Warning gmgen.h 92: Functions containing for are not expanded inline
+
+	Available memory 4096420
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv genclass.cpp
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+genclass.cpp:
+
+	Available memory 4142228
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv gasclass.cpp
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+gasclass.cpp:
+
+	Available memory 4096716
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv geninput.cpp
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+geninput.cpp:
+
+	Available memory 4046860
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv timer.cpp
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+timer.cpp:
+Warning timer.cpp 44: Parameter 'Function' is never used in function RemFn(void (*)(void *),void *,int)
+Warning timer.cpp 44: Parameter 'data' is never used in function RemFn(void (*)(void *),void *,int)
+Warning timer.cpp 44: Parameter 'freq' is never used in function RemFn(void (*)(void *),void *,int)
+
+	Available memory 4109344
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv windclss.cpp
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+windclss.cpp:
+
+	Available memory 4133044
+	bcc -f- -c -C -ml -1 -P -O2 -I..\drv findfile.cpp
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+findfile.cpp:
+
+	Available memory 4113612
+	TASM  /ml/jP286N/m2 scrnrout.asm
+Turbo Assembler  Version 3.1  Copyright (c) 1988, 1992 Borland International
+
+Assembling file:   scrnrout.asm
+Error messages:    None
+Warning messages:  None
+Passes:            2
+Remaining memory:  417k
+
+	tlink /s/c @palchos.lnk
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International
