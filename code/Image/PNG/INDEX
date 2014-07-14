@@ -1,0 +1,31 @@
+Index for ftp.uu.net:/pub/archiving/zip directory:
+
+This directory contains the latest official releases of the Info-Zip
+software and selected compiled executables.
+
+AMIGA/				Executables for Amiga
+ATARI/                          Executables for Atari
+MAC/				Executables for Mac
+MAIL/				Info-Zip mail archives
+MSDOS/				Executables for MSDOS
+NT/                             Executables for Windows/NT
+OLD/				Junk that we haven't gotten around to deleting
+OS2/                            Executables for OS/2
+SCO-UNIX/                       Executables for SCO Unix
+SOLARIS2/                       Exectuables for Solaris
+VMS/				Executables for VMS
+WINDOWS/			Executables for Windows
+appnote.txt                     Zip format description from PKZIP 1.93a
+calgarycorpus.zip		Calgary Compression Corpus (for benchmarks)
+compression-faq.zip		Latest (or almost latest) comp.compression FAQ
+gzip-1.2.4.tar			Source for gzip (replacement for Unix compress)
+ship17.zip			Ship 1.7 source (designed to supplant uuencode)
+unzip512.tar.Z			UnZip 5.12 source in Unix .tar.Z format
+unzip512.zip			UnZip 5.12 source in .zip format
+unzphist.zip			The complete (as best we know) history of UnZip
+zcrypt10.zip			Encryption source for Zip 1.1
+zcrypt24.zip			Encryption source for Zip 2.01 and UnZip 5.12
+zip11.zip			Zip 1.1 source
+zip201.zip			Zip 2.01 source
+
+Please send questions and bug reports to "zip-bugs@wkuvx1.wku.edu".

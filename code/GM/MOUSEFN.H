@@ -1,7 +1,7 @@
 /* mousefn.c header file   by Andy Stone   DEC 26,1990  */
 
-// Define MOUSE if using the OLD mouse routines.
-//#define MOUSE
+// Define MOUSE if using the OLD mouse routines. (playgame)
+// #define MOUSE
 
 int initmouse(void);         // 1 if installed, 0 if not
 int moucur(int a);           // TRUE (1) = show  FALSE(0) = hide

@@ -1,0 +1,125 @@
+#============================================================================
+# Makefile for VMS Zip, ZipCloak, ZipNote  and ZipSplit          Greg Roelofs
+# Version:  2.0 [for use with Todd Aven's MAKE/VMS 3.4]          10-SEP-1993
+#============================================================================
+
+# Most recent revisions:  10-SEP-1993 08:53 by Hunter Goatley (add AXP support)
+
+
+#####################
+# MACRO DEFINITIONS #
+#####################
+
+CFLAGS = /NOLIST
+CC = cc
+LIB =
+# Uncomment next two lines to use the GNU compiler (also add /undef=__STDC__
+# to CFLAGS, and possibly replace /obj=$@ [below] with copy/rename/delete
+# setup).  NOT TESTED.
+#CC = gcc
+#LIB = gnu_cc:[000000]gcclib.olb/lib,
+
+%IFDEF __ALPHA
+CC = CC/STANDARD=VAXC
+E = .ALPHA_EXE
+O = .ALPHA_OBJ
+OPTIONS =
+OPTFILE =
+%ELSE
+E = .exe
+O = .obj
+OPTFILE = ,VAXCRTL.OPT
+OPTIONS = $(OPTFILE)/OPTIONS
+%ENDIF
+
+LD = LINK
+LDFLAGS = /NOTRACE
+
+ZIPS = zip$E zipnote$E zipsplit$E zipcloak$E
+
+# object file lists
+OBJZ = zip$O, zipfile$O, zipup$O, fileio$O, crypt$O, util$O,-
+   globals$O, VMSmunch$O, vms$O
+OBJI = deflate$O, trees$O, bits$O
+OBJU =	zipfile$O_,zipup$O_,fileio$O_,globals$O,-
+	util$O_,vmsmunch$O,vms$O
+OBJN =	zipnote$O,$(OBJU)
+OBJS =	zipsplit$O,$(OBJU)
+OBJC =	zipcloak$O,$(OBJU),crypt$O_
+
+###############################################
+# BASIC COMPILE INSTRUCTIONS AND DEPENDENCIES #
+###############################################
+
+default:	$(ZIPS)
+
+
+# suffix rules
+*$O:	*.c				# `*.c' necessary?
+	$(CC)$(CFLAGS)/OBJECT=$@ $<
+
+*$O_:	*.c				# `$*' not legal
+	$(CC)$(CFLAGS)/OBJECT=$@/DEFINE=("UTIL") $<
+
+
+# executables makerules (trailing `$' makes line a data line)
+zip$E:		$(OBJZ), $(OBJI) $(OPTFILE)
+	$(LD) $(LDFLAGS)/EXEC=ZIP$E $(OBJZ), $(OBJI) $(OPTIONS)
+
+zipnote$E:	$(OBJN) $(OPTFILE)
+	$(LD) $(LDFLAGS)/EXEC=ZIPNOTE$E $(OBJN) $(OPTIONS)
+
+zipcloak$E:	$(OBJC) $(OPTFILE)
+	$(LD) $(LDFLAGS)/EXEC=ZIPCLOAK$E $(OBJC) $(OPTIONS)
+
+zipsplit$E:	$(OBJS) $(OPTFILE)
+	$(LD) $(LDFLAGS)/EXEC=ZIPSPLIT$E $(OBJS) $(OPTIONS)
+
+VAXCRTL.OPT:
+	open/write tmp vaxcrtl.opt
+	write tmp "SYS$SHARE:VAXCRTL.EXE/SHARE"
+	close tmp
+
+# dependencies for zip, zipnote, zipcloak, and zipsplit
+$(OBJZ):	zip.h ziperr.h tailor.h
+$(OBJI):	zip.h ziperr.h tailor.h
+$(OBJN):	zip.h ziperr.h tailor.h
+$(OBJS):	zip.h ziperr.h tailor.h
+$(OBJC):	zip.h ziperr.h tailor.h
+fileio$O:	VMSmunch.h
+vms$O:          vms.c zip.h
+VMSmunch$O:     VMSmunch.c VMSmunch.h
+zip$O:		revision.h
+zipcloak$O:	revision.h
+zipfile$O:	VMSmunch.h
+zipnote$O:	revision.h
+zipsplit$O:	revision.h
+zipup$O:	revision.h
+
+
+clean:
+	del *.obj;*
+	del *.exe;* 		# use "purge/log" instead?
+
+
+# the backslash '\' is the continuation character if it occurs as
+# the last non-white character on the line.
+# the hyphen '-' is the DCL continuation character, so if it occurs
+# as the last non-white character on the line, the next line will
+# not have the dollar sign '$' prepended.
+
+
+################################
+# INDIVIDUAL MACHINE MAKERULES #
+################################
+
+generic:	default		# first try if unknown
+generic2:	default		# second try if unknown
+vax:		default
+vms:		default
+
+all:		$(ZIPS)
+zip:		zip$E
+zipcloak:	zipcloak$E
+zipnote:	zipnote$E
+zipsplit:	zipsplit$E

@@ -1,0 +1,679 @@
+Date: 	Wed, 3 Aug 1994 19:34:23 +0200
+From: Kai Uwe Rommel <rommel@ars.muc.de>
+
+Enclosed I send the revised set of patches. That does now also include
+some changes required for MetaWare High C++ for OS/2.
+
+
+diff -cbr unzip/envargs.c unzip-2/envargs.c
+*** unzip/envargs.c	Thu Apr 21 10:02:16 1994
+--- unzip-2/envargs.c	Tue Aug 02 11:48:46 1994
+***************
+*** 180,186 ****
+--- 180,188 ----
+      char ***argvp;
+  {
+  #ifndef MSC /* declared differently in MSC 7.0 headers, at least */
++ #ifndef __WATCOMC__
+      extern char **environ;          /* environment */
++ #endif
+  #endif
+      char        **envp;             /* pointer into environment */
+      char        **newargv;          /* new argument list */
+diff -cbr unzip/extract.c unzip-2/extract.c
+*** unzip/extract.c	Fri Jul 22 13:03:48 1994
+--- unzip-2/extract.c	Tue Aug 02 11:48:46 1994
+***************
+*** 863,869 ****
+--- 863,873 ----
+          if (cflag) {
+              outfile = stdout;
+  #ifdef DOS_NT_OS2
++ #ifdef __HIGHC__
++             setmode(outfile, _BINARY);
++ #else
+              setmode(fileno(outfile), O_BINARY);
++ #endif
+  #           define NEWLINE "\r\n"
+  #else
+  #           define NEWLINE "\n"
+diff -cbr unzip/funzip.c unzip-2/funzip.c
+*** unzip/funzip.c	Sun Jul 31 20:28:52 1994
+--- unzip-2/funzip.c	Tue Aug 02 11:48:48 1994
+***************
+*** 238,250 ****
+--- 238,258 ----
+    else
+    {
+  #ifdef DOS_NT_OS2
++ #ifdef __HIGHC__
++     setmode(stdin, _BINARY);
++ #else
+      setmode(0, O_BINARY);  /* some buggy C libraries require BOTH setmode() */
++ #endif
+  #endif                     /*  call AND the fdopen() in binary mode :-( */
+      if ((in = fdopen(0, FOPR)) == (FILE *)NULL)
+        err(2, "cannot find stdin");
+    }
+  #ifdef DOS_NT_OS2
++ #ifdef __HIGHC__
++   setmode(stdout, _BINARY);
++ #else
+    setmode(1, O_BINARY);
++ #endif
+  #endif
+    if ((out = fdopen(1, FOPW)) == (FILE *)NULL)
+      err(2, "cannot write to stdout");
+diff -cbr unzip/msdos/msdos.c unzip-2/msdos/msdos.c
+*** unzip/msdos/msdos.c	Wed Jul 27 22:20:06 1994
+--- unzip-2/msdos/msdos.c	Tue Aug 02 11:48:52 1994
+***************
+*** 37,45 ****
+  static int renamed_fullpath;   /* ditto */
+  static unsigned nLabelDrive;   /* ditto, plus volumelabel() */
+  
+! #if (defined(__GO32__) || defined(__EMX__))
+! #  define MKDIR(path,mode)   mkdir(path,mode)
+  #  include <dirent.h>        /* use readdir() */
+  #  define direct dirent
+  #  define Opendir opendir
+  #  define Readdir readdir
+--- 37,57 ----
+  static int renamed_fullpath;   /* ditto */
+  static unsigned nLabelDrive;   /* ditto, plus volumelabel() */
+  
+! #if (defined(__WATCOMC__) && defined(__386__))
+! #  define WREGS(v,r) (v##.w.##r)
+! #  define int86x int386x
+! #else
+! #  define WREGS(v,r) (v##.x.##r)
+! #endif
+! 
+! #if (defined(__GO32__) || defined(__EMX__) || defined(__WATCOMC__))
+! #  ifdef __WATCOMC__
+! #    include <direct.h>
+! #    define MKDIR(path,mode)   mkdir(path)
+! #  else
+  #  include <dirent.h>        /* use readdir() */
++ #    define MKDIR(path,mode)   mkdir(path,mode)
++ #  endif
+  #  define direct dirent
+  #  define Opendir opendir
+  #  define Readdir readdir
+***************
+*** 774,791 ****
+      regs.h.bl = (uch)nDrive;
+  #ifdef __EMX__
+      _int86(0x21, &regs, &regs);
+!     if (regs.x.flags & 1)
+  #else
+      intdos(&regs, &regs);
+!     if (regs.x.cflag)        /* error:  do default a/b check instead */
+  #endif
+      {
+          Trace((stderr,
+            "error in DOS function 0x44 (AX = 0x%04x):  guessing instead...\n",
+!           regs.x.ax));
+          return (nDrive == 1 || nDrive == 2)? TRUE : FALSE;
+      } else
+!         return regs.x.ax? FALSE : TRUE;
+  }
+  
+  
+--- 786,803 ----
+      regs.h.bl = (uch)nDrive;
+  #ifdef __EMX__
+      _int86(0x21, &regs, &regs);
+!     if (WREGS(regs,flags) & 1)
+  #else
+      intdos(&regs, &regs);
+!     if (WREGS(regs,cflag))        /* error:  do default a/b check instead */
+  #endif
+      {
+          Trace((stderr,
+            "error in DOS function 0x44 (AX = 0x%04x):  guessing instead...\n",
+!           WREGS(regs,ax)));
+          return (nDrive == 1 || nDrive == 2)? TRUE : FALSE;
+      } else
+!         return WREGS(regs,ax)? FALSE : TRUE;
+  }
+  
+  
+***************
+*** 854,874 ****
+  
+      /* set the disk transfer address for subsequent FCB calls */
+      sregs.ds = FP_SEG(pdta);
+!     regs.x.dx = FP_OFF(pdta);
+!     Trace((stderr, "segment:offset of pdta = %x:%x\n", sregs.ds, regs.x.dx));
+      Trace((stderr, "&dta = %lx, pdta = %lx\n", (ulg)&dta, (ulg)pdta));
+      regs.h.ah = 0x1a;
+      intdosx(&regs, &regs, &sregs);
+  
+      /* fill in the FCB */
+      sregs.ds = FP_SEG(pfcb);
+!     regs.x.dx = FP_OFF(pfcb);
+      pfcb->flag = 0xff;          /* extended FCB */
+      pfcb->vattr = 0x08;         /* attribute:  disk volume label */
+      pfcb->drive = (uch)nLabelDrive;
+  
+  #ifdef DEBUG
+!     Trace((stderr, "segment:offset of pfcb = %x:%x\n", sregs.ds, regs.x.dx));
+      Trace((stderr, "&fcb = %lx, pfcb = %lx\n", (ulg)&fcb, (ulg)pfcb));
+      Trace((stderr, "(2nd check:  labelling drive %c:)\n", pfcb->drive-1+'A'));
+      if (pfcb->flag != fcb.flag)
+--- 866,886 ----
+  
+      /* set the disk transfer address for subsequent FCB calls */
+      sregs.ds = FP_SEG(pdta);
+!     WREGS(regs,dx) = FP_OFF(pdta);
+!     Trace((stderr, "segment:offset of pdta = %x:%x\n", sregs.ds, WREGS(regs,dx)));
+      Trace((stderr, "&dta = %lx, pdta = %lx\n", (ulg)&dta, (ulg)pdta));
+      regs.h.ah = 0x1a;
+      intdosx(&regs, &regs, &sregs);
+  
+      /* fill in the FCB */
+      sregs.ds = FP_SEG(pfcb);
+!     WREGS(regs,dx) = FP_OFF(pfcb);
+      pfcb->flag = 0xff;          /* extended FCB */
+      pfcb->vattr = 0x08;         /* attribute:  disk volume label */
+      pfcb->drive = (uch)nLabelDrive;
+  
+  #ifdef DEBUG
+!     Trace((stderr, "segment:offset of pfcb = %x:%x\n", sregs.ds, WREGS(regs,dx)));
+      Trace((stderr, "&fcb = %lx, pfcb = %lx\n", (ulg)&fcb, (ulg)pfcb));
+      Trace((stderr, "(2nd check:  labelling drive %c:)\n", pfcb->drive-1+'A'));
+      if (pfcb->flag != fcb.flag)
+***************
+*** 894,900 ****
+      strncpy((char *)fcb.vn, "???????????", 11);   /* i.e., "*.*" */
+      Trace((stderr, "fcb.vn = %lx\n", (ulg)fcb.vn));
+      Trace((stderr, "regs.h.ah = %x, regs.x.dx = %04x, sregs.ds = %04x\n",
+!       regs.h.ah, regs.x.dx, sregs.ds));
+      Trace((stderr, "flag = %x, drive = %d, vattr = %x, vn = %s = %s.\n",
+        fcb.flag, fcb.drive, fcb.vattr, fcb.vn, pfcb->vn));
+      intdosx(&regs, &regs, &sregs);
+--- 906,912 ----
+      strncpy((char *)fcb.vn, "???????????", 11);   /* i.e., "*.*" */
+      Trace((stderr, "fcb.vn = %lx\n", (ulg)fcb.vn));
+      Trace((stderr, "regs.h.ah = %x, regs.x.dx = %04x, sregs.ds = %04x\n",
+!       regs.h.ah, WREGS(regs,dx), sregs.ds));
+      Trace((stderr, "flag = %x, drive = %d, vattr = %x, vn = %s = %s.\n",
+        fcb.flag, fcb.drive, fcb.vattr, fcb.vn, pfcb->vn));
+      intdosx(&regs, &regs, &sregs);
+***************
+*** 1058,1065 ****
+      union REGS regs;
+  
+      sregs.ds  = FP_SEG(CountryInfo);
+!     regs.x.dx = FP_OFF(CountryInfo);
+!     regs.x.ax = 0x3800;
+      int86x(0x21, &regs, &regs, &sregs);
+  
+  #else /* __GO32__ || __EMX__ */
+--- 1070,1077 ----
+      union REGS regs;
+  
+      sregs.ds  = FP_SEG(CountryInfo);
+!     WREGS(regs,dx) = FP_OFF(CountryInfo);
+!     WREGS(regs,ax) = 0x3800;
+      int86x(0x21, &regs, &regs, &sregs);
+  
+  #else /* __GO32__ || __EMX__ */
+diff -cbr unzip/os2/makefile.os2 unzip-2/os2/makefile.os2
+*** unzip/os2/makefile.os2	Sat Jul 23 13:42:04 1994
+--- unzip-2/os2/makefile.os2	Tue Aug 02 11:53:42 1994
+***************
+*** 32,43 ****
+  #   For Watcom C/386, edit the os2$(OBJ) target so that os2/os2.c reads
+  #   os2\os2.c instead.  Watcom can't handle forward slashes; gcc can't
+  #   handle backslashes.  We'll see about making this a macro next time...
+  
+  default:
+  	@echo "Enter `$(MAKE) -f makefile.os2 target' with makefile.os2 copied"
+  	@echo "to the main UnZip directory and where target is one of:"
+  	@echo "   msc mscdos ibm ibmdyn ibmdebug ibmprof"
+! 	@echo "   watcom borland gcc gccdyn gccdebug gccdos"
+  
+  # MS C 6.00 for OS/2, 16-bit (should figure out way to split unzip/funzip 
+  # compiles so former is always large model and latter always small model...)
+--- 32,45 ----
+  #   For Watcom C/386, edit the os2$(OBJ) target so that os2/os2.c reads
+  #   os2\os2.c instead.  Watcom can't handle forward slashes; gcc can't
+  #   handle backslashes.  We'll see about making this a macro next time...
++ #   Same for msdos/msdos.c ...
+  
+  default:
+  	@echo "Enter `$(MAKE) -f makefile.os2 target' with makefile.os2 copied"
+  	@echo "to the main UnZip directory and where target is one of:"
+  	@echo "   msc mscdos ibm ibmdyn ibmdebug ibmprof"
+! 	@echo "   metaware borland gcc gccdyn gccdebug gccdos"
+! 	@echo "   watcom watcom16 watcomdos watcom16dos"
+  
+  # MS C 6.00 for OS/2, 16-bit (should figure out way to split unzip/funzip 
+  # compiles so former is always large model and latter always small model...)
+***************
+*** 52,57 ****
+--- 54,71 ----
+  	OBJ=".obj" \
+  	DEF="os2\unzip16.def"
+  
++ # MS C 6.00 for OS/2, debug version
++ mscdebug:
++ 	$(MAKE) -f makefile.os2 all \
++ 	CC="cl -nologo -AL -Zi -Od -I. $(FP)" \
++ 	CFLAGS="-G2 -Zp1 -W3 -DOS2 -DMSC" \
++ 	NFLAGS="" \
++ 	LDFLAGS="-Lp -Fe" \
++ 	LDFLAGS2="-link /noe" \
++ 	OUT="-Fo" \
++ 	OBJ=".obj" \
++ 	DEF="os2\unzip16.def"
++ 
+  # cross-compilation for MS-DOS with MS C 6.00 (same comment as above...formerly;
+  # now unzip is small model again, with [almost] all strings in far memory)
+  mscdos:
+***************
+*** 59,65 ****
+  	CC="cl -nologo -AS -Oaict -Gs -I. $(FP)" \
+  	CFLAGS="-Zp1 -W3 $(LOCAL_UNZIP)" \
+  	NFLAGS="" \
+! 	LDFLAGS="-F 0c00 -Lr -Fe" \
+  	LDFLAGS2="-link /noe /exe" \
+  	OUT="-Fo" \
+  	OBJ=".obj" \
+--- 73,79 ----
+  	CC="cl -nologo -AS -Oaict -Gs -I. $(FP)" \
+  	CFLAGS="-Zp1 -W3 $(LOCAL_UNZIP)" \
+  	NFLAGS="" \
+! 	LDFLAGS="-F 0C00 -Lr -Fe" \
+  	LDFLAGS2="-link /noe /exe" \
+  	OUT="-Fo" \
+  	OBJ=".obj" \
+***************
+*** 114,131 ****
+  	OBJ=".obj" \
+  	DEF="os2\unzip.def"
+  
+! # Watcom C/386 9.0
+  watcom:
+  	$(MAKE) -f makefile.os2 all \
+  	CC="wcl386 -zq -Ox -s -I." \
+  	CFLAGS="-Zp1 -DOS2 $(LOCAL_UNZIP)" \
+  	NFLAGS="" \
+! 	LDFLAGS="-k0x40000 -x -Fe=" \
+  	LDFLAGS2="" \
+  	OUT="-Fo" \
+  	OBJ=".obj" \
+  	DEF=""
+  
+  # Borland C++
+  borland:
+  	$(MAKE) -f makefile.os2 all \
+--- 128,194 ----
+  	OBJ=".obj" \
+  	DEF="os2\unzip.def"
+  
+! # Watcom C/386 9.0 or higher
+  watcom:
+  	$(MAKE) -f makefile.os2 all \
+  	CC="wcl386 -zq -Ox -s -I." \
+  	CFLAGS="-Zp1 -DOS2 $(LOCAL_UNZIP)" \
+  	NFLAGS="" \
+! 	LDFLAGS="-k0x40000 -x -l=os2v2 -Fe=" \
+  	LDFLAGS2="" \
+  	OUT="-Fo" \
+  	OBJ=".obj" \
+  	DEF=""
+  
++ # Watcom C/286 9.0 or higher
++ watcom16:
++ 	$(MAKE) -f makefile.os2 all \
++ 	CC="wcl -zq -ml -Ox -s -I." \
++ 	CFLAGS="-Zp1 -DOS2" \
++ 	NFLAGS="" \
++ 	LDFLAGS="-k0x2000 -x -l=os2 -Fe=" \
++ 	LDFLAGS2="" \
++ 	OUT="-Fo" \
++ 	OBJ=".obj"
++ 
++ # Watcom C/386 9.0 or higher, crosscompilation for DOS
++ watcomdos:
++ 	$(MAKE) -f makefile.os2 all \
++ 	CC="wcl386 -zq -Ox -s -I." \
++ 	CFLAGS="-Zp1 -DMSDOS" \
++ 	NFLAGS="" \
++ 	LDFLAGS="-k0x40000 -x -l=dos4g -Fe=" \
++ 	LDFLAGS2="" \
++ 	OUT="-Fo" \
++ 	OBJ=".obj" \
++ 	OBJU2="msdos.obj" \
++ 	OBJX2="msdos_.obj"
++ 
++ # Watcom C/286 9.0 or higher, crosscompilation for DOS
++ watcom16dos:
++ 	$(MAKE) -f makefile.os2 all \
++ 	CC="wcl -zq -mm -Ox -s -I." \
++ 	CFLAGS="-Zp1 -DMSDOS" \
++ 	NFLAGS="" \
++ 	LDFLAGS="-k0xC00 -x -l=dos -Fe=" \
++ 	LDFLAGS2="" \
++ 	OUT="-Fo" \
++ 	OBJ=".obj" \
++ 	OBJU2="msdos.obj" \
++ 	OBJX2="msdos_.obj"
++ 
++ # MetaWare High C/C++ 3.2
++ metaware:
++ 	$(MAKE) -f makefile.os2 all \
++ 	CC="hc -O2 -I." \
++ 	CFLAGS="-D__32BIT__ -DOS2" \
++ 	NFLAGS="" \
++ 	LDFLAGS="-o " \
++ 	LDFLAGS2="" \
++ 	OUT="-o ./" \
++ 	OBJ=".obj" \
++ 	DEF="-Hdef=os2\unzip.def"
++ 
+  # Borland C++
+  borland:
+  	$(MAKE) -f makefile.os2 all \
+***************
+*** 192,198 ****
+  	extract$(OBJ) file_io$(OBJ) inflate$(OBJ) match$(OBJ) \
+  	unreduce$(OBJ) unshrink$(OBJ) zipinfo$(OBJ)
+  OBJU2 = os2$(OBJ)
+! OBJX  = unzip_$(OBJ) crypt$(OBJ) extract_$(OBJ) file_io$(OBJ) \
+  	inflate$(OBJ) match$(OBJ)
+  OBJX2 = os2_$(OBJ)
+  OBJF  = funzip$(OBJ) crypt_$(OBJ) inflate_$(OBJ)
+--- 255,261 ----
+  	extract$(OBJ) file_io$(OBJ) inflate$(OBJ) match$(OBJ) \
+  	unreduce$(OBJ) unshrink$(OBJ) zipinfo$(OBJ)
+  OBJU2 = os2$(OBJ)
+! OBJX  = unzipsfx$(OBJ) crypt$(OBJ) extract_$(OBJ) file_io$(OBJ) \
+  	inflate$(OBJ) match$(OBJ)
+  OBJX2 = os2_$(OBJ)
+  OBJF  = funzip$(OBJ) crypt_$(OBJ) inflate_$(OBJ)
+***************
+*** 252,256 ****
+  inflate_$(OBJ):	inflate.c inflate.h unzip.h crypt.h	# funzip only
+  	$(CC) -c $(CFLAGS) -DFUNZIP $(OUT)$@ inflate.c
+  
+! unzip_$(OBJ):	unzip.c unzip.h crypt.h version.h	# unzipsfx only
+  	$(CC) -c $(CFLAGS) -DSFX $(OUT)$@ unzip.c
+--- 315,319 ----
+  inflate_$(OBJ):	inflate.c inflate.h unzip.h crypt.h	# funzip only
+  	$(CC) -c $(CFLAGS) -DFUNZIP $(OUT)$@ inflate.c
+  
+! unzipsfx$(OBJ):	unzip.c unzip.h crypt.h version.h	# unzipsfx only
+  	$(CC) -c $(CFLAGS) -DSFX $(OUT)$@ unzip.c
+diff -cbr unzip/os2/os2.c unzip-2/os2/os2.c
+*** unzip/os2/os2.c	Wed Jul 27 22:23:02 1994
+--- unzip-2/os2/os2.c	Tue Aug 02 11:48:54 1994
+***************
+*** 73,78 ****
+--- 73,79 ----
+  #define INCL_DOSDEVICES
+  #define INCL_DOSDEVIOCTL
+  #define INCL_DOSERRORS
++ #define INCL_DOSMISC
+  #include <os2.h>
+  
+  #ifdef __32BIT__
+***************
+*** 229,238 ****
+  #endif
+  
+  
+- #ifdef __WATCOMC__
+-    unsigned char __near _osmode = OS2_MODE;
+- #endif
+- 
+  #ifndef SFX
+     static char *getdirent(char *);
+     static void free_dircontents(struct _dircontents *);
+--- 230,235 ----
+***************
+*** 387,394 ****
+    if ( (pFEA2list = (PFEA2LIST) malloc((size_t) pEAblock -> lSize)) == NULL )
+      return;
+  
+!   if ( memextract((char *) pFEA2list, pEAblock -> lSize,
+!                   (char *) (pEAblock + 1), 
+                    pEAblock -> nSize - sizeof(pEAblock -> lSize)) )
+    {
+      free(pFEA2list);
+--- 384,391 ----
+    if ( (pFEA2list = (PFEA2LIST) malloc((size_t) pEAblock -> lSize)) == NULL )
+      return;
+  
+!   if ( memextract((uch *) pFEA2list, pEAblock -> lSize,
+!                   (uch *) (pEAblock + 1), 
+                    pEAblock -> nSize - sizeof(pEAblock -> lSize)) )
+    {
+      free(pFEA2list);
+***************
+*** 450,474 ****
+  char *GetLoadPath(void) 
+  {
+  #ifdef __32BIT__ /* generic for 32-bit API */
+- 
+    PTIB pptib;
+    PPIB pppib;
+    char *szPath;
+  
+    DosGetInfoBlocks(&pptib, &pppib);
+    szPath = pppib -> pib_pchenv;
+  
+    while (*szPath) /* find end of process environment */
+      szPath = strchr(szPath, 0) + 1;
+  
+    return szPath + 1; /* .exe file name follows environment */
+  
+- #else /* 16-bit, specific for MS C 6.00, note: requires large data model */
+- 
+-   extern char _far *_pgmptr;
+-   return _pgmptr;
+- 
+- #endif
+  } /* end function GetLoadPath() */
+  
+  
+--- 447,472 ----
+  char *GetLoadPath(void) 
+  {
+  #ifdef __32BIT__ /* generic for 32-bit API */
+    PTIB pptib;
+    PPIB pppib;
+    char *szPath;
+  
+    DosGetInfoBlocks(&pptib, &pppib);
+    szPath = pppib -> pib_pchenv;
++ #else /* 16-bit, note: requires large data model */
++   SEL selEnv;
++   USHORT offCmd;
++   char *szPath;
++ 
++   DosGetEnv(&selEnv, &offCmd);
++   szPath = MAKEP(selEnv, 0);
++ #endif
+  
+    while (*szPath) /* find end of process environment */
+      szPath = strchr(szPath, 0) + 1;
+  
+    return szPath + 1; /* .exe file name follows environment */
+  
+  } /* end function GetLoadPath() */
+  
+  
+***************
+*** 680,686 ****
+  {
+    static USHORT nLastDrive=(USHORT)(-1), nResult;
+    ULONG lMap;
+!   BYTE bData[64], bName[3];
+  #ifdef __32BIT__
+    ULONG nDrive, cbData;
+    PFSQBUFFER2 pData = (PFSQBUFFER2) bData;
+--- 678,685 ----
+  {
+    static USHORT nLastDrive=(USHORT)(-1), nResult;
+    ULONG lMap;
+!   BYTE bData[64];
+!   char bName[3];
+  #ifdef __32BIT__
+    ULONG nDrive, cbData;
+    PFSQBUFFER2 pData = (PFSQBUFFER2) bData;
+***************
+*** 689,698 ****
+    PFSQBUFFER pData = (PFSQBUFFER) bData;
+  #endif
+  
+-   if ( _osmode == DOS_MODE )
+-     return TRUE;
+-   else
+-   {
+      /* We separate FAT and HPFS+other file systems here.
+         at the moment I consider other systems to be similar to HPFS,
+         i.e. support long file names and case sensitive */
+--- 688,693 ----
+***************
+*** 713,725 ****
+      cbData = sizeof(bData);
+  
+      if ( !DosQueryFSAttach(bName, 0, FSAIL_QUERYNAME, (PVOID) pData, &cbData) )
+!       nResult = !strcmp(pData -> szFSDName + pData -> cbName, "FAT");
+      else
+        nResult = FALSE;
+  
+      /* End of this ugly code */
+      return nResult;
+-   }
+  } /* end function IsFileSystemFAT() */
+  
+  
+--- 708,719 ----
+      cbData = sizeof(bData);
+  
+      if ( !DosQueryFSAttach(bName, 0, FSAIL_QUERYNAME, (PVOID) pData, &cbData) )
+!     nResult = !strcmp((char *) (pData -> szFSDName) + pData -> cbName, "FAT");
+      else
+        nResult = FALSE;
+  
+      /* End of this ugly code */
+      return nResult;
+  } /* end function IsFileSystemFAT() */
+  
+  
+***************
+*** 1398,1404 ****
+      ULONG action;
+  #else
+      USHORT rc;
+!     UINT action;
+  #endif
+  
+  
+--- 1392,1398 ----
+      ULONG action;
+  #else
+      USHORT rc;
+!     USHORT action;
+  #endif
+  
+  
+***************
+*** 1579,1597 ****
+    eaop.fpGEAList = NULL;
+    eaop.oError = 0;
+  
+!   strcpy(fealst.szName, ".LONGNAME");
+!   strcpy(fealst.szValue, longname);
+  
+!   fealst.cbList  = sizeof(fealst) - CCHMAXPATH + strlen(fealst.szValue);
+!   fealst.cbName  = (BYTE) strlen(fealst.szName);
+!   fealst.cbValue = sizeof(USHORT) * 2 + strlen(fealst.szValue);
+  
+  #ifdef __32BIT__
+    fealst.oNext   = 0;
+  #endif
+    fealst.fEA     = 0;
+    fealst.eaType  = 0xFFFD;
+!   fealst.eaSize  = strlen(fealst.szValue);
+  
+    return DosSetPathInfo(name, FIL_QUERYEASIZE,
+                          (PBYTE) &eaop, sizeof(eaop), 0);
+--- 1573,1591 ----
+    eaop.fpGEAList = NULL;
+    eaop.oError = 0;
+  
+!   strcpy((char *) fealst.szName, ".LONGNAME");
+!   strcpy((char *) fealst.szValue, longname);
+  
+!   fealst.cbList  = sizeof(fealst) - CCHMAXPATH + strlen((char *) fealst.szValue);
+!   fealst.cbName  = (BYTE) strlen((char *) fealst.szName);
+!   fealst.cbValue = sizeof(USHORT) * 2 + strlen((char *) fealst.szValue);
+  
+  #ifdef __32BIT__
+    fealst.oNext   = 0;
+  #endif
+    fealst.fEA     = 0;
+    fealst.eaType  = 0xFFFD;
+!   fealst.eaSize  = strlen((char *) fealst.szValue);
+  
+    return DosSetPathInfo(name, FIL_QUERYEASIZE,
+                          (PBYTE) &eaop, sizeof(eaop), 0);
+***************
+*** 1880,1886 ****
+  
+    if (!bInitialized)
+      InitNLS();
+!   for ( szPtr = szArg; *szPtr; szPtr++ )
+      *szPtr = cLowerCase[*szPtr];
+    return szArg;
+  }
+--- 1874,1880 ----
+  
+    if (!bInitialized)
+      InitNLS();
+!   for ( szPtr = (unsigned char *) szArg; *szPtr; szPtr++ )
+      *szPtr = cLowerCase[*szPtr];
+    return szArg;
+  }
+diff -cbr unzip/unzip.h unzip-2/unzip.h
+*** unzip/unzip.h	Sun Jul 31 20:09:44 1994
+--- unzip-2/unzip.h	Tue Aug 02 11:48:56 1994
+***************
+*** 437,447 ****
+--- 437,449 ----
+  #endif
+  
+  #ifdef __WATCOMC__
++ #  ifdef __386__
+  #  define __32BIT__
+  #  undef far
+  #  define far
+  #  undef near
+  #  define near
++ #  endif
+  #  define PIPE_ERROR (errno == -1)
+  #endif
+  
+***************
+*** 770,776 ****
+  #endif
+  
+  /* GRR:  NT defines MSDOS?? */
+! #if (!defined(MSDOS) && !defined(__IBMC__)) || defined(NT)
+  #  define near
+  #  define far
+  #endif
+--- 772,778 ----
+  #endif
+  
+  /* GRR:  NT defines MSDOS?? */
+! #if (!defined(MSDOS) && !defined(__IBMC__) && defined(__32BIT__)) || defined(NT)
+  #  define near
+  #  define far
+  #endif

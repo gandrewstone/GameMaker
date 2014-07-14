@@ -1,0 +1,27 @@
+CC=cc
+CFLAGS=-O
+# CFLAGS=-g -DDEBUG
+
+OBJS = png.o pngrcb.o pngrutil.o pngtrans.o pngwutil.o \
+	pngread.o pngstub.o pngwrite.o pngrtran.o pngwtran.o
+
+
+pnglib.a: $(OBJS)
+	ar r pnglib.a  $(OBJS)
+
+clean:
+	rm -f *.o
+	rm -f pnglib.a
+
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+png.o: png.h zlib.h zconf.h
+pngrcb.o: png.h zlib.h zconf.h
+pngread.o: png.h zlib.h zconf.h
+pngrutil.o: png.h zlib.h zconf.h
+pngstub.o: png.h zlib.h zconf.h
+pngtrans.o: png.h zlib.h zconf.h
+pngrtran.o: png.h zlib.h zconf.h
+pngwtran.o: png.h zlib.h zconf.h
+pngwrite.o: png.h zlib.h zconf.h
+pngwutil.o: png.h zlib.h zconf.h

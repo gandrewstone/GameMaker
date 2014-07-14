@@ -1,0 +1,180 @@
+# Amiga sMakefile for Zip, ZipNote, ZipCloak and ZipSplit
+# Updated for SAS/c 6.3  July 1, 1993
+#
+# NOTE: Optimizer problems under SASC 6.2 have been fixed
+#       for SASC 6.3.  If you are using version 6.2, either
+#       upgrade (for free), or turn off optimization.
+#
+# -John Bush, <John.Bush@East.Sun.COM>
+#         or: <JBush@Bix.COM>
+
+# See the master Makefile under the top level Zip/Unzip source directory
+# for more information on compiler macros and flags for this version.
+
+#######################
+# MACROBE DEFINITIONS #
+#######################
+
+# Do not set any DEBUG flags  when building production version.
+# CDBG = DEBUG=L                   # line table only
+# CDBG = DEBUG=S                  # with symbol flush
+# CDBG = $(CDBG) DEF=DEBUG       # program debug statements
+# LDBG = ADDSYM
+# MAP = MAP amiga/ZIP.MAP
+
+# Optimizer flags
+OPT = OPT OPTTIME OPTINL OPTINLOCAL OPTCOMP=5 OPTDEP=5 OPTRDEP=5
+
+# Essential compiler flags.  You can also change CPU=ANY to
+# CPU=68020 when selecting the 68020 version of longest_match.
+#
+CC = sc
+CFLAGS = VERBOSE NOSTKCHK NMINC UNSCHAR STRMERGE NOICONS
+CFLAGS = $(CFLAGS) DATA=FAR CODE=NEAR MEMSIZE=HUGE CPU=ANY
+DEFINES = DEF=NO_MKTEMP DEF=PROTO DEF=ECHOFF_UNNECCESSARY
+
+# Define AMIGA_BETA to print "Beta Notice" up front.  See tailor.h.
+# Undefine AMIGA_BETA when building a released version.
+# DEFINES = $(DEFINES) DEF=AMIGA_BETA
+
+# Define MEDIUM_MEM for production release (per Paul Kienitz).
+# This reduces runtime memory requirement but not speed or compression.
+DEFINES = $(DEFINES) DEF=MEDIUM_MEM
+
+# Linker flags
+LD = slink
+PSTRT = LIB:c.o
+LFLGS = LIB LIB:sc.lib+LIB:amiga.lib NOICONS
+
+# Temporary filename for namelists (to prevent command line overflow).
+TMPF = ram:MakeZip.tmp
+
+# ------------------------------------------------------------
+# Assembler longest_match selection stuff  (new 7/3/93)
+# ------------------------------------------------------------
+# Define ASMV to externalize longest_match() in deflate.c.
+# Without this, a C language equivalent is compiled within deflate.c,
+# and all remaining assmbly selections below become irrelevant.
+# If disabling ASMV, be sure to undefine the MATCHOBJ macro too.
+#
+SELECTASM = DEF=ASMV
+DEFINES = $(DEFINES) $(SELECTASM)
+MATCHOBJ = match.o
+
+# Compiler and flags selections.  Note:  "ATSIGN" is only used
+# if match_68.a source is selected (see below), but it's presence
+# doesn't alter the compilation of the default code, so leave it.
+#
+ASM = asm
+AFLAGS = -m2 -iINCLUDE: -dAMIGA -dATSIGN
+
+# Selecton of longest_match() source filename.
+# Can be passed from command line via MATCHSRC=XXXXXX.a
+# The GNU gzip version is standard and default.
+#
+# match.a    -- GNU gzip version (by Carsten Steger).
+# match_68.a -- Amiga specific version (by Paul Kienitz)
+#
+MATCHSRC = match.a
+
+# OPTIONS, can be passed from command line via MATCHOPTS=-dXXXXXX
+# The default is no system-dependent code that runs on all 68k systems.
+#
+# For match.a:
+#
+# -dUNALIGNED_OK -- selects faster 68020 word-based comparisons
+#
+# For match_68.a:
+#
+# -dCPUTEST      -- perform CPU model test at runtime.
+# -dCPU020       -- force 68020 code generation (override CPUTEST)
+#           ** If neither is specified, code is all-68000 compatible.
+#
+MATCHOPTS = 
+
+# ------------------------------------------------------------
+# End of longest_match assembler selection stuff
+# ------------------------------------------------------------
+
+###############################################
+# BASIC COMPILE INSTRUCTIONS AND DEPENDENCIES #
+###############################################
+
+# default C rules
+#
+.c.o:
+      $(CC) $(DEFINES) $(CFLAGS) $(OPT) $(CDBG) OBJNAME=$@ $*.c
+
+# Alternate rules for routines compiled with utilities
+#
+.c.oo:
+      $(CC) DEF=UTIL $(DEFINES) $(CFLAGS) $(OPT) $(CDBG) OBJNAME=$*.oo $*.c
+
+# object file macro lists
+#
+HFILES = zip.h ziperr.h tailor.h revision.h crypt.h
+
+OBJA = zipfile.o zipup.o fileio.o util.o globals.o crypt.o amiga.o
+OBJI = deflate.o trees.o bits.o $(MATCHOBJ)
+OBJU = zipfile.oo zipup.oo fileio.oo util.oo globals.o
+
+OBJZ = zip.o $(OBJA) $(OBJI)
+
+OBJN = zipnote.o  $(OBJU)
+OBJC = zipcloak.o $(OBJU) crypt.oo amiga.o
+OBJS = zipsplit.o $(OBJU)
+
+ZIPS = zip zipnote zipcloak zipsplit 
+
+# -----------------------------------------------------------------
+
+all:      $(ZIPS)
+
+zip: $(OBJZ) $(HFILES)
+        -echo "$(OBJZ)" > $(TMPF)
+	$(LD) TO Zip      FROM $(PSTRT) WITH $(TMPF) $(LFLGS) $(LDBG) $(MAP)
+        
+zipnote: $(OBJN) $(HFILES)
+        -echo "$(OBJN)" > $(TMPF)
+	$(LD) TO ZipNote  FROM $(PSTRT) WITH $(TMPF) $(LFLGS) $(LDBG)
+
+zipcloak: $(OBJC) $(HFILES)
+        -echo "$(OBJC)" > $(TMPF)
+	$(LD) TO ZipCloak FROM $(PSTRT) WITH $(TMPF) $(LFLGS) $(LDBG)
+
+zipsplit: $(OBJS) $(HFILES)
+        -echo "$(OBJS)" > $(TMPF)
+	$(LD) TO ZipSplit FROM $(PSTRT) WITH $(TMPF) $(LFLGS) $(LDBG)
+
+clean:
+       -delete $(OBJZ) quiet force >nil:
+       -delete $(OBJU) quiet force >nil:
+       -delete $(OBJA) quiet force >nil:
+       -delete $(OBJI) quiet force >nil:
+       -delete $(OBJN) quiet force >nil:
+       -delete $(OBJC) quiet force >nil:
+       -delete $(OBJS) quiet force >nil:
+       -delete $(ZIPS) quiet force >nil:
+
+zip.o:      zip.c      $(HFILES)
+zipup.o:    zipup.c    $(HFILES)
+zipnote.o:  zipnote.c  $(HFILES)
+zipcloak.o: zipcloak.c $(HFILES)
+crypt.o:    crypt.c    $(HFILES)
+zipsplit.o: zipsplit.c $(HFILES)
+deflate.o:  deflate.c  $(HFILES)
+trees.o:    trees.c    $(HFILES)
+bits.o:     bits.c     $(HFILES)
+zipfile.o:  zipfile.c  $(HFILES)
+fileio.o:   fileio.c   $(HFILES)
+util.o:     util.c     $(HFILES)
+globals.o:  globals.c  $(HFILES)
+
+# Amiga specific objects
+amiga.o: amiga/amiga.c $(HFILES)
+
+# Allow selection of ASM version via MATCHSRC
+match.o:    amiga/$(MATCHSRC)
+        $(ASM) $(AFLAGS) $(MATCHOPTS) -o$@ amiga/$(MATCHSRC)
+
+# end of Makefile

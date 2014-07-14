@@ -1,0 +1,25 @@
+Borland C++ Version 4.00 Copyright (c) 1993 Borland International
+fli.cpp:
+Warning fileclss.hpp 4: Redefinition of 'DEBUG' is not identical
+Warning fileclss.hpp 38: Functions containing while are not expanded inline
+Warning fileclss.hpp 74: Functions containing for are not expanded inline
+Error fileclss.hpp 74: Size of the type is unknown or zero in function FileRead::Get(void *,unsigned long)
+Error fileclss.hpp 74: Not an allowed type in function FileRead::Get(void *,unsigned long)
+Error fileclss.hpp 79: Size of the type is unknown or zero in function FileRead::Get(void *,unsigned long)
+Error fileclss.hpp 79: Not an allowed type in function FileRead::Get(void *,unsigned long)
+Warning fileclss.hpp 134: Initializing boolean with int in function FileRead::LoadMore()
+Warning fli.cpp 17: Unreachable code in function FrameHeader::Validate()
+Warning fli.cpp 249: Parameter 'H' is never used in function FrameHeader::View(FLIHeader &,FileRead &,VideoMode *,Coord2d)
+*** 4 errors in Compile ***
+fileclss.cpp:
+Warning fileclss.hpp 38: Functions containing while are not expanded inline
+Warning fileclss.hpp 74: Functions containing for are not expanded inline
+Error fileclss.hpp 74: Size of the type is unknown or zero in function FileRead::Get(void *,unsigned long)
+Error fileclss.hpp 74: Not an allowed type in function FileRead::Get(void *,unsigned long)
+Error fileclss.hpp 79: Size of the type is unknown or zero in function FileRead::Get(void *,unsigned long)
+Error fileclss.hpp 79: Not an allowed type in function FileRead::Get(void *,unsigned long)
+Warning fileclss.hpp 134: Initializing boolean with int in function FileRead::LoadMore()
+Error fileclss.cpp 3: Body has already been defined for function 'FileRead::Peek(unsigned int)'
+Error fileclss.cpp 28: Body has already been defined for function 'FileRead::LoadMore()'
+Warning fileclss.cpp 45: Initializing boolean with int in function FileRead::LoadMore()
+*** 6 errors in Compile ***

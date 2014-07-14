@@ -47,12 +47,12 @@ windio.obj:     windio.c
                 $(CCOMPILER) $(CFLAGS) windio.c
 genc.obj:       mousefn.h genc.c
                 $(CCOMPILER) $(CFLAGS) genc.c
-vgaobj.obj:     c:\drv\vgaobj.asm
-                $(ASSEMBLER) $(AFLAGS) c:\drv\vgaobj.asm
-fileclss.obj:   c:\drv\fileclss.cpp c:\drv\fileclss.hpp
-                $(CCOMPILER) $(CFLAGS) c:\drv\fileclss.cpp
-fli.obj:        c:\image\fli\fli.cpp c:\drv\fileclss.hpp
-                $(CCOMPILER) $(CFLAGS) c:\image\fli\fli.cpp
+vgaobj.obj:     ..\drv\vgaobj.asm
+                $(ASSEMBLER) $(AFLAGS) ..\drv\vgaobj.asm
+fileclss.obj:   ..\drv\fileclss.cpp ..\drv\fileclss.hpp
+                $(CCOMPILER) $(CFLAGS) ..\drv\fileclss.cpp
+fli.obj:        ..\image\fli\fli.cpp ..\..\drv\fileclss.hpp
+                $(CCOMPILER) $(CFLAGS) -I..\Image\fli ..\Image\fli\fli.cpp
 palc.obj:       palc.c
                 $(CCOMPILER) $(CFLAGS) palc.c
 blocc.obj:      blocc.c

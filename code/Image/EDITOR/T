@@ -1,0 +1,4 @@
+boolean FileMenu::ReInit(char *fspec,char *Dir,FileRead &f)
+boolean DirMenu::ReInit(char *fspec,char *Dir,FileRead &f)
+
+

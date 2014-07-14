@@ -1,0 +1,21 @@
+pngtodo.txt - list of things to do for pnglib
+
+for 1.0 Beta
+	finish transformations - namely gamma, background, alpha, dither
+   build test suite and testing program
+   test, test, test
+   memory model support
+   better documentation for using and modifying pnglib
+
+for 1.0 or 1.1 (I'd like these to be in 1.0, if they can be finished
+      in time).
+	optional palette creation
+	histogram creation
+	text conversion between different code types
+   cHRM transformation
+   support for other chunks being defined (sCAl, the gIF series,
+      and others that people come up with).
+
+for 1.1
+	push reader (
+	

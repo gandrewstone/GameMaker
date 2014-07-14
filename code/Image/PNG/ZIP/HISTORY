@@ -1,0 +1,1287 @@
+Note, this history contains mail addresses and ftp locations that no longer
+exist, such as addresses at wsmr-simtel20 and directory names containing
+w8sdz, among others.  For problems, the correct email address is
+zip-bugs@wkuvx1.bitnet
+
+------------------------ Nov  7  1990   version 0.0 ------------------------
+------------------------ Nov  8  1990   version 0.1 ------------------------
+------------------------ Nov 12  1990   version 0.2 ------------------------
+------------------------ Nov 14  1990   version 0.3 ------------------------
+Thank you for your comments.  Here is Zip 0.3 with almost all of that fixed.
+The changes include:
+
+1. Put \n\ for newlines in long strings (everyone had this problem).
+2. Wrote my own bsearch (called search---different args).
+3. Wrote my own timelocal (called invlocal), used whether STDC or not.
+   (Note to Greg: look at the code---I found a simple way to do it.)
+4. -m now deletes empty directories also.
+5. Changed crc.c to util.c and put search() in util.c.
+6. Changed "void *" to "voidp *" and made voidp void for STDC, else char.
+7. Removed -a option.
+8. Some minor changes to zip.doc.
+
+I did not do anything about Cliff Manis's problem with DIR not being
+defined.  DIR should have been defined in sys/dir.h.  If it wasn't, then
+there's something wrong with dir.h, or it is missing, or the opendir, etc.
+functions are missing.  I don't really want to think about what to do for
+the latter possibility.
+
+NUnzip 3.99 does not appear to be Unix-ready.  It fails for file names longer
+than 12 characters (Segmentation fault), cannot find explicit names that
+do not contain a dot, and does not notice the Unix identifier (which should
+switch off name to lower-case mapping).
+
+------------------------ Nov 20  1990   version 0.4 ------------------------
+Yo Zippers,
+
+Here is a first attempt at a Zip intended to work on System V.  Try using
+"make sysv" for such systems.  I also included replacements for memset()
+and memcmp() by Bill Davidsen and James Dugal for systems without those.
+Use "make old" to include those routines.  Sun's use getdents() like Sys V,
+even though it's BSD, so use "make sun".  For others, try just "make".
+
+When using "make" a second time with a different request, it's best to erase
+all the .o files to force recompiling everything.
+
+What follows are the changes I made and some things to try if you get it
+compiled.  Have fun.
+
+Mark
+
+
+Changes from Zip 0.3 to Zip 0.4:
+
+1.  Changed third arg of search() to size_t to make lint happier.
+2.  Replaced zip.doc with a man page, zip.1 (raw) and zip.man (formatted).
+3.  rename() replaced with link() and unlink().
+4.  Fixed vem in central header and added REVISION and REVDATE #define's
+    to zip.h.  (Didn't read Phil's appnote.txt carefully enough there.)
+5.  Removed prototypes except for development host (NeXT).  (They're only
+    there for my benefit anyway---they should not affect the resulting
+    code.  Consider them some meager documentation.)
+6.  Changed rindex() to strrchr().
+7.  Improved behavior on a write failure when -b is used.
+8.  Added Bill Davidsen's and James Dugal's memset(), memcpy(), and
+    memcmp() routines under the trusty ZMEM #define.
+9.  Check that zip file is writeable before doing any real work.
+10. Added #ifdef REGEX to use regcmp(), regex() instead of re_comp(),
+    re_exec().  (We'll see if this works.)
+11. Replaced opendir(), readdir(), closedir() with my own opend(), readd(),
+    and closed() routines that use getdirentries() on BSD and getdents() on
+    System V (I hope) and Sun's.  An #ifdef DIRENT selects getdents().
+12. zip.h no longer #includes string.h, instead defining the string
+    functions used explicitly.
+
+
+If you get Zip 0.4 to compile, here are some things to test:
+
+1.  Try zipping up some stuff, of course.  Use all the options that are
+    implemented.  Especially try -rp and -rpm on a directory tree (use
+    *test* files and directories, of course).
+2.  Naturally check with unzip -t, but also check with "zip xxx" where
+    xxx.zip is the zip file.  This should say "nothing to do", but if it
+    says "error in zip file structure", there's a problem.
+3.  After zipping, check that there are no $Z* files leftover.
+4.  Try using -b, specifying a path on another device.  Check for $Z*'s.
+5.  Try -d and a regular expression (like \*.o) on a zip file.
+6.  And I'm interested in timing---try it on a 500K or so text file.
+
+------------------------ Nov 27  1990   version 0.5 ------------------------
+Hail fellow zippers,
+
+Here's Zip 0.5.  The biggie is it now includes implosion, courtesy of Rich
+Wales.  Even as we speak, he is working on new algorithms for implode that
+promise to be significantly faster.  He might even get a paper out of it ...
+
+You can use the -s option (shrink only) when testing to save a little time,
+but also try it normally to test implosion (if you test with text files
+of reasonable length, implosion will be chosen for most of them).  Also, for
+speed testing of implosion, use -i to not waste time trying to shrink.
+
+Including implosion about doubles the size of zipnn.tar.Z, so I would like
+some input on distributing subsequent versions.  Would y'all like to keep
+on getting the uuencoded version via mail, or would you prefer a notice
+about availability via anonymous ftp on simtel20.army.mil in <w8sdz.zip>?
+(I have been sending the previous versions to Keith to put there, and will
+continue to do so.  I do not know what the lag time is for him to move it
+there.)
+
+The other important change is that this is another attempt at getting the
+directory access routines working on all systems.  Read the installation
+part of the manual page (zip.man).  And if you feel like, read the whole
+thing.  I'm also taking suggestions for and bugs in the documentation.
+
+The differences from Zip 0.4 include:
+
+1. Changed all occurences of "size_t" to "extent" and typedef'ed extent
+   to size_t (after an #include <stddef.h>) for ANSI C, or unsigned int
+   otherwise.  If anyone finds that they have a non ANSI C, that size_t
+   is defined, and that it is not the size of the compiler's int, then
+   please let me know.
+2. Changed help() to put the help text in a static array of strings and
+   then printf() for each line.  Some compilers barfed on the long
+   string.  Suggested by davidsen@crdos1.crd.ge.com.
+3. Added Rich Wales' implode routines, made their inclusion the default
+   (changed #ifdef IMPLODE to #ifndef NOIMPLODE).
+4. Put "extern int errno;" in unixfile.c (redundant extern's should be ok).
+5. Minor changes to the man page (zip.1 and zip.man).
+6. Added warnings for names given on the command line that are not matched.
+   Lack pointed out by grimesg@sj.ATE.SLB.COM (George).
+7. Changed back to opendir(), etc. on BSD systems.
+8. Added NDIR #define for HPUX to #include <ndir.h> instead of <sys/dir.h>.
+9. Redid Makefile, adding next (use shared library), sysvpw (System V's
+   that require linking the libPW library for regex routines), and hpux
+   (see #8 above).
+
+As usual, report problems to info-zip@wsmr-simtel20.army.mil.  If you wish,
+you can, in addition, send the same report to me (madler@piglet.caltech.edu)
+or Rich (wales@cs.ucla.edu) if the problem is with implosion (i* files) for
+quicker reponse.
+
+your humble servant,
+Mark Adler
+------------------------ Dec  7  1990   version 0.6 ------------------------
+Greetings and Felicitations Honorable Zip Compatriots,
+
+I have uploaded Zip 0.6, which incorporates most of your helpful comments,
+to Simtel20.Army.Mil, and it should evenually end up in <W8SDZ.ZIP> as
+ZIP06.TAR-Z.  The most significant change is the addition of encryption
+both as the -e option in Zip, and a new program, ZipCloak, that encrypts
+and decrypts zip entries.  This surely adds some new portability problems,
+due to the getp() routine which reads a password from the terminal with no
+echoing.  We'll see how well this flies ...
+
+If someone wants to PKZIP up the tar.Z file, please do so.  I didn't zip
+it up myself because a) I'm lazy, and b) PKZIP can compress it better
+anyhow, and I don't have a PC.
+
+Also, there is an EXPORT symbol used to remove encryption, so I can make
+an export version that does not have -e or ZipCloak.  This version will
+simply be missing a few source files and have a different Makefile.
+
+I also added a few systems to the Makefile, and made some other changes to
+it based on all your detailed comments.  If it still works after all that,
+I'll be amazed.
+
+Those and other changes from 0.5 to 0.6 are detailed at the end of this note.
+
+I have not addressed the portability problem with the implode routines,
+since that is Rich's domain.  I have no idea what is causing it.  (For those
+who don't know, one system produced remarkable 90% compression rates with
+implode, but alas, it is a bug.)
+
+One fellow complained that zipping up the README file results in a zip file
+that is larger than the original, even though Zip claims it compressed it.
+Well, it did compress it, but the ZIP file format has an overhead of
+76+2*N bytes per file+22 bytes, where N is the length of the file name.
+And that's without comments or "extra" information.  So, a zip file with a
+single file whose name has six characters has an overhead of 110 bytes.
+README gets shrunk by 16% from 274 bytes to 230 bytes, resulting in a total
+zip file size of 340 bytes---larger than the original file (274 bytes).
+The moral is don't expect zip to compress a single small file.  The other
+moral is use unzip -v to see the compression.
+
+Someone else asked about multi-disk zip files.  I'm not sure I believe in
+those, since PKZIP and PKUNZIP do not appear to suppport them (though it is
+part of the ZIP file definition in APPNOTE.TXT).  What I was planning on
+doing for that case was to write a ZipSplit program that would take a large
+zip file and try to optimally split it into the fewest number of zip files
+that are all less than the specified size.  Each would be a complete, stand
+alone zip file---not part of a single, multi-disk zip file.  There would
+also be a ZipMerge program.
+
+This is the version of Zip that will live in infamy (note the revision date).
+Of course, some current Presidents of the United States think that should be
+September 7th, but I won't name any names.
+
+I am going on vacation for about two weeks, so I expect to find many new
+problems reported upon my return.
+
+And lastly, for my Holiday Greetings: Party On Dudes.
+
+Mark Adler
+madler@piglet.caltech.edu
+
+
+Here are the changes from Zip 0.5 to Zip 0.6:
+
+1.  Minor documentation changes (zip.1 and zip.man).
+2.  Fixed an embarrasing lack of recursion in opend/readd/closed functions
+    that only existed in 0.5.
+3.  Moved $(LDFLAGS) to end of the linking command line in Makefile.
+4.  Added make dnix for DNIX 5.2, 5.3 not using optimization (no -O).
+5.  Wrote ZipCloak for encryption and decryption.
+6.  Rich changed the output routines of implode to use zfwrite and zputc to
+    provide hooks for encryption (defined in crypt.h).  Also removed
+    function prototypes unless PROTO defined.
+7.  Added encryption (-e) to Zip.
+8.  Added make pyramid (use rindex() instead of strrchr()).
+9.  Changed make to $(MAKE) and cc to $(CC) in Makefile.
+10. Took out strip in Makefile.
+11. Changed year from 1991 to 1990.  (How'd *that* get in there?  Of course,
+    it's not as bad as when I wrote a check the other day and dated it 1977.
+    I think my brain cell isn't working as well as it used to.)
+12. Added make cray (use scc instead of cc).
+13. Added make amdahl (use system() instead of rmdir()).
+14. Added entry of one-line comments for added files (-c).
+15. Put comment delimiters around name following #endif's in Rich's code.
+
+------------------------ Feb 13  1991   version 0.7 ------------------------
+Fellow stuck zippers,
+
+Well folks, it's been a while since 0.6. so there have been a lot of
+changes on the way to 0.7.  The exhaustive listing is below, but here are
+some highlights ...
+
+Implode now (appears) to be PKUNZIP compatible.  There were many odd
+little requirements implosed by the coding of PKUNZIP that were obtained
+from Phil Katz and associates.  Now that Rich has that working, he will
+likely be working on much faster string matching routines to speed up
+implode.
+
+User interrupts (control-C or kill) are now caught and the temporary files
+are deleted, making for a clean getaway.
+
+Self-extracting zip files for MSDOS can now be processed, with the
+extensions zip, ZIP, exe, or EXE.  This allows you to make self-extracting
+zip files for MSDOS by taking an existing one (like PKZ110.EXE) and
+deleting all the entries to get a prototype self-extracting zip file that
+can be copied and added to.  Of course, you should only do this if you are
+a registered user of PKZIP.  Note that if the file does not end in .zip,
+you have to give the full name.
+
+I have relaxed some of the restrictions on zip files to allow processing
+ones with "authenticity verification" (applied by the PUTAV program that
+comes with PKZIP).  Of course, the authenticity no longer checks out if
+you muck with the file, but at least you can muck with it now.
+
+The Makefile has been considerably simplified, thanks to suggestions from
+Jean-Loup Gailly.  Also, I wrote my own sh expression matcher, eliminating
+the regular expression hassles, and the REGEX symbol and -lPW options in
+the Makefile.
+
+Many, many cosmetic changes, the most dangerous of which was turning on
+prototypes again in the hopes we can get them to work.  If they cause you
+problems, record the problems (for me), and then add a -DNOPROTO to the
+appropriate line in the Makefile and try again.
+
+This version now compiles under Microsoft C 5.1 and Turbo C++ 1.0, with
+much thanks to Jean-Loup Gailly.  I say "compiles" and not "works" because
+I have not thoroughly tested it.  It does work, but there may be errors in
+the port as well as errors in the design.  By the latter I mean that there
+may be some disagreement over what you expect it to do and what it does,
+especially with regards to upper and lower case names and wildcard
+patterns.  Also, the implode routines do not yet work under MSDOS, so the
+compilations are done using NOIMPLODE.  There are two dumb batch files to
+do the compile: doturboc.bat and domsc.bat.  If someone would like to
+write make files for the make utilities that come with those languages,
+please be my guest.  I'm just too lazy.  However, I would probably resist
+including make files that require a make utility that does not come with
+those languages, be it commercial, shareware, or free.
+
+There are two new programs: ZipSplit and Ship.  ZipSplit tries to split a
+big zip file into the smallest number of zip files less than a specified
+size.  This is to aid in using zip to backup to floppies.  It has the
+limitation that it cannot break up an entry in a zip file, since it makes
+complete, standalone zip files.  This means if any entry is larger than
+the specified size (plus some overhead), zipsplit will give up and not do
+the split.  It does *not* implement the multi-disk zip file format implied
+in APPNOTE.TXT.  ZipSplit will optionally write an index file and deduct
+the size of that file from the first zip file so both will fit on the
+first disk.
+
+Ship is a fixed-up version of a program I have been using myself for some
+time in place of uuencode/uudecode.  It's purpose is to facilitate sending
+zip files through the mail.  It uses a more efficient coding scheme than
+uuencode (four bytes per five characters instead of three bytes per four
+characters) and includes a crc at the end of each file to check the
+veracity what was received.  It can split its output to a specified size
+and recombine it automatically at the other end, verifying the sequence.
+It can also mail the parts to a specified address, with subject lines
+identifying the parts, instead of making a bunch of files that you're just
+going to mail and delete anyway.  Example:
+
+     % ship -500 -m saddam@pickle.iq README zip07.zip
+     README shipped
+     zip07.zip shipped
+     files part0001..part0004 mailed
+
+will mail README and zip07.zip together in four chunks of 500 or fewer
+lines each.  At the other end, Saddam can save the parts into the files
+named in the subject lines (part0001..part0004), and then do:
+
+     % ship -u part*
+     README received
+     zip07.zip received
+
+For now, zip.1 (and zip.doc) are incomplete as far as MSDOS goes.  I'll
+put off doing that until the MSDOS version has stabilized.  Likewise, I
+have put off writing zipcloak.1, zipsplit.1, and ship.1 for the same
+reason.
+
+There are, of course, all the little changes that fix bugs (what are
+those?), make the Makefile work on more systems, documentation, and,
+for the alert reader, an undocumented option ...
+
+As usual, send reports to info-zip@wsmr-simtel20.army.mil, so everyone
+can get a chuckle out of whatever new bugs I've introduced.
+
+Mark Adler
+madler@pooh.caltech.edu
+
+
+Changes from release 0.6 to release 0.7:
+
+1.  Changed Makefile to use mv instead of -o on compiles.
+2.  Added MAKE = make to Makefile.
+3.  Catch user interrupt or termination and delete temporary files.
+4.  Allow general purpose flags in local and central headers to differ in
+    the "reserved" bits.  Keep both for copying zip entries verbatim.
+5.  Removed prototype for closedir--return value not used and inconsistent
+    across systems.
+6.  Wrote ZipSplit to break a large zip file into the smallest number of
+    zip files less than a specified size.  Run zipsplit with no arguments
+    to see the command help.
+7.  Put error messages in globals.c to be common across zip, zipcloak, and
+    zipsplit.  Use #define's in zip.h for error numbers.
+8.  Changed getp() to open a new file for the terminal device, and added
+    the echon() function to turn echoing back on when interrupted at
+    password prompt.
+9.  Added warn()'s to distinguish various zip file structure errors.
+10. Allow "extra" fields in local and central headers to differ.
+11. Fixed percent compression calculation to work for very large files.
+12. Included the program (makecrc.c) that generates the CRC table.
+    makecrc.c is not compiled or run by the Makefile, but is present for
+    completeness.
+13. Added an undocumented (except for here) option, -v, to zip that checks
+    for "oddities" in the zip file structure and points them out if found
+    (but continues processing).
+14. Put prototypes in crypt.h inside #ifdef NeXT to avoid redefinition
+    problems with other compilers.
+15. Added "make zilog" for Zilog S8000 running Zeus 3.21.
+16. Minor changes to the manual page (zip.1 and zip.doc).
+17. Fixed bug in replace() (manifested by -b option).
+18. readzipfile() now also checks the central directory start and size in
+    the end of central directory header.
+19. Allow modification of self-extracting zip files (exe instead of zip).
+20. Allow .ZIP as valid suffix as well as .zip (also .EXE and .exe).
+21. Cleaned up malloc usage, free'd everything malloc'ed.
+22. fclose'd all fopen'ed files explicitly.
+23. Corrected assignment of one ftell() result from an int to a long.
+24. Considerably simplified Makefile, based on Jean-Loup Gailly's
+    suggestions.
+25. Renamed unixfile.c to fileio.c in anticipation of non-unix support.
+26. Removed const's (pesky little buggers caused too many problems).
+27. Wrote my own shell expression compare routine, took REGEX and -lPW's
+    out of Makefile, which removed the sysvpw make option.
+28. Added tempname() prototype to crypt.h for the implode routines to use.
+29. Trying string.h for prototypes of string functions if __STDC__
+    defined, which is what unzip.h does.
+30. Turned prototypes on if __STDC__ defined (we'll try this one more
+    time).  They can be turned off using NOPROTO.
+31. Improved source documentation.
+32. Changed prototype of open in fileio.c to OF((char *, int, ...)).
+33. Removed "local" from prototypes of main() (after all, it's *not*
+    local).
+34. Wrote Ship program to supplant uuencode--slightly more efficient, has
+    error checking, file splitting, automatic mailing, other features.
+    Ship currently uses the command:
+        /usr/ucb/mail -s subject < tempfile
+    to send mail.  Please let me know what works for your system.  Note
+    that I want to be able to specify a subject line.
+35. Ported to MSDOS Microsoft C 5.1, based on Jean-Loup Gailly's work.
+36. Fixed add/update bug when -p not used.
+37. Handle lower case conversion and devices (e.g. C:) for MSDOS.
+38. Indented the #ifdef/#ifndef constructs that do not contain function
+    definitions, to improve the readability somewhat.
+39. Cleaned up error handling.  Now use perror() for i/o errors.  Put the
+    errors and messages in ziperr.h.
+40. Ported to MSDOS Turbo C++ 1.0.
+41. Implemented wild card expansion on the command line for MSDOS and
+    handle MSDOS matching (*.* == all, not *).
+42. Changed version required to unzip to 11 (1.10) since the implode
+    routines can procude an overlapping match one away from the end of the
+    window (PKUNZIP 1.00 requires two away from the end).
+43. Changed old next make option to next10 (for version 1.0) and added a
+    new next make option for 2.0 (just called next) that uses the -object
+    linking option for smaller executables.
+44. Added -z option to take a multi-line zip file comment from stdin.
+45. Changed temporary names from $ZXXXXXX to _ZXXXXXX, where XXXXXX is
+    filled in by mktemp().  This avoids problems with "rm $Z*" in sh.
+46. Got new implode routines from Rich that are (hopefully) PKUNZIP
+    compatible.
+47. When -b is not specified, put the temporary files in the same
+    directory (i.e. the same device) that the zip file is (or will be) in.
+48. Added doturboc.bat and domsc.bat files to compile for Turbo C++ 1.0
+    and Microsoft C 5.1.  I am interested in successes and failures with
+    other versions of those compilers.  In this version, the implode
+    routines do not work under MSDOS.
+------------------------ May  6  1991   version 0.8 ------------------------
+Buenos Dias Amigos,
+
+Heer ees dee Cinco de Mayo reeleese of seep, aka Zip 0.8.  The changes
+from 0.7 are in the (long) list below, but here are some highlights:
+faster implode, faster shrink, first attempt at a VMS version (thanks
+to Cave Newt), and a new program, ZipNote, to aid in editing zip file
+comments.  To compile under VMS, do an "@makevms.com".  To compile using
+Mircosoft C do a "make makefile.msc".  To compile using Borland (Turbo)
+C, do a "make -fmakefile.bor".  Please try to break any or all of these
+programs in every conceivable way--we're getting close a public release.
+Thank yew fer your support.
+
+Mark Adler
+madler@pooh.caltech.edu
+
+Changes from 0.7 to 0.8:
+
+1.  Added the -n option to prevent compressing already compressed files.
+    Documented -n in zip.1.
+2.  Check the length of the compressed data in zipup() in case implode or
+    shrink has a bug.
+3.  Fixed -v option to not complain about needing PKUNZIP 1.1.
+4.  Added report of store/shrink/implode sizes when -v (verbose) used.
+5.  Put in Rich's patch to fix 100% implosion bug.
+6.  Fixed -i bug.
+7.  Made changes to im_ctree.c and implode.c to (hopefully) make it work
+    under MSDOS.  (Jean-Loup said declare topmaxvals and botmaxvals as
+    U_INT in im_ctree.c, and use MSDOS, not __MSDOS__ in implode.c.)
+8   Added implode routine compilation to domsc.bat and doturboc.bat.
+9.  Replaced FILENAME_MAX with FNMAX, which is now always 1024.  (It seems
+    FILENAME_MAX is incorrectly set to 14 on some System V Unixii.)
+10. Changed BEST to -1 so it is different from STORE (=0).  Redid some of
+    the method logic in zipup().
+11. Changed wb+ to w+b in implode.c.
+12. Removed "nothing to do" error for -u and -f.
+13. Zip source distributions will now have tabs removed, except for
+    Makefile and Makefile.exp (no feelthy tabs rule).
+14. Changed zip error on open failure to a warning.  This accounts for
+    files that do not have read permission or are locked, and files
+    deleted during the zip.  For entries being updated, the old entry is
+    copied over instead.  This change had the side effect of removing the
+    zipskip() routine.
+15. Removed OBJC dependencies in Makefile.exp (didn't belong).
+16. Removed strip from Makefile, instead using the -s link option.
+17. Fixed -um and -fm to delete files whose entry's times were checked in
+    the archive.
+18. Put portability stuff common to zip.h and crypt.h into tailor.h.
+19. Added mark tracing to -v (for debugging).
+20. Changed name and zname logic--an external name is always converted
+    into an internal zname, and vice-versa.  zname is now always
+    malloc'ed.
+21. Fixed -z to use CRLF between lines (for PKZIP) and have no newline
+    after the last (or only) line.
+22. Added clean to Makefile (deletes *.o, zip, zipcloak, zipsplit, ship).
+23. Replaced LDFLAGS with LFLAGS1 and LFLAGS2 in Makefile (splits link
+    options before and after object files as in unzip).
+24. Added scodos to Makefile (from Bill Davidsen).
+25. Included stdio.h in tailor.h--removed stdio.h from zip.h and
+    implode.h.
+26. Do not include stddef.h if M_XENIX defined.
+27. Cast the arguments of all free() calls to (voidp *).
+28. Added casts to char * for memset() and qsort() args in zipsplit.c.
+29. Changed implode.h to define malloc and str* properly.
+30. Fixed invlocal() to handle integer overflow correctly, as well as
+    reliably across compilers.
+31. Got new implode.h from Rich with fix #29 above.  Removed stdio.h
+    include.
+32. Commented out the abort() calls in im_ctree.c.
+33. -ee requests a verification of the encryption password.
+34. malloc and free tempath.
+35. Documented -, SCO, and scodos in zip.1, and - in help().
+36. Added revision.h for Zip revision number and date.
+37. -u and -f with no arguments now (both) freshen the entire archive.
+38. Use /Oait instead of /Ox for MSC to avoid loop optimization (buggy on
+    5.1, and sometimes even crashes compiler!).
+39. Added ! (reverse) range matching to shmatch(), and early abort on '*'
+    failures (speeds up pathological patterns).  Cleaned up '\' (escape)
+    handling.
+40. Changed '!' in ship to '{' (some EBCDIC translations do not include
+    !).  However, unship (ship -u) still understands '!'.  Also added the
+    -v option of ship to print out the version and revision date.  Also
+    now refuse to overwrite an existing file when unshipping (ship -u),
+    but there is a -o option to overwrite anyway.
+41. Added a "fast" mode to ship using hard-arithmetic coding that is
+    nearly as efficient as base 85 coding, but much faster on 16-bit
+    machines (base 85 coding uses 32 bit multiplication and division).
+42. Put tailor.h back in ship.c, so that ship.c can stand on its own.
+43. Made -p the default, and added a new option, -j to do the opposite
+    (junk directory names).  -p is still there but does nothing, so as to
+    avoid annoying PKZIP users.  Changed documentation and help()
+    accordingly.
+44. If -j is used, and two files are to be added with the same name, then
+    zip exits with an error.
+45. Wrote ZipNote for editing zipfile comments.  Just do zipnote for
+    usage.
+46. Replaced Rich's im_lmat.c with a new one from Jean-Loup.  Improves the
+    speed of implode by a factor of two, and even more for very large
+    files.
+47. Reduced the execution time of shrink by 33% simply by moving the code
+    around (eliminated some unnecessary calls, moved some tests).
+    Shrink's execution time is now about 50% more than compress (it used
+    to take over twice as long).  Hash tables for shrink are still
+    intended for a future release.
+48. VMS mods from Greg: replace() unlinks only after copy, changed
+    delete() to destroy(), added code for deletedir(), use creation time
+    instead of modification time, warn if stamp() attempted, changed
+    includes, make link rename and unlink delete, added findfirst,
+    findnext stuff, added wild() for VMS, modified newname(), procname().
+49. Implemented internal<-->external name conversions for MSDOS and VMS.
+50. For VMS matching, changed ? to %, removed bracketed ranges.
+51. Added makevms.com, stolen from Unzip (vms_make.com).
+52. Implemented -k (force the zip file to look like it was made by PKZIP).
+53. Removed implode for VMS (it crashes--haven't tracked down where).
+54. Got Jean-Loup's makefile.dos working for MSC 5.1 (makefile.msc) and
+    Turbo C++ 1.0 (makefile.bor).
+------------------------ Jul 11  1991   version 0.9 ------------------------
+Hey gang,
+
+Here is our very-nearly-ready-to-release version of Zip.  There will be no
+features added or changed from 0.9 to 1.0--only bugs fixed.  I hope that
+we can get 1.0 out pretty quickly then.  This is really your last chance to
+find bugs before it goes out, so please, please test all the programs as
+much as you can.  Try all the features, if possible, and perhaps try to
+think of ways to break the programs.  Also, and this is very important, read
+the documentation in zip.doc and "debug" that too.  I already know that it
+is not complete in 0.9, but please send any comments about errors, omissions,
+format, or whatever to Info-ZIP, even if they seem obvious.
+
+The highlights of the changes from 0.8 to 0.9 are: faster, slicker implode;
+operation in small model on MSDOS for speed; a new temporary file interface
+for faster operation on small files; some shrink improvements; and some new
+options (-y, -g, -q).  Also, ship has been enhanced in several ways, not the
+least of which is a help option (-h).
+
+Have fun.
+
+Mark Adler
+madler@tybalt.caltech.edu
+
+
+Changes from 0.8 to 0.9:
+
+1.  Removed the "not implemented yet" note in help() for -k (it *is*
+    implemented now).  Removed from bug list in zip.1 too.
+2.  Fixed Turbo C implode bug.
+3.  Added /link /e in makefile.msc for ship.c.
+4.  Made handler() in zipnote.c the same as handler() in zipsplit.c.
+5.  Added -y option in Unix to store symbolic links as such.  (We need
+    Unzip to be aware of symbolic links and use symlink() to recreate them.)
+6.  Ignore control characters in unship input.
+7.  Use prototypes and ANSI libraries if MSDOS.  (Used to check for Turbo C,
+    but Microsoft C 6.0 also does not define __STDC__ unless strict ANSI
+    is requested.)
+8.  Added mod to ct_fsort() from Rich that should remove any qsort()
+    dependencies in implode output.
+9.  Removed some 32/16-bit prejudices in util.c and crypt.c that affect
+    64-bit integer (short, int, and long) machines (Cray).
+10. Added System V MAILX option to ship.c to use the mailx command.  This
+    is automatically activated by DIRENT if ship is compiled by the zip
+    makefile.
+11. Added patches from Greg Roelofs for echo control on Cray and Amdahl.
+    The patch uses termio.h and ioctl(), and is assumed for all System V,
+    not just those (we'll see how this flies).
+12. Changed -Ox to -Oacegit -FPi87 in makefile.msc.  Added /nologo to link.
+13. Applied J-L's 082 mods (Sinatra style): select 4K window for < 5.5K,
+    8K window for >= 5.5K files (just like PK does); various im_ctree.c
+    mods verbatim (except for the treename warning, which I did differently);
+    various im_lmat.c mods verbatim (except macros are done the ugly portable
+    way); farmalloc'ed in shrink.c; changed makefile.msc and makefile.bor to
+    use small model; added J-L to zip.1 acknowledgements (oops).
+14. Moved struct zlist's and struct flist's to far storage (needed by above
+    mods).  Unfortunately, I can't move the names and other things pointed to
+    by those structures into the far space, since they are arguments to
+    library functions like strcmp() and fwrite().
+15. Changed zipup() to both shrink and implode only on files smaller than
+    BSZ.  Also in that case, free up shrink data structures before allocating
+    the implode data structures.  Changed from fopen() to open() except for
+    VMS.
+16. Fixed bug in dosmatch() to free malloc'ed space.
+17. MINIX mods (do not need minix make option): call tempname() with a unique
+    character (MINIX mktemp() flawed); defined S_IWRITE as S_IWUSR if S_IWUSR
+    defined; removed explicit signal dereference.
+18. Fixed bug in unship when used as a filter with no args.
+19. Changed getnam() to not use static storage.
+20. Copy permissions from old to new zip file (zip, zipcloak, zipnote).
+21. Added patches for AT&T 3B1, added 3b1 target to makefile, added to zip.1.
+22. Made FNMAX 256 for MSDOS (is 1024 otherwise).
+23. Used the "pyr" predefined symbol for Pyramid systems in tailor.h.
+24. Added Greg's VMS mods to ship.c.  Added help to ship.c (-h or -?).
+    Changed meaning of -nnn arg from lines to K.
+25. Moved ZMEM routines to fileio.c to properly include them in zipnote and
+    zipsplit.
+26. Added -s option to ship to specify a subject line prefix.
+27. Fixed -z in zip to not trash leading blank lines in the comment.
+28. Made ship recognize "unship" in argv[0] a little more flexibly.
+29. Made sure temporary zip files are closed before being deleted by an
+    error or interrupt.
+30. Added a new temporary file interface and new source files tempf.c and
+    tempf.h.  This avoids making temporary files for small (<16k) output.
+    Both shrink and implode use this.
+31. Added OS/2 patches, files.  However, left zip case-sensitive for OS/2
+    names, as in Unix.
+32. Removed amdahl target in makefile, using UTS symbol instead.
+33. Changed -y to depend on definition of S_IFLNK.
+34. Avoid leading periods on lines in ship output by inserting a space.
+35. Ship is now extensible: added a warning for "unsupported keyword".
+    Such keywords can appear before the "ship" line, for example.
+36. Added -g option to allow "growing" the zip file.  If just adding new
+    entries to a zip file, -g will write over the old zip file without
+    creating a temporary.  The danger is that if there is an error, the
+    old zip file will be lost.  If not just adding, then -g is ignored.
+37. Added aux (A/UX) target to makefile.
+38. In shrink.c, removed unnecessary FreeList and ClearList arrays, and
+    the recursive Prune() routine.  This also resulted in a speedup in
+    shrink of about 15%.  It is now only about 30% slower than Unix compress.
+39. Added -q option for quiet operation.
+------------------------ Sep 21  1991   version 1.0 ------------------------
+Hello world!
+
+This is the first public release version of Zip and its cohort utilities.
+We hope you enjoy using it much much more than we enjoyed writing it and
+trying to get it to work on every fritzing raffing bliffing nobbin Unix
+system in the galaxy.
+
+Please feel free to send any problems, complaints, suggestions, kudos,
+ridicule, or whatever to zip-bugs@cs.ucla.edu.  If there were a way to
+send cookies over the net, we'd accept those too.
+
+Thank yew fer yur support.
+
+Mark Adler
+madler@tybalt.caltech.edu
+
+
+Changes from 0.9 to 1.0:
+
+1.  Removed some pesky carriage returns masquerading as spaces in fileio.c
+    and zipup.c.
+2.  Removed #include memory.h in tempf.c (string.h good enough).
+3.  Compile ship in doturboc.bat.
+4.  Miscellaneous zip.1 (zip.doc) changes.
+5.  Fixed mistake in stamp() in fileio.c (didn't double seconds).
+6.  Applied Jean-Loup's mods for Cray's (do not assume 16-bit shorts).
+7.  Removed pyramid make option, since #ifdef pyr seems to work.
+8.  Added some casts to tempf.c to clean up some warnings.
+9.  Added comment to makefile.exp saying what it is.
+10. Removed length checks in zipup.c to fix problem with using Vax variable
+    record length formats.
+11. Fixed VMS replace-across-devices problem.
+12. Changed order of include's in implode.h to make tailor.h show up first.
+13. Added Convex mods and make target.
+14. Fixed path delimiter under VMS for unship.
+15. Added ship to makevms.com.
+16. Put in new copyright messages.
+17. Added aix make target.
+18. Fixed zipsplit.idx to start counting at one like the file names.
+19. Changed -a (append VMS version number) to -w to leave -a open for a
+    possible future option.
+20. Back to separate makefiles for Microsoft and Borland (.msc and .bor).
+21. Workaround in fileio.c for Borland stat() bug: stat() succeeds for wild
+    card names that match existing files.
+22. Added "(did you remember to use binary mode when you transferred it?)"
+    to the "probably not a zip file" warning.
+23. Changed utilities to append .zip only when the zip file name does not
+    contain a dot.
+24. At least mentioned the other utilities in zip.doc (zipcloak, ship, etc.),
+    and documented upper case matching of names when using -d under MSDOS.
+25. Fixed bug in MSDOS version: zip foo c:autoexec.bat wouldn't work.
+26. Added hidden/system attribute bug to BUGS in zip.1
+27. Fixed recognition of unship in ship when unship is in a path.
+28. Added non-stream-LF VMS bug to zip.1 bug list.
+29. Fixed bug in #23 above when path has dots.  Documented #23 in zip.1.
+30. Show disclaimer only for -l, add -h and -l to zip utilities.
+31. Applied Minix patches.
+
+------------------------ Aug 29  1992   version 1.1 ------------------------
+This is the last official version supporting the implosion and
+shrink methods. It corrects only the three problems given below.
+For better compression and many other improvements, use zip 1.9
+or above, which should be available on the site where you found
+zip 1.1.
+
+1. Fix a compiler bug in Interactive Unix (the original code compiled
+   without -O).
+2. Fix declarations incompatible with the SVR4 include files
+3. Additional workaround to bypass another bug in pkunzip 1.10 (unzip 4.1
+   and above do not have this problem).
+
+Please use zip 1.1 only if you require compatibility with pkzip 1.10.
+By the time you read this, pkzip 2.0 will probably have been released.
+You can send problem reports to zip-bugs@cs.ucla.edu, but please check
+first if your problem has not been corrected in zip 1.9 or above.
+Thanks.
+
+------------------------ Feb 17  1992   version 1.5 ------------------------
+1.  pkzip 2.0 format (deflation) now supported
+    Shrink and Implode left in zip 1.1 only for backward compatibility
+
+------------------------ Mar 25  1992   version 1.6 ------------------------
+1.  zip can now be used as a filter in a pipe
+2.  Optimized assembler code for MSDOS and OS/2
+3.  encryption is now supported
+4.  Better VMS support for various file formats other than Stream-LF
+5.  Better OS/2 support
+------------------------ Apr 24  1992   version 1.7a ------------------------
+1.  On VMS, create new zip files in fixed length 512 format
+2.  Call VMSmunch only if the zip file existed previously
+3.  Avoid mktemp() and use simpler name for temporary file.
+4.  Rename dir_os2.[ch] -> os2zip.[ch]
+5.  On MSDOS, use fdopen() after setmode() in zip.c
+    Added setmode() for stdin in zipup.c
+6.  Do not split #if on two lines (some compilers don't like this)
+7.  __MSDOS__ instead of __BORLANDC__ in crypt.c
+8.  Added (char*) cast in deflate.c to avoid warning
+9.  OS/2 support for storing file attributes in an extra field.
+
+------------------------ June 6  1992   version 1.8a ------------------------
+1.  Fixed bug in tempname() for VMS
+2.  Fixed type problems in zipup.c for gcc under VMS
+3.  Added VMSmunch in vms subdirectory and updated makefile (descrip.mms)
+4.  The extra field for OS/2 is now compressed (Kai Uwe Rommel)
+5.  Added various fixes for djgcc (Onno van der Linden)
+6.  Fixed long standing bug in wild() for MSDOS (Jon Saxton)
+7.  Added support for ZIPOPT environment variable (Bill Davidsen
+    and Antoine Verheijen).
+8.  Fixed zipsplit bug for VMS (Greg Roelofs)
+9.  Added fix for DEC OSF/1 (Kjetil W. J{\o}rgensen)
+10. Added fix for ultrix on DECstation (Jonathan Kamens)
+10. Added sysnopis for zipsplit, etc... in zip.1 (Jonathan Kamens)
+11. Fixed MAILX problem for SysV in ship.c (Greg Roelofs)
+12. Added Linux support (Humberto Ortiz-Zuazaga)
+13. In makefile.os2, support for $(FP), masm 5.x, match.s (Greg & Kai)
+14. Added -w-cln in makefile.bor to avoid warning (David Kirschbaum)
+15. VMS echo suppression code incorporated (Greg Roelofs)
+16. Added fix to match.asm if WSIZE != 32768
+17. Create .exe files directly for target scodos (Bill Davidsen)
+18. Fixed the -0 bug (compressed size was doubled)
+19. Changed -- (read names from stdin) to -@ to reserve -- for undoing
+    the effects of ZIPOPT
+20. Create zip entries for directories with the -r option, so that
+    directory attributes can be saved. (Kai Uwe Rommel)
+
+------------------------ June 17  1992   version 1.8b ------------------------
+1.  Changed -s (Software license) to -L (license) to avoid clash
+    with the old shrink option.
+2.  read_buf declared as extern only in zip.h
+3.  avoid warnings in zip.c for Turbo C: while ((ch = *s) != '\0'
+4.  suppressed unused variables mem_inbuf and mem_outbuf in bits.c
+5.  Speed up the search for start of zip structures (pksfx files)
+6.  Allow updates of an empty pksfx file (original file was destroyed)
+7.  Keep correct offsets for pksfx files
+8.  On MSDOS, in2ex() was updating the input argument. Also, do not
+    force upper case: keep the name as it was in the old zip file.
+    This is important for -f. Similarly, force lower case in ex2in()
+    on MSDOS, except when dosify (-k) is imposed. I kept however the
+    old code under the flag FORCE_UPPER in case I goofed.
+9.  When growing a zip file with -g and interrupting it, the whole file was
+    lost. We now attempt to restore the previous state of the file.
+10. "zip -fo jjj", where jjj is a non-existent zipfile, used to dump core.
+    We now emit a warning.
+11. More generally, we emit a warning for all options assuming the presence
+    of a zip file (-d,-f,-u,-g) if the zip file did not exist or was empty.
+    Idem for "zip -o jjj" on non-existent or empty zip file.
+12. Copy also the extended local entry in zipcopy().
+13. Updated zip.1 and vms/vms_zip.rnh to describe the new features.
+14. Fixed bug in zipsplit (wrong offsets for all files but first)
+15. Added match.s, optimized 386 version of longest_match() for Unix and
+    32 bit OS/2 (with gas).
+16. Added os2/match32.asm, optimized 386 version of longest_match() for
+    32 bit OS/2 (for assemblers using Intel syntax). NOT TESTED YET.
+17. Added "assume DS: DGROUP" in match.asm to allow SS_NEQ_DS even with MSC.
+18. Added include <malloc.h> in tailor.h for Unix. This is required on
+    16-bit Unix.
+19. Use init_upper() in os2zip.[ch]
+20. Switched back to old tempname(): the new one could overwrite an existing
+    file, it ignored tempath, and it caused problems on VMS for files with a
+    '.' in the name. Kept however the old code if NO_MKTEMP is defined.
+21. Use 0x1 instead of (unsigned)1 in definition of HSIZE (one compiler
+    does not like the cast in an array definition).
+22. Include VMSmunch.h in zip.c
+23. On VMS, zip -o screwed up all offsets in pksfx files
+
+------------------------ June 18  1992   version 1.8c ------------------------
+1.  Added missing comma in revision.h
+2.  invlocal doesn't work on Cray, use mktime instead (Greg Roelofs)
+3.  On VMS, use ctx=stm only to read zipfiles, not input files.
+4.  Undo change 21 above, which breaks even more compilers
+5.  Include dos.h in util.c and fix trivial compilation errors
+6.  Undo change 1 of 1.8b: -L already used for OS/2 (Steve Salisbury)
+7.  Do not create a zip entry for directory "." (Greg Roelofs)
+8.  Avoid core dump when -@ is given before the zip file (and do
+    the right thing).
+
+------------------------ June 19  1992   version 1.8d ------------------------
+1.  Force calloc to take unsigned values. (Problem with one 16 bit
+    compiler on AT&T 6300).
+2.  Fixed fileio.c for Convex (Bill Davidsen)
+3.  util_ was missing for zipnote and zipsplit in make_vaxc.com (Glenn Andrews)
+4.  Added warning in zip.1 and below (do not update encrypted files
+    with pkzip 1.10).
+5.  Fixed fix 12 of 1.8b. I drink too much. (Confused bit 1 with bit 8).
+6.  Updated install.doc
+7.  Fixed result type of os2 version of init_upper().
+8.  Added makefile entry for AT&T 6300 (Peter Mauzey)
+9.  Fixed typo in descrip.mms
+10. Removed zipfile.c warning: shift count exceeds width of value shifted
+11. Fix enormous bug in init_upper for VMS (upper stayed as zero)
+
+------------------------ June 23  1992   version 1.8e ------------------------
+1.  Don't include malloc.h by default (does not exist on VMS)
+2.  Define calloc for 16 bit systems (required for AT&T 6300)
+3.  Simpler make_vaxc.com (Greg Roelofs)
+4.  New vms/descrip.mms and fixes in zipfile.c (Igor)
+5.  seekable() must be true for in-memory compression.
+6.  Undefine S_IFLNK if NO_SYMLINK (problems with VMS and SCO)
+7.  Include descrip.h only once in fileio.c (Mike Freeman)
+8.  New os2/match32.asm (untested) and makefile.os2.
+9.  Added dosflag in zlist and flist entries, to force MSDOS file
+    attributes. It is set if dosify is set, or (under OS/2) for a file
+    on a FAT file system which does not have a long name (Kai-Uwe).
+10. Added GetFileTime on OS/2 to avoid core dump on bad dates (Kai-Uwe)
+11. New vms.c supporting deflation of extra headers
+
+------------------------ June 24  1992   version 1.8f ------------------------
+1.  Incorporated (finally!) Mac support. *Untested*. (James E. O'Dell)
+2.  Another long awaited change: Atari ST. Also *untested*.
+    (martin@atlantic.cs.unb.ca)
+3.  New makefile.os2, as usual. (Kai-Uwe)
+4.  Support for Watcom C in os2zip.c. *Not yet working*. (Kai-Uwe).
+5.  I forgot to output the length for stored blocks...
+
+------------------------ June 29  1992   version 1.8g ------------------------
+1.  New os2zip.c and makefile.os2 as usual.
+2.  In the VMS makefiles, define the symbols systematically so that
+    people won't forget to update them. (Fed up with the reports that
+    zip does not accept parameters).
+3.  Use -L for software License and -E for Extended attributes
+4.  Added -F 1000 in makefile entry for scodos (Bill Davidsen)
+5.  Replaced strcmp with namecmp in zip.c for check of zipfile name.
+6.  New os2/match32.asm (still not working)
+7.  Do not close stdin (check for null ifile in zipup.c).
+8.  signal handlers for zip and zipcloak fixed to restore echo for VMS
+9.  slightly cleaner VMS echo calls in fileio.c
+10. stricmp missing from VMS zipsplit, zipnote:  since UTIL was unused for
+    util.c, I used it to specify stricmp only; then I had to change some of
+    the makefiles which previously used util_.* to use util.*, and I added
+    util_.obj to OBJS and OBJN in all of the VMS makefiles. (Greg)
+11. ifdef'd out the debugging commentary in vms.c (Greg)
+12. new VMS makefile for use with (free) MAKE/VMS (Greg)
+13. Eliminate some compiler warnings from BCC, MSC, gcc (Onno van der Linden)
+14. Do not use MSDOS version of init_upper for djgpp (Onno van der Linden)
+15. In msdos/makefile.gcc, added util_.o to OBJN and OBJS, and used asm version
+    match.o (Onno van der Linden)
+16. Added install target in makefile (Alvin Koh)
+17. Default makefile entry is named 'all'.
+18. fixes to vms.c for gcc (Igor)
+19. Define S_IWRITE as S_IWUSR for Minix only (problem on X/OS) (Fulvio Marino)
+20. Added xos makefile entry  (Fulvio Marino)
+21. In VMS, files without an extension are now stored without the dot (Greg
+    and Igor).
+22. Save/restore ebx in match.s and match32.asm
+23. Fixed MAX_DIST in match.s (the asm code produced different results
+    than the C code)
+24. Fixed the -b option: allow ENOTSAM instead of EXDEV (used by Turbo C).
+25. Do not complain about zip files created on MSDOS with versions of zip
+    above 1.0.
+
+------------------------ Aug 14  1992   version 1.9a ------------------------
+1.  Changed -S to -L in help screen
+2.  Do not declare chmod for aegis (George Grimes)
+3.  Cleaner vms/make_gcc.com (Mike Freeman)
+4.  Disabled built-in functions for Linux (Arnt Gulbrandsen)
+5.  Added a description of the deflation algorithm in algorith.doc.
+6.  Removed ship, now distributed separately.
+7.  Added the CRC for in-memory compression. The extra-field format is now
+    the official PKWare format (Kai-Uwe)
+8.  On OS/2, force lower case names for FAT files if -k is not given. (Kai-Uwe)
+9.  Allow coutry dependent mapping for upper to lower case. (Kai-Uwe)
+10. Use namecmp instead of stricmp which was confusing. (Onno van der Linden)
+11. Avoid some warnings in deflate.c (Onno van der Linden)
+12. Avoid one warning in crypt.c, and distribute it separately.
+13. Call init_upper() for all utilities and add util_.o in makefiles (Kai-Uwe)
+
+------------------------ Aug 18  1992   version 1.9b ------------------------
+1.  Fixes for Windows NT (Dave Feinleib)
+2.  Avoid two warnings for Ultrix (makefile and fileio.c)
+3.  Finally removed the declaration of chmod(), which causes endless
+    new patches for each new target.
+4.  Allow -L for license in the utilities (zipsplit, zipnote, zipcloak).
+5.  Mention funzip in zip.1.
+6.  Untabify all sources files (for more reliable context diffs)
+7.  Fix bug in trees.c dealing with bit length overflow.
+8.  Fix bug in zipup.c when reading from stdin: if (ifile) does not
+    produce the expected result.
+9.  Avoid duplication of bug list in zip.1 and history.
+10. Removed ship from zip.1.
+
+------------------------ Aug 20  1992   version 1.9 ------------------------
+First official version compatible with pkzip 1.9a.
+
+1.  Renamed the atari files to avoid name conflicts (for unzip -j).
+2.  Don't tell 'use zip -L' in zipnote and zipsplit.
+3.  Add a rule for util_.ojb in the msdos and atari makefiles
+4.  Fixed compilation option for util_.obj in makefile.msc (msc 5.1 bug)
+5.  Added the 'Where' file.
+6.  More information about zip in Readme.
+7.  Fixed install.doc.
+8.  Fixed vms/vms_zip.rnh
+9.  Fixed init_upper() in util.c and os2zip.c (Kai-Uwe)
+
+------------------------ Aug 26  1992   version 1.9p1 ------------------------
+This is official patch 1 for zip 1.9, not a beta version.
+
+1.  Simplified makefile entry for convex (Rafal Maszkowski)
+2.  Do not use 'const' even for djgcc (Onno van der Linden)
+3.  Use gcc in linux makefile entry (Arnt Gulbrandsen)
+4.  Fix serious bug in -l option (file truncated).
+5.  Fix stack problem for OS/2 IBM-C (Kai-Uwe)
+6.  Fix serious bug in zipup.c sometimes causing file truncation to zero bytes
+    or internal error (Timo Salmi and Robert Tobler)
+7.  Do not unlink() directories when running as root (Charles Hannum)
+8.  Fix msdos/makefile.bor and msdos/makefile.gcc (Onno van der Linden)
+
+------------------------ Oct 14  1992   version 1.9c ------------------------
+This is a beta version.
+
+1.  Added hp target in makefile, in addition to hpux (Bo Kullmar)
+2.  Do not store entries with empty names with zip -rj (Johan Vromans)
+3.  One VMS system was reported to define S_IFLNK: disable it.
+4.  man page for /usr/man/manl must be zip.l, not zip.1 (Bruno Pillard)
+5.  fixed yet another typo in msdos/makefile.bor (util_.c)
+6.  use fprintf(msg, ...) instead of printf (zip file on stdout)
+7.  Fix yet another serious bug in trash(): all directories up to the
+    root could be removed, when using: zip -m foo /a/b/c/d.
+    Now only this file (d) is removed. With -rm, the directory /a/b/c
+    is also removed if empty, but not /a/b. (W. T. Sidney)
+8.  Avoid warnings in deflate.c and util.c (Jim Reisert)
+9.  Use ASMV instead of ASM (used in signal.h in SCO SVR3.2 !)
+10. Add directory names on VMS also (Greg)
+11. Avoid warnings in trees.c with MSC 7.0 -- that's a bug in MSC (Piet Plomp)
+12. Support "make list" as in unzip (Vesselin Bontchev)
+13. Unification with unzip: Readme -> README, cray3 -> cray_v3 (Greg)
+14. Moved all crypt stuff to crypt.c. Use dummy crypt.c for export
+    version. We now have a single makefile for both versions. (Greg)
+15. New makefile entry for Dynix/ptx 1.3 (Alan Phillips)
+16. Made the encryption random header much more random.
+17. Changed "ifdef unix" into "ifdef SYSV" in match.s
+18. Added 386BSD patches (Frank van der Linden)
+19. Added TOPS20 support (Frank Wancho)
+20. Finally (!) incorporated the new man page (Rick Rodgers)
+21. Rewritten history. (Nice to be able to do this, isnt'it?) That was
+    for the zip 1.1 release.
+22. Try to zip zip files with -9.
+23. Support option -DBIG_MEM to read input file in a single step (for TOPS20)
+24. Support mmap() of input file instead of read(). (NOT YET WORKING.)
+
+------------------------ Oct 19  1992   version 1.9d ------------------------
+1.  Fixed "zip -n : foo" to compress all files instead of storing them.
+2.  Don't force -o with -e (no longer necessary)
+3.  Don't take directories into account for -o.
+4.  Under MSDOS, zip now sets the attribute correctly for hidden and system
+    files. unzip restores them correctly (but not pkunzip).
+5.  Store attributes correctly on 16 bit systems such as the AT 6300 PLUS
+    (Peter Mauzey)
+6.  Support -ll for CR LF to LF translation
+7.  On VMS, allow creation of remote zip files accessed through Decnet (Igor)
+    It is still not possible to compress remote files because of stat() bug.
+8.  Use same declaration of open() in zipup.c and crypt.c.
+9.  Do not restrict to 8+3 filenames in Windows NT (Scott Briggs)
+10. Renamed some parameters in bits.c to work around buggy compilers
+    (Jim Van Zandt, Peter Mauzey) <jrv@mbunix.mitre.org>
+11. Added makefile entry for coherent (Fred Smith)
+12. Do not define const for precompiled headers in NeXT 3.x (Mark)
+13. Added -T option to test zip file integrity
+14. Fixed bug for stored blocks (James Van Artsdalen)
+15. Added zipcloak.prj and *.tc files for Turbo C
+16. Improved and updated zip.1.
+17. New makefile.os2 as usual (Kai Uwe)
+18. Do not defined __32BIT__ if already defined (Kai Uwe)
+19. Do not decrypt the random header twice in unzip (Greg)
+20. More patches for DJGCC (Onno van der Linden)
+21. Updated all makefiles to use crypt.
+
+------------------------ Oct 21  1992   version 1.9e ------------------------
+1.  Added some patches for TOPS20 which had been forgotten in 1.9c
+    (Frank Wancho)
+2.  For zip -T, use unzip -qq and invert test of system() for VMS (Greg)
+3.  Made zipup.c more portable. Use set_extra_field() for all systems.
+4.  The MMAP code now works and is faster on my Sun.
+5.  Speed up zip -1 with another way to stop searching soon.
+
+------------------------ Oct 23  1992   version 1.9f ------------------------
+1.  Put back CFLAGS in vms/makefile.vms (Greg)
+2.  Use uch instead of byte in crypt.c (Greg)
+3.  Fix bug for zip -0 with MMAP
+4.  Use full version number instead of x.y.
+5.  Fixes for djgcc (Onno van der Linden)
+6.  Olimit 750 for Ultrix (Michael Lawler)
+7.  Support MMAP on SVR4
+8.  One more attempt to fix the zip -rm bug on VMS (not yet checked)
+
+------------------------ Oct 26  1992   version 1.9g ------------------------
+1.  With -T, test zip file even if there is nothing else to do.
+2.  New tops20/make.mic, fix a few tops20 compilation errors (Frank Wancho)
+3.  New makefile.os2 as usual, plus some simple fixes: (Kai Uwe)
+    - moved define inside the __crypt_h block in crypt.h
+    - moved set_extra_field outside __32BIT__ block in os2zip.c
+    - added OS2 #ifdef around os2zip.c to simplify DOS cross
+      compilation with makefile.os2
+    - corrected handling of near/far/huge in tailor.h for IBM C which
+      predefines such macros for porting purposes already
+    - made larger I/O buffers in tailor.h for 32-bit OS/2 for
+      better performance
+4.  Fixed bug in zipup.c for directory and symlink handling (Kai Uwe, Onno)
+5.  Added makefile targets 386bsd, sysv_gcc, sysv_386_gcc.
+6.  Use C comments in match.s for 386BSD (Onno)
+7.  Moved RAND_HEAD_LEN to crypt.h (Greg)
+8.  Added NO_TERMIO flag for Minix and Tops20
+9.  Avoid duplicate declarations for SYSV in crypt.c.
+10. Avoid warnings in bits.c for Borland C++ (Rich)
+
+------------------------ Oct 27  1992   version 1.9h ------------------------
+1.  check_zipfile is local (Greg)
+2.  One more attempt to fix the VMS zip -rm bug. Getting desperate.
+3.  Get rid of open() declaration in crypt.c. It works in zipup.c but
+    causes problems here on some systems.
+4.  Define correctly the "version made by" code on all systems.
+
+------------------------ Oct 30  1992   version 1.9i ------------------------
+1.  Eliminate a couple of warnings in bits.c (Onno)
+2.  Use _dos_getfileattr for BCC instead of bdosptr and fix a warning in
+    GetFileMode in fileio.c (Onno).
+3.  Added warning about -O2 in convex makefile entry (Rafal Maszkowski)
+4.  Undo the check for gcc in zip.h, otherwise we get a conflict on
+    the 'const' argument of perror in SCO, defined in both stdio.h and
+    string.h (Piet Plomp)
+5.  Don't use chmod on TOPS20 (Frank Wancho)
+6.  Avoid unused variable in crypt.c (Onno)
+7.  Use large model for BC++, _TEXT exceeds 64K (Onno)
+8.  Started cleanup by partial removal of "far" keyword.
+
+------------------------ Nov 21  1992   version 1.9j ------------------------
+1.  Simplified trash() and deletedir() significantly, fixing the VMS zip -r
+    bug as a side effect (Greg).
+2.  tailor.h: djgcc warns about using a char as array index (Onno)
+3.  makefile.bor and match.asm: changed LARGE to __LARGE__ because LARGE
+    is a reserved word in tasm. (Onno)
+4.  Added a workaround for a bug in latest version of OS/2 (Kai Uwe)
+5.  Added -Z to CLFAGS in makefile.bor (Zachary Heilig)
+6.  Quote "-T" in help screen for VMS (Greg)
+7.  Added -c to CFLAGS in makefile.gcc (Bob Hardy)
+9.  Added rs6000 makefile entry as in unzip (Michael Bernardi)
+10. Renamed makefile as Makefile for unification with unzip
+11. Added makefile entry for Pixel (Aubrey Jaffer)
+12. Use nice_match in match.s to guarantee same output as C code.
+13. Fixed "version made by" for OS/2 in zipup.c (Kai-Uwe)
+14. Aligned messages with : as in unzip (Kai-Uwe)
+15. New Amiga support (John Bush)
+16. Forget the "#define const" which was source of trouble.
+17. Do not use a directory time for -o (Onno)
+
+
+------------------------ Nov 24  1992   version 1.9k ------------------------
+1.  Define const for non ANSI compilers (Michael Lawler)
+2.  Removed the .dif files from the amiga subdirectory (John Bush)
+3.  Added automatic configuration with "make generic"
+
+------------------------ Jan 26  1993   version 1.9l ------------------------
+1.  Add trap handler in configure
+2.  Use readdir() for 386BSD (Onno)
+3.  New work around for OS/2 bug in os2zip.c (Kai Uwe).
+4.  Commented out declarations of opendir and readdir (was causing
+    problems with 'const'). (Mark).
+5.  Process -@ only after the zip file is read (George Sipe)
+6.  Added check for NeXT in configure (Mark)
+7.  Define SYSV only if sys/termio.h exists
+8.  Don't use gcc -c -c in msdos/makefile.gcc (Onno)
+9.  Don't include sys/types.h for Amiga (John)
+10. Added support for pgp in trees.c
+11. Use nice_match in match.asm
+12. Do not attempt matches beyond the window end (caused crash on 286 in
+    protected mode when attempting a word load at address DS:FFFF).
+13. Fixed location of zcrypt19.zip in Where.
+14. Do not check file size on MSDOS because of bug in DIET
+15. Set 'version needed to extract' to 1.0 for stored files (Peter Gutmann)
+16. Do not ignore the time of the first entry for -o (Mark).
+17. Allow zip -r0 with output to a pipe (Mark)
+18. Never include a zip file in itself or remove it at the end with -m.
+19. Fix zip -r on VMS to include all versions (;*).  (Igor)
+20. Don't forget closedir() on error (Kai Uwe)
+21. Ignore ftell() error on pipes (Eric Backus)
+22. Don't free() the literal string "-" (Eric Backus)
+23. Don't call err() with a null pointer (Eric Backus)
+24. Put back percent() arguments as ulg (Mark).
+25. New os2/zip.def and os2zip.c (Kai Uwe)
+26. Fixes in tailor.h for OS2 (Kai Uwe)
+27. Fix for zero length indexed files (Igor)
+
+------------------------ Aug 20  1993   version 1.9m ------------------------
+1.  1992->1993 in all copyright notices.
+2.  Added "make bull" (doc@magna.com (Matthew J. D'Errico)
+3.  Fixed vms_stat() to work across Decnet (Igor)
+4.  Use ; instead of , in trees.c (confuses the SAS Amiga compiler).
+5.  Added instructions for info-zip lists.
+6.  Add the -F and -FF (zipfix) options.
+7.  Documented the -v option.
+8.  Use progress indicator also for zip -0 (Greg).
+9.  Document /etc/magic line in install.doc.
+10. Changed os2 stack size from 0x40000 to 0x80000 to avoid OS/2 bugs.
+11. Don't use name foo.zip.$z$ on OS/2 FAT system.
+12. Do not ignore the -l option with zip -0.
+13. Updated Where file.
+14. In zip.1, mention pkzip 2.04 instead of 1.93a.
+15. Fix test for regular files in filetime().
+16. In memcompress(), do not call deflate with compression level 0.
+17. Display 0 instead of gargabe for negative compression ratios.
+18. New amiga files. (diffs not yet applied, will be changed shortly)
+19. Speed up zip -1 to -3 as in gzip, default changed to -6.
+20. Fix problem of zip -r with symbolic link to non existent file.
+21. Do not use _dos_getfileaddr() for Borland C++ (James W. Birdsall)
+22. Fix compilation error in vms.c with GNU cc (Mike Freeman)
+23. make the file that zipnote generates somewhat self-documenting, and allow
+    the zipnote -w input to be a little more free form. (Mark)
+24. Added support for Borland C++ for OS/2 (32-bit) (Kai-Uwe).
+25. Added makefile for Turbo C 2.0 (Andrew Cadach)
+26. Added untested makefile entry for SCO Xenix on 286.
+27. Add -S option to include hidden/system files on MSDOS/OS/2 (Kai Uwe).
+28. Free the extra field as soon as it is written on disk.
+29. Use -DSYSV for "make sun" so that it also works on Solaris. Add sun_bsd.
+30. Added "make next-fat".
+
+
+------------------------ Aug 21  1993   version 1.9n ------------------------
+1.  Don't undef const in crypt.c (does not work on MSDOS).
+2.  Fix some warnings with MSDOS compilers.
+3.  Switch to large model for all 16 bit MSDOS compilers.
+4.  New match.s with 68K support, and to avoid problems with DJGPP 1.10.
+5.  When -b is used, do not create any file other than the final zipfile
+    in the final directory. (Don't leave junk on a WORM.)
+
+------------------------ Aug 29  1993   version 2.0a ------------------------
+1.  Free local extra field only if different from central extra field (Kai Uwe)
+2.  Use size_t instead of unsigned in os2/os2zip.c
+3.  Fix for emx in os2/makefile.os2.
+4.  Fix change 5 of zip 1.9n (was allowing destruction of a readonly file).
+5.  next-fat -> nextfat to make Greg happy.
+6.  Fix macros in vms/descrip.mms (Igor).
+7.  Free the local extra field only after the second putlocal() (Igor).
+8.  Add vms.obj in make_vaxc.com for zipsplit, zipnote, zipcloak (Mike Freeman)
+9.  Don't use the constant (unsigned)2*32768 with 16-bit int (Piet Plomp).
+10. Use syntax acceptable by ml in msdos/makefile.msc (Piet Plomp).
+11. Use const if MODERN instead of __STDC__ (Greg).
+12. Remove garbage at both ends of zip file with -F or -FF (Bill Davidsen)
+13. Added support for Human68K (NIIMI Satoshi)
+14. Preserve existing soft and hard links for the zip file (Martin Schulz)
+15. Don't crash when no zip-file, with flag -o (Martin Schulz)
+16. Ignore -y when -k is set (Martin Schulz)
+17. Add the -D option (create entries for directories)
+18. Free window and hash table (when -DDYN_ALLOC) before calling unzip for -T.
+19. Remove -m4 from msdos/makefile.tc (not supported by TurboC 2.0)
+20. Fix handling of system/hidden files for Windows/NT (Martin Schulz)
+21. Get correct file times for Windows/NT (Martin Schulz)
+22. Upper case conversion for Windows/NT depends on FAT (Martin Schulz)
+23. Keep old internal name when updating on MSDOS a zipfile made on Unix:
+    "zip foo Makefile" no longer changes Makefile into makefile.
+24. Do not recurse while excluding.
+25. Add -i option. Simplify the -x code.
+26. Include the volume label for the -S option.
+
+------------------------ Sep 1st  1993   version 2.0b ------------------------
+1.  Do not use process.h in dummy/zipcloak.c
+2.  Support volume labels for OS/2 (Kai Uwe)
+3.  Include volume label even if file patterns do not include the root dir.
+4.  Fixed copyright notice.
+5.  Fixed zip -FF code (do not copy the bad compressed size)
+6.  Add warning if -F would truncate the zip file.
+7.  Use a specific option for volume label (-$ as in pkzip and arj).
+8.  Better Amiga support (John Bush and Paul Kienitz).
+9.  Define UNIX for Unix systems (Greg).
+10. Link util_ for zipcloak (Mike Freeman)
+11. Suppress all the TurboC .prj and .tc files; makefile.tc is more convenient.
+12. Include only the dummy crypt routines. Full versions in zcryp20k.zip.
+13. Fixed the contents file.
+14. Untabify everything to make diffs easier.
+15. When zip is used to archive stdin, read the archive comment (-z) from
+    stderr instead of stdin. (Bill Davisen)
+
+------------------------ Sep 2nd  1993   version 2.0c ------------------------
+1.  Allow the full zipcloak.c to be compiled with the dummy crypt.[ch].
+2.  Set the directory attribute when creating directory entries.
+3.  Add -p option to zipsplit to wait between diskettes. (Mark).
+4.  On OS/2, accept volume label on a drive other than the current drive.
+5.  Fix fileio for SGI.
+6.  Add err() to the dummy zipcloak.c.
+7.  Get match.asm from msdos subdirectory in all msdos makefiles.
+8.  Default to -DDYN_ALLOC for MSC to reduce memory usage for -T.
+9.  Set up the Where and README files for a zip 2.0 release.
+10. Check sys/dirent.h instead of dirent.h in configure (temporary
+    hack until the big fileio.c cleanup).
+11. Use only strrchr (already defined as rindex for some BSD systems).
+12. Little Amiga patches in fileio.c and SMakeFile (John Bush).
+
+
+------------------------ Sep 6th  1993   version 2.0d ------------------------
+1.  Need sys/dir.h for NODIR option (James Birdsall)
+2.  Define OS_CODE and GetFileMode for Human68k (NIIMI Satoshi)
+3.  Added the zipgrep shell script and zipgrep.1.
+4.  Fix in crypt.c for Convex (Rafal Maszkowski)
+5.  Added nt/nt.c and fixed makefile.nt (Martin Schulz)
+6.  Fix opendir/readdir for NT (Martin Schulz)
+7.  Reverse the meaning of -D. Directory attributes are saved by
+    default. Use -D to disable creation of directory entries.
+8.  Remove empty directories with -rm even if directory entries are not
+    created (-D).
+9.  Support volume labels with DJGPP (MSDOS version of gcc).
+10. Added initialization for z->dosflag.
+11. In Makefile, use "sh configure flags" instead of "./configure flags" to
+    deal with some buggy versions of make (SunOS 4.1 /bin/make).
+12. Made zcrypt20m.zip compatible with unzip 5.0p1, unzip 5.1e and zip 2.0d.
+    (However funzip from unz50p1 cannot compile with the new crypt.)
+
+------------------------ Sep 7th  1993   version 2.0e ------------------------
+1.  Avoid warnings for NT and fix IsFileNameValid() (Steve Salisbury).
+2.  Use only comment after #endif in crypt.c (zcryp20n).
+3.  Put the correct README in zcryp20n.
+4.  Allow chars above 0x80 in recmatch (Paul Kienitz)
+5.  In recmatch, Allow "^" as well as "!" at the beginning of a set
+    (for example "[^0-9]") as a negation (Paul Kienitz)
+6.  Better msdos/makefile.tc.
+
+------------------------ Sep 7th  1993   version 2.0f ------------------------
+1.  Call FindClose in fileio.c, add nt/ntzip.h (Martin Schulz)
+2.  Added "Why doesn't zip do <something> just like PKZIP does?" in README.
+
+
+------------------------ Sep 7th  1993   version 2.0g -------------------------
+1.  Fix wild() for human68k, jstring.h not needed (NIIMI Satoshi)
+2.  wild() is needed for OS2 also (Kai Uwe)
+3.  New os2/makefile.os2 (Kai Uwe)
+
+------------------------ Sep 7th  1993   version 2.0 -------------------------
+1.  Define MODERN for VMS on Alpha (Hunter)
+2.  In vms/VMSmunch.c, deal with variant_unions under Alpha (Hunter)
+3.  Define main with int result (Hunter)
+4.  Do not return a garbage exit code for zipsplit -t.
+5.  Restore file attributes of an existing zip file (Igor)
+6.  Define UTIL in globals.c and vms.c to avoid declaring read_buf (Hunter)
+7.  Renamed make_vaxc.com as make_vms.com, make it work on AXP (Hunter).
+8.  Added warning about OpenVMS AXP in vms/make_gcc.com (Hunter)
+9.  Support OpenVMS AXP in vms/descrip.mms (Hunter)
+10. Do not perform sliding with MMAP or BIG_MEM (Martin Schulz)
+11. Recommend -DMMAP in install.doc.
+12. Avoid WATCOM C bug in stat("*") (Thomas Opheys)
+13. Avoid temp file name > 8 chars for NO_MKTEMP (Thomas Opheys)
+
+------------------------ Sep 18th  1993   version 2.0.1 ----------------------
+1.  Do not add entries "./" and "../" (problem with DJGPP only)
+2.  Let -v cancel -q and vice-versa.
+3.  Fix Makefile entry for sco_x286 (Tom Schmidt)
+4.  Avoid warning with MSC in util.c.
+5.  Enable file size check for OS/2.
+6.  IMPORTANT FIX: on OS/2, do not truncate large files with EAs (Tai-Shan Lin)
+7.  zipfix (zip -F) no longer implies -o (Michael Bolton)
+8.  Add temporary in readzipfile() to avoid Coherent compiler bug (Fred Smith)
+9.  Use asm code for Coherent (Fred Smith)
+10. Use /usr/local/man/man1 as default MANDIR
+11. Add uninstall makefile entry
+12. If link() fails on Amiga, always assume cross device rename.

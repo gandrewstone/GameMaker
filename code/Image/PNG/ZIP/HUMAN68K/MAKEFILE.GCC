@@ -1,0 +1,68 @@
+# Makefile for Zip, ZipCloak, ZipNote and ZipSplit for human68k
+# Written by NIIMI Satoshi <a01309@cfi.waseda.ac.jp>
+
+VPATH = human68k
+
+CC = gcc
+AS = as
+
+# if you are using mc68030 (or higher) based X68000,
+# uncomment following defines
+#CC = gcc -DUNALIGNED_OK
+#AS = as -s UNALIGNED_OK
+
+CFLAGS = -Wall -O -fomit-frame-pointer -fstrength-reduce -DASMV
+LDFLAGS = -s
+LIBS = -lsignal -lmb -ldos
+
+# object file lists
+OBJZ = zip.o zipfile.o zipup.o fileio.o util.o globals.o crypt.o
+
+OBJI = deflate.o trees.o bits.o
+OBJA = match.o human68k.o
+OBJU = zipfile_.o zipup_.o fileio_.o util_.o globals.o human68k.o
+OBJN = zipnote.o  $(OBJU)
+OBJC = zipcloak.o $(OBJU) crypt_.o
+OBJS = zipsplit.o $(OBJU)
+
+all: zips
+
+.SUFFIXES: _.o .o .c
+.c_.o:
+	$(CC) $(CFLAGS) -DUTIL -c $< -o $@
+.c.o:
+	$(CC) $(CFLAGS) -c $< -o $@
+
+ZIPS = zip.x zipnote.x zipsplit.x zipcloak.x
+
+zip.o zipup.o zipnote.o zipcloak.o zipsplit.o: revision.h
+zips: $(ZIPS)
+
+zip.x: $(OBJZ) $(OBJI) $(OBJA)
+	$(CC) -o zip.x $(LDFLAGS) $(OBJZ) $(OBJI) $(OBJA) $(LIBS)
+zipnote.x: $(OBJN)
+	$(CC) -o zipnote.x $(LDFLAGS) $(OBJN) $(LIBS)
+zipcloak.x: $(OBJC)
+	$(CC) -o zipcloak.x $(LDFLAGS) $(OBJC) $(LIBS)
+zipsplit.x: $(OBJS)
+	$(CC) -o zipsplit.x $(LDFLAGS) $(OBJS) $(LIBS)
+
+match.o: human68k/match.s
+	$(AS) -o $@ $<
+
+clean:
+	rm -f *.o $(ZIPS)
+
+zip.bfd: $(ZIPS)
+	rm -f $@
+	for file in $(ZIPS); do \
+		bdif -A -R uploaded/$$file $$file $@; \
+	done
+
+# rules for zip, zipnote, zipcloak, zipsplit, and zip.doc.
+$(OBJZ): zip.h ziperr.h tailor.h
+$(OBJI): zip.h ziperr.h tailor.h
+$(OBJN): zip.h ziperr.h tailor.h
+$(OBJS): zip.h ziperr.h tailor.h
+$(OBJC): zip.h ziperr.h tailor.h
+zip.o zipup.o crypt.o bits.o zipup_.o zipcloak.o crypt_.o:  crypt.h

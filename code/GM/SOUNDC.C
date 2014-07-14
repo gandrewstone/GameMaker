@@ -236,8 +236,7 @@ char PlaySbVocFile(char far * filename)
 void StopSound(void)
   {
   if (driverloaded==FALSE) return;
-  asm
-    {
+  asm {
     mov         bx,8
     call        pointertodriver
     }
@@ -268,8 +267,8 @@ void ShutSbVocDriver(void)
     pointertovoice = 0;      // Clear the pointer to voice file
     vocfilesize    = 0;      // No sound so size is 0
     }
-  asm
-    {
+
+  asm {
     mov         bx,9
     call        pointertodriver
     }

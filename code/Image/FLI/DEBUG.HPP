@@ -1,0 +1,43 @@
+// --------------------------------
+//  Copyright 1994 G. Andrew Stone
+//  Not public domain!
+// --------------------------------
+
+#ifndef DEBUGGING
+#define DEBUGGING
+
+#define DEBUGFILE "fli.dbg"
+#include <stdio.h>
+//#define NOGRAPHICS
+
+class Debug
+  {
+  public:
+  FILE *logfile;
+  Debug()
+    {
+    logfile = fopen(DEBUGFILE,"wt");
+//    logfile=stdout;
+    }
+  ~Debug()
+    {
+    if (logfile != stdout) fclose(logfile);
+    }
+  void Debug::Msg(char *x)
+    {
+    fputs(x,logfile);
+    fflush(logfile);
+    //fputs(x,stdout);
+    }
+
+  };
+
+
+
+extern Debug Debugging;
+
+#define DEBUG(x) Debugging.Msg(x)
+#define LOG(x) Debugging.Msg(x)
+
+#endif
+

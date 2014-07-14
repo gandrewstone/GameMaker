@@ -1,0 +1,87 @@
+# Makefile for Zip, ZipNote, ZipCloak, ZipSplit for Aztec C 5.2
+#   -- Paul Kienitz, July 1993
+# Wow, it even works with Manx's own broken mini-Make now.
+
+# Make sure platform is defined correctly
+DOSFLAG = -d AMIGA
+
+# NOTE:  Encryption requires separately available CRYPT.C
+# Define these two as blank for no-encryption version.
+CRYPTF = -d CRYPT
+CRYPTO = crypt.o
+
+DEFINES = $(DOSFLAG) $(CRYPTF)
+CC = cc
+CFLAGS = $(DEFINES) -pl -mcd -sabfmnpu -wcr0u -r46
+# -pl means short ints, -mcd is large code & data, -r46 is use A4 and A6 like
+# regular regs, -sabfmnpu is various optimizations, -wcr0u adjusts type checking
+
+LD = ln
+LDLIBS = -lcl
+LDFLAGS = -m +q
+
+###############################################
+# BASIC COMPILE INSTRUCTIONS AND DEPENDENCIES #
+###############################################
+
+# default C rules
+.c.o :
+	$(CC) $(CFLAGS) -o $@ $*.c
+
+# rules for routines containing entries needed by utilities
+.c.oo :
+	$(CC) $(CFLAGS) -d UTIL -o $@ $*.c
+
+# object file lists
+
+HFILES = zip.h ziperr.h tailor.h revision.h crypt.h amiga/z-stat.h
+
+OBJI = deflate.o trees.o bits.o
+OBJA = zipfile.o zipup.o util.o fileio.o globals.o amiga/amiga.o
+OBJU = zipfile.oo zipup.oo fileio.oo util.oo globals.o amiga/amiga.o
+
+OBJZ = zip.o $(OBJA) $(OBJI) $(CRYPTO) amiga/match.o
+
+OBJN = zipnote.o  $(OBJU)
+OBJC = zipcloak.o $(OBJU) crypt.oo
+OBJS = zipsplit.o $(OBJU)
+
+ZIPS = zip zipnote zipcloak zipsplit
+
+zip : $(OBJZ) $(HFILES)
+	$(LD) $(LDFLAGS) -o $@ $(OBJZ) $(LDLIBS)
+
+zipnote : $(OBJN) $(HFILES)
+	$(LD) $(LDFLAGS) -o $@ $(OBJN) $(LDLIBS)
+
+zipcloak : $(OBJC) $(HFILES)
+	$(LD) $(LDFLAGS) -o $@ $(OBJC) $(LDLIBS)
+
+zipsplit : $(OBJS) $(HFILES)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+
+all :      $(ZIPS)
+
+clean :
+       -delete $(OBJZ) >nil:
+       -delete $(OBJU) >nil:
+       -delete zipnote.o zipcloak.o zipsplit.o >nil:
+
+# special cases:
+
+trees.o : trees.c
+	$(CC) $(CFLAGS) -mr -o trees.o trees.c
+
+deflate.o : deflate.c
+	$(CC) $(CFLAGS) -d ASMV -o deflate.o deflate.c
+
+amiga/match.o : amiga/match_68.a
+	as -n -c -d -eCPUTEST -eAMIGA -o amiga/match.o amiga/match_68.a
+# -n -c -d means one pass, and large code & data; -e defines a symbol.
+# The SAS assembler should also define the symbol ATSIGN when assembling.
+
+amiga/amiga.o : amiga/amiga.c amiga/filedate.c amiga/stat.c amiga/z-stat.h
+	$(CC) $(CFLAGS) -o amiga/amiga.o amiga/amiga.c
+
+zip.o zipnote.o zipcloak.o crypt.o zipsplit.o deflate.o trees.o bits.o \
+   zipfile.o zipup.o fileio.o util.o globals.o : $(HFILES)

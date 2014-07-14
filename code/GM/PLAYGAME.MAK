@@ -35,7 +35,7 @@ playgame.exe:   playgame.obj\
                 $(LINKER) $(LFLAGS) @playgame.lnk
 
 playgame.obj:   playgame.c gmgen.h mousefn.h
-                $(CCOMPILER) $(CFLAGS) playgame.c
+                $(CCOMPILER) $(CFLAGS) -I..\Image\fli playgame.c
 
 !include "compile.mak"
 

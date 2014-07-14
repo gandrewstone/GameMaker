@@ -1,0 +1,267 @@
+#define    FRAMEFILELEN  50
+class      Frame
+  {
+  public:
+
+  char     File[FRAMEFILELEN+1];
+  Coord2d  Pos;
+  uint     Pause;
+  Frame()
+    {
+    for (uint i=0;i<FRAMEFILELEN+1;i++) File[i]=0;
+    Pos.Set(0,0);
+    Pause=0;
+    }
+  };
+
+
+class GetCoord2d
+  {
+  public:
+  InputClass *Inp;
+  Coord2d    *AnsPos;
+
+  void Init(Coord2d *p,InputClass *i) { AnsPos=p; Inp=i; }
+
+  Message Do(void)
+    {
+    Message Ret;
+
+    while (!Inp->Pending())
+      {
+      if ( (*AnsPos) != Inp->Cursor->Pos)
+        {
+        *AnsPos=Inp->Cursor->Pos;
+        Ret.Set(*AnsPos,COMPUTERMSG,CheckingInMSG);
+        return(Ret);
+        }
+      }
+    KeysPending--;
+    Ret.Set(*AnsPos,KeyStk[KeysPending]>>8,KeyStk[KeysPending]&255);
+    return(Ret);
+    }
+  };
+
+
+class QueryCoord2d:public QueryObject,public GetCoord2d
+  {
+  char Ans[16];
+  public:
+
+  QueryCoord2d(Font *f, VideoMode *v):QueryObject(f,v)
+    { for (uint j=0;j<16;j++) Ans[j]=0;  }
+
+  boolean Init(Box2d TextLoc,Coord2d *AnswerAddr)
+    {
+    GetCoord2d::Init(AnswerAddr,&i);
+    sprintf(Ans,"(%d,%d)",AnsPos->x,AnsPos->y);
+    QueryObject::Init(TextLoc,"",Ans,11);
+    }
+
+  boolean Start(void) { return(QueryObject::Start()); }
+  boolean End  (void) { return(True); }
+  boolean DoMsg(Message InMsg)
+    {
+    if (!QueryObject::DoMsg(InMsg))
+      {
+      if (InMsg.Origin==MOUSEMSG)
+        {
+        KeysPending=0;
+        do
+          {
+          InMsg=GetCoord2d::Do();
+          sprintf(Ans,"(%d,%d)",AnsPos->x,AnsPos->y);
+          QueryObject::Start();
+          } while ((InMsg.Origin==COMPUTERMSG)&&(InMsg.Val=CheckingInMSG));
+        }
+      }
+    return(True);
+    }
+  };
+
+class      FrameMenu:public Window
+  {
+  static Box2d     Menu  [3];
+  static Box2d     HiLite[3];
+  static Box2d     Input [3];
+  static Font     *Fnt;
+
+  Frame           *fr;
+  QueryObject     *FileQ;
+  QueryObject     *PauseQ;
+  QueryCoord2d    *PosQ;
+  char             Pause[7];
+
+  public:
+  static GISImage *Im;
+  FrameMenu(Frame *frame,Font *font,VideoMode *Vid);
+  virtual boolean Start(void) { return(Draw()); }
+
+  void PalMatch(RGBdata *p) { Im->PalMatch(p); }
+
+  boolean Draw(void)
+    {
+    char str[FRAMEFILELEN];
+    Coord2d FntAdd(0,Fnt->Height.Capitol+Fnt->Height.Baseline-1);
+    Shown=True;
+    Im->Draw(Edges.ul);
+    Fnt->Draw(Edges.ul+Input[0].ul+FntAdd,FRAMEFILELEN,fr->File,Vid);
+     sprintf(str,"(%d,%d)",fr->Pos.x,fr->Pos.y);
+    Fnt->Draw(Edges.ul+Input[1].ul+FntAdd,13,str,Vid);
+    sprintf(Pause,"%d",fr->Pause);
+    Fnt->Draw(Edges.ul+Input[2].ul+FntAdd,6,Pause,Vid);
+    return(True);
+    }
+
+  void SetData(Frame *frame) { fr=frame; }
+
+  boolean DoMsg(Message InMsg)
+    {
+    Msg.Clear();
+    if (InMsg.Origin==COMPUTERMSG)
+      {
+      if (InMsg.Val==WentInMSG)
+        {
+        if (FileQ==NULL)
+          {
+          FileQ = new QueryObject(Fnt,Im->Vid);
+          if (FileQ!=NULL)
+            {
+            if (FileQ->Init(Input[0],"",fr->File,FRAMEFILELEN))
+              {
+              FileQ->SetColors(0,Im->ColXlat[14],Im->ColXlat[1]);
+              Dis += FileQ;
+              }
+            else { delete FileQ; FileQ=NULL; }
+            }
+          }
+        if (PauseQ==NULL)
+          {
+          PauseQ = new QueryObject(Fnt,Im->Vid);
+          if (PauseQ!=NULL)
+            {
+            if (PauseQ->Init(Input[2],"",Pause,6))
+              {
+              PauseQ->SetColors(0,Im->ColXlat[14],Im->ColXlat[1]);
+              Dis += PauseQ;
+              }
+            else { delete PauseQ; FileQ=NULL; }
+
+            }
+          }
+        if (PosQ==NULL)
+          {
+          PosQ = new QueryCoord2d(Fnt,Im->Vid);
+          if (PosQ != NULL)
+            {
+            PosQ->Init(Input[1],&fr->Pos);
+            PosQ->SetColors(0,Im->ColXlat[14],Im->ColXlat[1]);
+            Dis += PosQ;
+            }
+          }
+        }
+      }
+
+    switch (InMsg.Origin)
+      {
+      case KEYBOARDMSG:
+        switch(Ascii(InMsg.Val))
+          {
+          case 13:
+            Msg.Val = DONEMSG;
+          case 27:
+            if (FileQ)  { Dis -= FileQ;  delete FileQ;  FileQ  = NULL; }
+            if (PauseQ) { Dis -= PauseQ; delete PauseQ; PauseQ = NULL; }
+            if (PosQ)   { Dis -= PosQ;   delete PosQ;   PosQ   = NULL; }
+            Msg.Origin=COMPUTERMSG;
+            if (Ascii(InMsg.Val)==27) Msg.Val = ABORTMSG;
+            break;
+          }
+      }
+    return(True);
+    }
+  };
+
+
+FrameMenu::FrameMenu(Frame *frame,Font *font,VideoMode *v):Window(font,v)
+    {
+    if (Im==NULL)  // No other FrameMenus ever inited, so init the static stuff
+      {
+      Im=new GISImage;
+      Im->Startup(new FileRead("frammenu.gis"),Vid);
+      Edges.ul=MakeCoord2d(0,0);
+      Edges.lr=MakeCoord2d(209,49);
+      Menu  [0].Set(5,7,205,18);
+      Menu  [1].Set(5,19,205,30);
+      Menu  [2].Set(5,31,205,41);
+      HiLite[0].Set(11,10,46,16);
+      HiLite[1].Set(11,21,78,27);
+      HiLite[2].Set(11,32,54,38);
+      Input [0].Set(48,8,205,18);
+      Input [1].Set(80,19,205,30);
+      Input [2].Set(56,30,205,41);
+      FileQ = NULL;
+      PauseQ= NULL;
+      PosQ  = NULL;
+      Fnt   = font;
+      fr    = frame;
+      }
+    }
+
+
+GISImage* FrameMenu::Im;
+Font*     FrameMenu::Fnt;
+
+Box2d     FrameMenu::Menu  [3];
+Box2d     FrameMenu::HiLite[3];
+Box2d     FrameMenu::Input [3];
+
+
+
+  // Load The menus up.
+  Frame     Frames[20];
+  FrameMenu Fr(&Frames[0],Fnt,Vid);
+  Vid->SetAllPal(Fr.Im->Pal,Vid);
+  Fr.Draw();
+  Dis += &Fr;
+  Dis.Dispatch(i);
+
+  // Load the GIF.
+  uint Cnt=0;
+  do
+    {
+    if(!File.Open(Frames[Cnt].File)) Fnt->Draw(MakeCoord2d(10,10),12,"No Such File!",Vid);
+    else
+      {
+      if ((Im = new GIFImage)==NULL)
+        {
+        Fnt->Draw(MakeCoord2d(10,10),12,"Cannot Alloc Mem.",Vid);
+        Fr.Msg.Val=ABORTMSG;
+        }
+      else
+        {
+        if (Im->Startup(&File,Vid))
+          {
+          Cur.Off();
+          Vid->Clear(Im->BkCol,Vid);
+          Im->Draw(Frames[Cnt].Pos);
+          Fr.PalMatch(Im->Pal);
+          Cur.On();
+          }
+        else Fnt->Draw(MakeCoord2d(10,100),12,"Not a Gif.",Vid);
+        delete Im;
+//        Box2d Section = SelectArea(Vid);
+        }
+      }
+    Cnt++;
+    Fr.SetData(&Frames[Cnt]);
+    Fr.Draw();
+    Dis += &Fr;
+    Dis.Dispatch(i);
+    } while (Fr.Msg.Val!=ABORTMSG);
+
+  File.Close();
+
+
+
+

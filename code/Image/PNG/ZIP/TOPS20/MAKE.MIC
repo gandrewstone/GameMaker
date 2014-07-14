@@ -1,0 +1,33 @@
+@te no pau e
+@cc -c -q zip
+@cc -c -q zipfil
+@cc -c -q zipup
+@cc -c -q fileio
+@cc -c -q util
+@cc -c -q global
+@cc -c -q deflat
+@cc -c -q trees
+@cc -c -q bits
+@cc -c -q crypt
+@cc -i -o zip zip.rel zipfil.rel zipup.rel fileio.rel util.rel global.rel deflat.rel trees.rel bits.rel crypt.rel
+@cc -c -q zipnot
+@rename zipfil.c zipfix.c
+@rename zipup.c zipupx.c
+@rename fileio.c filiox.c
+@rename util.c utilx.c
+@cc -c -q -DUTIL zipfix
+@cc -c -q -DUTIL zipupx
+@cc -c -q -DUTIL filiox
+@cc -c -q -DUTIL utilx
+@rename zipfix.c zipfil.c
+@rename zipupx.c zipup.c
+@rename filiox.c fileio.c
+@rename utilx.c util.c
+@cc -i -o zipnot zipnot.rel zipfix.rel zipupx.rel filiox.rel utilx.rel global.rel
+@reset
+@rename zipnot.exe zipnote.exe
+@cc -c -q zipspl
+@cc -i -o zipspl zipspl.rel zipfix.rel zipupx.rel filiox.rel utilx.rel global.rel
+@reset
+@rename zipspl.exe zipsplit.exe
+@kmic

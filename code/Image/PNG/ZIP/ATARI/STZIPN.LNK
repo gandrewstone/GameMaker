@@ -1,0 +1,10 @@
+\TC\lib\c0.o
+atari.o
+zipnote.o
+zipfile_.o
+zipup_.o
+fileio_.o
+globals.o
+\TC\lib\tcstdlib.lib
+\TC\lib\tcextlib.lib
+\TC\lib\tctoslib.lib

@@ -1,0 +1,110 @@
+<HTML>
+<HEAD>
+<TITLE>PNG (Portable Network Graphics) Specification, Tenth Draft</TITLE>
+</HEAD>
+<BODY>
+
+<H1>PNG (Portable Network Graphics) Specification, Tenth Draft</H1>
+
+Revision date: 5 May, 1995
+
+
+<BLOCKQUOTE>
+  Copyright 1995, Thomas Boutell.
+  Permission is granted to reproduce this specification in complete
+  and unaltered form. Excerpts may be printed with the
+  following notice: "excerpted from the PNG
+  (Portable Network Graphics) specification, tenth draft."
+  No notice is required in software
+  that follows this specification; notice is only required
+  when reproducing or excerpting from the specification itself.
+</BLOCKQUOTE>
+
+
+<H2>Contents</H2>
+
+<UL>
+<LI><A HREF="PNG-Status.html">0. Status</A>
+<LI><A HREF="PNG-Introduction.html">1. Introduction</A>
+<LI><A HREF="PNG-DataRep.html">2. Data Representation</A>
+<UL>
+<LI><A HREF="PNG-DataRep.html#DR:Integers and byte order">Integers and byte order</A>
+<LI><A HREF="PNG-DataRep.html#DR:Color values">Color values</A>
+<LI><A HREF="PNG-DataRep.html#DR:Image layout">Image layout</A>
+<LI><A HREF="PNG-DataRep.html#DR:Alpha channel">Alpha channel</A>
+<LI><A HREF="PNG-DataRep.html#DR:Filtering">Filtering</A>
+<LI><A HREF="PNG-DataRep.html#DR:Interlaced data order">Interlaced data order</A>
+<LI><A HREF="PNG-DataRep.html#DR:Gamma correction">Gamma correction</A>
+<LI><A HREF="PNG-DataRep.html#DR:Text strings">Text strings</A>
+</UL>
+<LI><A HREF="PNG-Structure.html">3. File Structure</A>
+<UL>
+<LI><A HREF="PNG-Structure.html#PNG file signature">PNG file signature</A>
+<LI><A HREF="PNG-Structure.html#Chunk layout">Chunk layout</A>
+<LI><A HREF="PNG-Structure.html#Chunk naming conventions">Chunk naming conventions</A>
+<LI><A HREF="PNG-Structure.html#CRC algorithm">CRC algorithm</A>
+</UL>
+<LI><A HREF="PNG-Chunks.html">4. Chunk Specifications</A>
+<UL>
+<LI><A HREF="PNG-Chunks.html#Critical Chunks">Critical Chunks</A>
+<LI><A HREF="PNG-Chunks.html#Ancillary Chunks">Ancillary Chunks</A>
+<LI><A HREF="PNG-Chunks.html#Summary of Standard Chunks">Summary of Standard Chunks</A>
+<LI><A HREF="PNG-Chunks.html#Additional Chunk Types">Additional Chunk Types</A>
+</UL>
+<LI><A HREF="PNG-Compression.html">5. Deflate/Inflate Compression</A>
+<LI><A HREF="PNG-Filters.html">6. Filter Algorithms</A>
+<UL>
+<LI><A HREF="PNG-Filters.html#Filter type 0: None">Filter type 0: None</A>
+<LI><A HREF="PNG-Filters.html#Filter type 1: Sub">Filter type 1: Sub</A>
+<LI><A HREF="PNG-Filters.html#Filter type 2: Up">Filter type 2: Up</A>
+<LI><A HREF="PNG-Filters.html#Filter type 3: Average">Filter type 3: Average</A>
+<LI><A HREF="PNG-Filters.html#Filter type 4: Paeth">Filter type 4: Paeth</A>
+</UL>
+<LI><A HREF="PNG-Ordering.html">7. Chunk Ordering Rules</A>
+<LI><A HREF="PNG-Multi.html">8. Multi-Image Extension</A>
+<LI><A HREF="PNG-Encoders.html">9. Recommendations for Encoders</A>
+<UL>
+<LI><A HREF="PNG-Encoders.html#E:Bitdepth scaling">Bitdepth scaling</A>
+<LI><A HREF="PNG-Encoders.html#E:Encoder gamma handling">Encoder gamma handling</A>
+<LI><A HREF="PNG-Encoders.html#E:Alpha channel creation">Alpha channel creation</A>
+<LI><A HREF="PNG-Encoders.html#E:Filter selection">Filter selection</A>
+<LI><A HREF="PNG-Encoders.html#E:Text chunk processing">Text chunk processing</A>
+<LI><A HREF="PNG-Encoders.html#E:Registering proprietary chunks">Registering proprietary chunks</A>
+</UL>
+<LI><A HREF="PNG-Decoders.html">10. Recommendations for Decoders</A>
+<UL>
+<LI><A HREF="PNG-Decoders.html#D:Chunk error checking">Chunk error checking</A>
+<LI><A HREF="PNG-Decoders.html#D:Pixel dimensions">Pixel dimensions</A>
+<LI><A HREF="PNG-Decoders.html#D:Truecolor image handling">Truecolor image handling</A>
+<LI><A HREF="PNG-Decoders.html#D:Decoder gamma handling">Decoder gamma handling</A>
+<LI><A HREF="PNG-Decoders.html#D:Background color">Background color</A>
+<LI><A HREF="PNG-Decoders.html#D:Alpha channel processing">Alpha channel processing</A>
+<LI><A HREF="PNG-Decoders.html#D:Progressive display">Progressive display</A>
+<LI><A HREF="PNG-Decoders.html#D:Palette histogram usage">Palette histogram usage</A>
+<LI><A HREF="PNG-Decoders.html#D:Text chunk processing">Text chunk processing</A>
+</UL>
+<LI><A HREF="PNG-Rationale.html">11. Appendix: Rationale</A>
+<UL>
+<LI><A HREF="PNG-Rationale.html#R:Why a new file format?">Why a new file format?</A>
+<LI><A HREF="PNG-Rationale.html#R:Why these features?">Why these features?</A>
+<LI><A HREF="PNG-Rationale.html#R:Why not these features?">Why not these features?</A>
+<LI><A HREF="PNG-Rationale.html#R:Why not use format XYZ?">Why not use format XYZ?</A>
+<LI><A HREF="PNG-Rationale.html#R:Byte order">Byte order</A>
+<LI><A HREF="PNG-Rationale.html#R:Interlacing">Interlacing</A>
+<LI><A HREF="PNG-Rationale.html#R:Why gamma encoding?">Why gamma encoding?</A>
+<LI><A HREF="PNG-Rationale.html#R:Non-premultiplied alpha">Non-premultiplied alpha</A>
+<LI><A HREF="PNG-Rationale.html#R:Filtering">Filtering</A>
+<LI><A HREF="PNG-Rationale.html#R:Text strings">Text strings</A>
+<LI><A HREF="PNG-Rationale.html#R:PNG file signature">PNG file signature</A>
+<LI><A HREF="PNG-Rationale.html#R:Chunk layout">Chunk layout</A>
+<LI><A HREF="PNG-Rationale.html#R:Chunk naming conventions">Chunk naming conventions</A>
+<LI><A HREF="PNG-Rationale.html#R:Palette histograms">Palette histograms</A>
+</UL>
+<LI><A HREF="PNG-CRCAppendix.html">12. Appendix: Sample CRC Code</A>
+<LI><A HREF="PNG-Credits.html">13. Credits</A>
+</UL>
+
+
+
+</BODY>
+</HTML>

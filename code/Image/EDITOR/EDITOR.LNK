@@ -1,0 +1,14 @@
+c0l.obj+
+fileclss.obj+
+fli.obj+
+image.obj+
+findfile.obj+
+fontchr.obj textio.obj bitmap.obj+
+geninput.obj genclass.obj timer.obj gasclass.obj intsa.obj jsticka.obj jstickc.obj+
+editor.obj
+editor.exe
+editor.map
+d:\drv\viddrv.lib+
+cl.lib
+
+

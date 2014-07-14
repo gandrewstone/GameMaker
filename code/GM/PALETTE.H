@@ -1,3 +1,5 @@
+#ifndef PAL_H
+#define PAL_H
 // Palette manipulation routines - source in palc.c, pala.asm
 #include "gen.h"
 #include "Pixel.hpp"
@@ -67,4 +69,5 @@ void RainbowCols(RGBdata *colors);
 void RandCols(RGBdata *colors);
 void insertcol(int number,unsigned char red,unsigned char green,unsigned char blue,RGBdata *colors);
 void InitStartCols(RGBdata *colors);
-
+
+#endif

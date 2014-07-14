@@ -1,0 +1,603 @@
+NAME
+     zip, zipcloak, zipnote,  zipsplit  -  package  and  compress
+     (archive) files
+
+SYNOPSIS
+     zip [-cdDeEfFghjklLmoqrSTuvVwyz@$]  [-b path]  [-n suffixes]
+     [-t mmddyy] [ zipfile [ file1 file2 ...]] [-xi list]
+
+     zipcloak [-dhL] [-b path] zipfile
+
+     zipnote [-hwL] [-b path] zipfile
+
+     zipsplit [-hiLpst] [-n size] [-b path] zipfile
+
+DESCRIPTION
+     zip is a compression and file packaging  utility  for  Unix,
+     VMS,  MSDOS,  OS/2,  Windows NT, Minix, Atari and Macintosh.
+     It is analogous to a combination of the UNIX commands tar(1)
+     and  compress(1)  and  is compatible with PKZIP (Phil Katz's
+     ZIP for MSDOS systems).
+
+     A companion program (unzip(1L)), unpacks zip archives.   The
+     zip  and  unzip(1L) programs can work with archives produced
+     by PKZIP, and PKZIP and PKUNZIP can work with archives  pro-
+     duced  by  zip.   zip version 2.0.1 is compatible with PKZIP
+     2.04 Note that PKUNZIP 1.10 cannot extract files produced by
+     PKZIP 2.04 or zip 2.0.1. You must use PKUNZIP 2.04g or unzip
+     5.0p1 (or later versions) to extract them.
+
+     For a brief help on zip and unzip, run each without specify-
+     ing any parameters on the command line.
+
+     The program is useful for packaging a set of files for  dis-
+     tribution; for archiving files; and for saving disk space by
+     temporarily compressing unused files or directories.
+
+     The zip program puts one or more  compressed  files  into  a
+     single  zip  archive, along with information about the files
+     (name, path, date, time of  last  modification,  protection,
+     and  check information to verify file integrity).  An entire
+     directory structure can be packed into a zip archive with  a
+     single command.  Compression ratios of 2:1 to 3:1 are common
+     for text files.  zip has one compression method  (deflation)
+     and can also store files without compression.  zip automati-
+     cally chooses the better of the two  for  each  file  to  be
+     compressed.
+
+     When given the name of an existing  zip  archive,  zip  will
+     replace  identically named entries in the zip archive or add
+     entries for new names.  For example, if foo.zip  exists  and
+     contains foo/file1 and foo/file2, and the directory foo con-
+     tains the files foo/file1 and foo/file3, then:
+
+          zip -r foo foo
+
+     will replace foo/file1  in  foo.zip  and  add  foo/file3  to
+     foo.zip.  After this, foo.zip contains foo/file1, foo/file2,
+     and foo/file3, with foo/file2 unchanged from before.
+
+     If the file list is specified as -@, zip takes the  list  of
+     input  files  from  standard input.  Under UNIX, this option
+     can be used to  powerful  effect  in  conjunction  with  the
+     find(1)  command.   For example, to archive all the C source
+     files in the current directory and its subdirectories:
+
+          find . -name "*.[ch]" -print | zip source -@
+
+     (note that the pattern must be quoted to keep the shell from
+     expanding  it).  zip will also accept a single dash ("-") as
+     the zip file name, in which case it will write the zip  file
+     to  standard  output,  allowing  the  output  to be piped to
+     another program. For example:
+
+          zip -r - . | dd of=/dev/nrst0 obs=16k
+
+     would write the zip output  directly  to  a  tape  with  the
+     specified  block  size  for  the  purpose  of backing up the
+     current directory.
+
+     zip also accepts a single dash ("-") as the name of  a  file
+     to  be  compressed, in which case it will read the file from
+     standard input, allowing zip to take input from another pro-
+     gram. For example:
+
+          tar cf - . | zip backup -
+
+     would compress the output of the tar command for the purpose
+     of backing up the current directory. This generally produces
+     better compression than the previous example  using  the  -r
+     option, because zip can take advantage of redundancy between
+     files. The backup can be restored using the command
+
+          unzip -p backup | tar xf -
+
+     When no zip file name is given and stdout is not a terminal,
+     zip acts as a filter, compressing standard input to standard
+     output.  For example,
+
+          tar cf - . | zip | dd of=/dev/nrst0 obs=16k
+
+     is equivalent to
+
+          tar cf - . | zip - - | dd of=/dev/nrst0 obs=16k
+
+     zip archives created in this manner can  be  extracted  with
+     the  program  funzip which is provided in the unzip package,
+     or by gunzip which is provided  in  the  gzip  package.  For
+     example:
+
+     dd if=/dev/nrst0  ibs=16k | funzip | tar xvf -
+
+     When changing an existing zip archive, zip will write a tem-
+     porary  file with the new contents, and only replace the old
+     one when the process of creating the new  version  has  been
+     completed without error.
+
+     If the name of the zip archive does not  contain  an  exten-
+     sion,  the extension .zip is added. If the name already con-
+     tains an extension other than .zip the existing extension is
+     kept unchanged.
+
+OPTIONS
+     -b path
+          Use the specified path for the temporary  zip  archive.
+          For example:
+
+               zip -b /tmp stuff *
+
+          will put the temporary zip  archive  in  the  directory
+          /tmp,  copying  over stuff.zip to the current directory
+          when done. This option is only useful when updating  an
+          existing  archive,  and the file system containing this
+          old archive does not have enough space to hold both old
+          and new archive at the same time.
+
+     -c   Add one-line comments for each file.   File  operations
+          (adding, updating) are done first, and the user is then
+          prompted for a one-line comment for each  file.   Enter
+          the  comment  followed by return, or just return for no
+          comment.
+
+     -d   Remove (delete) entries from a zip archive.  For  exam-
+          ple:
+
+               zip -d foo foo/tom/junk foo/harry/\* \*.o
+
+          will remove the entry foo/tom/junk, all  of  the  files
+          that  start  with foo/harry/, and all of the files that
+          end with .o (in any path).  Note  that  shell  pathname
+          expansion  has been inhibited with backslashes, so that
+          zip can see the asterisks, enabling zip to match on the
+          contents  of the zip archive instead of the contents of
+          the current directory.
+
+          Under MSDOS, -d is case sensitive when it matches names
+          in  the  zip archive.  This requires that file names be
+          entered in upper case if they were zipped by  PKZIP  on
+          an MSDOS system.
+
+     -D   Do not create entries in the  zip  archive  for  direc-
+          tories.   Directory  entries  are created by default so
+          that their attributes can be saved in the zip  archive.
+          The  environment  variable ZIPOPT can be used to change
+          the default options. For example under Unix with sh:
+
+               ZIPOPT="-D"; export ZIPOPT
+
+          (The variable ZIPOPT can be used for any option  except
+          -i  and -x and can include several options.) The option
+          -D is a shorthand for -x "*/" but the latter cannot  be
+          set as default in the ZIPOPT environment variable.
+
+     -e   Encrypt the contents of the zip archive using  a  pass-
+          word  which is entered on the terminal in response to a
+          prompt (this will not be echoed; if standard  error  is
+          not a tty, zip will exit with an error).
+
+     -ee  Encrypt contents, prompting  for  the  password  twice,
+          checking  that  the  two  entries  are identical before
+          using the password.
+
+     -f   Replace (freshen) an existing entry in the zip  archive
+          only  if  it  has  been modified more recently than the
+          version already in the zip archive; unlike  the  update
+          option  (-u)  this  will  not  add  files  that are not
+          already in the zip archive.  For example:
+
+               zip -f foo
+
+          This command should be run from the same directory from
+          which  the  original  zip  command was run, since paths
+          stored in zip archives are always relative.
+
+     -F   Fix the zip archive. This option can be  used  if  some
+          portions   of  the  archive  are  missing.  It  is  not
+          guaranteed to work, so you MUST make a  backup  of  the
+          original archive first.
+
+          When doubled as  in  -FF  the  compressed  sizes  given
+          inside  the  damaged  archive  are  not trusted and zip
+          scans for special signatures  to  identify  the  limits
+          between  the  archive  members.  The  single -F is more
+          reliable if the archive is not too  much  damaged,  for
+          example  if  it  has  only  been truncated, so try this
+          option first.
+
+          Neither option will recover  archives  that  have  been
+          incorrectly   transferred  in  ascii  mode  instead  of
+          binary. After the repair, the -t option  of  unzip  may
+          show  that some files have a bad CRC. Such files cannot
+          be recovered; you can  remove  them  from  the  archive
+          using the -d option of zip.
+
+     -g   Grow (append to) the specified zip archive, instead  of
+          creating  a  new  one.  If  this  operation  fails, zip
+          attempts to restore the archive to its original  state.
+          If the restoration fails, the archive might become cor-
+          rupted.
+
+     -h   Display the zip help information (this also appears  if
+          zip is run with no arguments).
+
+     -i files
+          Include only the specified files, as in:
+
+               zip -r foo . -i \*.c
+
+          which will include only the files that end in .c in the
+          current  directory  and  its  subdirectories. (Note for
+          PKZIP users: the equivalent command is
+
+               pkzip -r foo *.c
+
+          PKZIP does not allow  recursion  in  directories  other
+          than  the  current one.) The backslash avoids the shell
+          filename substitution, so that  the  name  matching  is
+          performed by zip at all directory levels.
+
+     -j   Store just the name of a saved file  (junk  the  path),
+          and  do not store directory names. By default, zip will
+          store the full path (relative to the current path).
+
+     -k   Attempt to convert the names and paths  to  conform  to
+          MSDOS,  store  only  the MSDOS attribute (just the user
+          write attribute from UNIX), and mark the entry as  made
+          under MSDOS (even though it was not); for compatibility
+          with PKUNZIP under MSDOS which  cannot  handle  certain
+          names such as those with two dots.
+
+     -l   Translate the Unix end-of-line character  LF  into  the
+          MSDOS  convention CR LF. This option should not be used
+          on binary files.  This option can be used  on  Unix  if
+          the  zip  file  is intended for PKUNZIP under MSDOS. If
+          the input files already contain CR LF, this option adds
+          an extra CR. This ensure that unzip -a on Unix will get
+          back an exact copy of the original file,  to  undo  the
+          effect of zip -l.
+
+     -ll  Translate the MSDOS end-of-line CR  LF  into  Unix  LF.
+          This  option  should not be used on binary files.  This
+          option can be used on MSDOS if the zip file is intended
+          for unzip under Unix.
+
+     -L   Display the zip license.
+
+     -m   Move the specified files into the  zip  archive;  actu-
+          ally,  this  deletes the target directories/files after
+          making  the  specified  zip  archive.  If  a  directory
+          becomes empty after removal of the files, the directory
+          is also removed. No deletions are done  until  zip  has
+          created  the archive without error.  This is useful for
+          conserving disk space, but is potentially dangerous  so
+          it  is  recommended to use it in combination with -T to
+          test the archive before removing all input files.
+
+     -n suffixes
+          Do not attempt to compress files named with  the  given
+          suffixes. Such files are simply stored (0% compression)
+          in the output zip file, so that zip doesn't  waste  its
+          time   trying  to  compress  them.   The  suffixes  are
+          separated by either colons or semicolons.  For example:
+
+               zip -rn .Z:.zip:.tiff:.gif:.snd  foo foo
+
+          will copy everything from foo into  foo.zip,  but  will
+          store  any  files that end in .Z, .zip, .tiff, .gif, or
+          .snd without trying to compress them (image  and  sound
+          files  often  have  their  own  specialized compression
+          methods).  By default, zip does not compress files with
+          extensions  in  the  list  .Z:.zip:.zoo:.arc:.lzh:.arj.
+          Such files are stored directly in the  output  archive.
+          The  environment  variable ZIPOPT can be used to change
+          the default options. For example under Unix with csh:
+
+               setenv ZIPOPT "-n .gif:.zip"
+
+          To attempt compression on all files, use:
+
+               zip -n : foo
+
+          The  maximum  compression  option  -9   also   attempts
+          compression on all files regardless of extension.
+
+     -o   Set the "last modified" time of the zip archive to  the
+          latest  (oldest)  "last  modified" time found among the
+          entries in the zip archive.  This can be  used  without
+          any other operations, if desired.  For example:
+
+          zip -o foo
+
+          will change the last modified time of  foo.zip  to  the
+          latest time of the entries in foo.zip.
+
+     -q   Quiet mode; eliminate informational messages  and  com-
+          ment  prompts.   (Useful, for example, in shell scripts
+          and background tasks).
+
+     -r   Travel the directory structure recursively;  for  exam-
+          ple:
+
+               zip -r foo foo
+
+          In this case, all the files and directories in foo  are
+          saved  in  a zip archive named foo.zip, including files
+          with names starting with ".", since the recursion  does
+          not  use  the shell's file-name substitution mechanism.
+          If you wish to include only a specific  subset  of  the
+          files  in directory foo and its subdirectories, use the
+          -i option to the specify the pattern  of  files  to  be
+          included.   You  should  not use -r with the name ".*",
+          since that matches ".." which will attempt  to  zip  up
+          the parent directory (probably not what was intended).
+
+     -S   Include system and hidden files. This option is  effec-
+          tive on some systems only; it is ignored on Unix.
+
+     -t mmddyy
+          Do not operate on files modified prior to the specified
+          date,  where  mm  is the month (0-12), dd is the day of
+          the month (1-31), and yy are the last two digits of the
+          year.  For example:
+
+               zip -rt 120791 infamy foo
+
+          will add all the files in foo  and  its  subdirectories
+          that were last modified on or after 7 December 1991, to
+          the zip archive infamy.zip.
+
+     -T   Test the integrity of the new zip file.  If  the  check
+          fails,  the  old zip file is unchanged and (with the -m
+          option) not input files are removed.
+
+     -u   Replace (update) an existing entry in the  zip  archive
+          only  if  it  has  been modified more recently than the
+          version already in the zip archive.  For example:
+
+               zip -u stuff *
+
+          will add any new files in the  current  directory,  and
+          update any files which have been modified since the zip
+          archive stuff.zip was last created/modified (note  that
+          zip will not try to pack stuff.zip into itself when you
+          do this).
+
+          Note that the -u option with no arguments acts like the
+          -f (freshen) option.
+
+     -v   Verbose  mode.  Display  a  progress  indicator  during
+          compression.
+
+     -V   Save VMS file attributes. This option is  available  on
+          VMS  only;  zip  archives created with this option will
+          generally not be usable on other systems.
+
+     -w   Append the version number of the  files  to  the  name,
+          including  multiple  versions  of  files.   (VMS  only;
+          default: use only the most recent version of  a  speci-
+          fied file).
+
+     -x files
+          Explicitly exclude the specified files, as in:
+
+               zip -r foo foo -x \*.o
+
+          which will include the contents of foo in foo.zip while
+          excluding  all the files that end in .o.  The backslash
+          avoids the shell filename  substitution,  so  that  the
+          name matching is performed by zip at all directory lev-
+          els.
+
+     -y   Store symbolic  links  as  such  in  the  zip  archive,
+          instead of compressing and storing the file referred to
+          by the link (UNIX only).
+
+     -z   Prompt for a multi-line  comment  for  the  entire  zip
+          archive.   The  comment  is  ended by a line containing
+          just a period, or an end of file condition (^D on UNIX,
+          ^Z  on  MSDOS,  OS/2, and VAX/VMS).  The comment can be
+          taken from a file:
+
+               zip -z foo < foowhat
+
+     -#   Regulate the speed of compression using  the  specified
+          digit  #,  where -0 indicates no compression (store all
+          files), -1 indicates  the  fastest  compression  method
+          (less   compression)   and  -9  indicates  the  slowest
+          compression method (optimal  compression,  ignores  the
+          suffix list). The default compression level is -6.
+
+     -@   Take the list of input files from standard input.
+
+     -$   Include the volume label for the the drive holding  the
+          first  file  to  be compressed.  If you want to include
+          only the volume label or to force a specific drive, use
+          the drive name as first file name, as in:
+
+               zip -$ foo a: c:bar
+
+          This option is effective on some  systems  only  (MSDOS
+          and OS/2); it is ignored on Unix.
+
+EXAMPLES
+     The simplest example:
+
+          zip stuff *
+
+     creates the archive stuff.zip (assuming it does  not  exist)
+     and  puts  all  the files in the current directory in it, in
+     compressed form (the .zip  suffix  is  added  automatically,
+     unless  that archive name given contains a dot already; this
+     allows the explicit specification of other suffixes).
+
+     Because of the way the  shell  does  filename  substitution,
+     files  starting  with "." are not included; to include these
+     as well:
+
+          zip stuff .* *
+
+     Even this will  not  include  any  subdirectories  from  the
+     current directory.
+
+     To zip up an entire directory, the command:
+
+          zip -r foo foo
+
+     creates the archive foo.zip, containing all  the  files  and
+     directories  in  the  directory foo that is contained within
+     the current directory.
+
+     You may want to make a zip archive that contains  the  files
+     in  foo, without recording the directory name, foo.  You can
+     use the -j option to leave off the paths, as in:
+
+          zip -j foo foo/*
+
+     If you are short on disk space, you might  not  have  enough
+     room to hold both the original directory and the correspond-
+     ing compressed zip archive.  In this case,  you  can  create
+     the  archive  in steps using the -m option.  If foo contains
+     the subdirectories tom, dick, and harry, you can:
+
+          zip -rm foo foo/tom
+          zip -rm foo foo/dick
+          zip -rm foo foo/harry
+
+     where the first command creates foo.zip, and  the  next  two
+     add  to it.  At the completion of each zip command, the last
+     created archive is deleted, making room  for  the  next  zip
+     command to function.
+
+PATTERN MATCHING
+     This section applies only to UNIX.   Watch  this  space  for
+     details on MSDOS and VMS operation.
+
+     The UNIX shells (sh(1) and csh(1)) do filename  substitution
+     on command arguments.  The special characters are:
+
+     ?    match any single character
+
+     *    match any number of characters (including none)
+
+     []   match any character in the range indicated  within  the
+          brackets (example: [a-f], [0-9]).
+
+     When these characters are encountered (without being escaped
+     with  a  backslash or quotes), the shell will look for files
+     relative to the current path that  match  the  pattern,  and
+     replace the argument with a list of the names that matched.
+
+     The zip program can do the same matching on names  that  are
+     in  the zip archive being modified or, in the case of the -x
+     (exclude) or -i (include) options, on the list of  files  to
+     be  operated  on, by using backslashes or quotes to tell the
+     shell not to do the name expansion.  In  general,  when  zip
+     encounters a name in the list of files to do, it first looks
+     for the name in the file system.  If it finds  it,  it  then
+     adds it to the list of files to do.  If it does not find it,
+     it looks for the name in the zip archive being modified  (if
+     it  exists), using the pattern matching characters described
+     above, if present.  For each match, it will add that name to
+     the  list of files to be processed, unless this name matches
+     one given with the -x option, or does  not  match  any  name
+     given with the -i option.
+
+     The pattern matching includes the path, and so patterns like
+     \*.o  match  names that end in ".o", no matter what the path
+     prefix is.  Note that the backslash must precede every  spe-
+     cial  character  (i.e. ?*[]), or the entire argument must be
+     enclosed in double quotes ("").
+
+     In general, use backslash to make zip do the pattern  match-
+     ing with the -f (freshen) and -d (delete) options, and some-
+     times after the  -x  (exclude)  option  when  used  with  an
+     appropriate operation (add, -u, -f, or -d).
+
+SEE ALSO
+     compress(1), shar(1L), tar(1), unzip(1L), gzip(1L)
+
+BUGS
+     zip 2.0.1 is not compatible with PKUNZIP 1.10. Use  zip  1.1
+     to produce zip files which can be extracted by PKUNZIP 1.10.
+
+     zip files produced by zip 2.0.1 must not be updated  by  zip
+     1.1  or  PKZIP 1.10, if they contain encrypted members or if
+     they have been produced in a pipe or on a non-seekable  dev-
+     ice.  The  old  versions  of  zip  or  PKZIP would create an
+     archive with an incorrect format.  The old versions can list
+     the  contents  of  the zip file but cannot extract it anyway
+     (because of the new compression algorithm).  If you  do  not
+     use  encryption  and use regular disk files, you do not have
+     to care about this problem.
+
+     Under VMS, not all of the odd file formats are treated prop-
+     erly.   Only stream-LF format zip files are expected to work
+     with zip.  Others can be converted using Rahul Dhesi's  BILF
+     program.  This version of zip handles some of the conversion
+     internally.  When using Kermit to transfer  zip  files  from
+     Vax  to  MSDOS, type "set file type block" on the Vax.  When
+     transfering from MSDOS to Vax, type "set file type fixed" on
+     the  Vax.   In  both  cases,  type "set file type binary" on
+     MSDOS.
+
+     Under VMS, zip hangs for file specification that uses DECnet
+     syntax foo::*.*.
+
+     On OS/2, zip cannot match some names, such as those  includ-
+     ing  an  exclamation  mark or a hash sign.  This is a bug in
+     OS/2 itself: the 32-bit DosFindFirst/Next  don't  find  such
+     names.   Other programs such as GNU tar are also affected by
+     this bug.
+
+     Under OS/2, the amount of External Attributes  displayed  by
+     DIR is (for compatibility) the amount returned by the 16-bit
+     version of DosQueryPathInfo(). Otherwise OS/2  1.3  and  2.0
+     would  report  different  EA sizes when DIRing a file.  How-
+     ever,  the  structure  layout   returned   by   the   32-bit
+     DosQueryPathInfo() is a bit different, it uses extra padding
+     bytes and link pointers (it's a linked  list)  to  have  all
+     fields  on  4-byte boundaries for portability to future RISC
+     OS/2 versions. Therefore the value reported  by  zip  (which
+     uses  this  32-bit-mode  size) differs from that reported by
+     DIR.  zip stores the 32-bit format for portability, even the
+     16-bit  MS-C-compiled  version  running on OS/2 1.3, so even
+     this one shows the 32-bit-mode size.
+
+AUTHORS
+     Copyright (C) 1990-1993 Mark Adler, Richard B. Wales,  Jean-
+     loup  Gailly,  Kai  Uwe  Rommel,  Igor Mandrichenko and John
+     Bush.  Permission is granted to any individual  or  institu-
+     tion  to use, copy, or redistribute this software so long as
+     all of the original files are included, that it is not  sold
+     for profit, and that this copyright notice is retained.
+
+     LIKE ANYTHING ELSE THAT'S FREE, ZIP AND ITS ASSOCIATED UTIL-
+     ITIES  ARE  PROVIDED  AS IS AND COME WITH NO WARRANTY OF ANY
+     KIND, EITHER EXPRESSED OR IMPLIED.  IN  NO  EVENT  WILL  THE
+     COPYRIGHT  HOLDERS  BE LIABLE FOR ANY DAMAGES RESULTING FROM
+     THE USE OF THIS SOFTWARE.
+
+     Please  send  bug  reports  and  comments   by   email   to:
+     zip-bugs@wkuvx1.bitnet.  For bug reports, please include the
+     version of zip, the make options used  to  compile  it,  the
+     machine  and operating system in use, and as much additional
+     information as possible.
+
+ACKNOWLEDGEMENTS
+     Thanks to R. P. Byrne  for  his  Shrink.Pas  program,  which
+     inspired  this  project, and from which the shrink algorithm
+     was stolen; to Phil Katz for placing in  the  public  domain
+     the  zip  file format, compression format, and .ZIP filename
+     extension, and for accepting minor changes to the file  for-
+     mat; to Steve Burg for clarifications on the deflate format;
+     to Haruhiko Okumura and Leonid Broukhis for  providing  some
+     useful  ideas for the compression algorithm; to Keith Peter-
+     sen, Rich Wales, Hunter Goatley and Mark Adler for providing
+     a  mailing  list and ftp site for the INFO-ZIP group to use;
+     and most importantly, to the INFO-ZIP group  itself  (listed
+     in  the file infozip.who) without whose tireless testing and
+     bug-fixing efforts a portable zip would not have been possi-
+     ble.   Finally  we  should  thank (blame) the first INFO-ZIP
+     moderator, David Kirschbaum, for getting us into  this  mess
+     in  the first place.  The manual page was rewritten for UNIX
+     by R. P. C. Rodgers.

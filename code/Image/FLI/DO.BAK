@@ -1,0 +1,2 @@
+bcc -ml -O2 fli.cpp d:\drv\fileclss.cpp d:\drv\viddrv.lib > %1
+

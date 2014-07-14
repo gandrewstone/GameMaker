@@ -1,0 +1,100 @@
+Copyright (C) 1990-1993 Mark Adler, Richard B. Wales, Jean-loup Gailly,
+Kai Uwe Rommel and Igor Mandrichenko.
+Permission is granted to any individual or institution to use, copy, or
+redistribute this software so long as all of the original files are included
+unmodified, that it is not sold for profit, and that this copyright notice
+is retained.
+
+This file is a complete list of files mentioned in the above copyright
+notice.  Some of the files in this list explicitly state in their text
+that they are public domain or not copyrighted.  These files can be
+distributed separately and are marked below with asterisks.
+
+file            what it is
+----            ----------
+Makefile        Unix make file.
+README          What zip is; general information.
+Where           where Zip/UnZip and encryption/decryption support can be found
+algorith.doc    Description of the deflation algorithm
+bits.c          Output variable-length bit strings.
+configure       Shell script for automatic configuration.
+contents        This file.
+crypt.c         * Dummy encryption sources.
+crypt.h         * Dummy encryption sources.
+deflate.c       Deflation compression method
+fileio.c        System dependent routines (most of them anyway).
+globals.c       Global variables.
+history         List of changes in the versions leading up to this one.
+infozip.who     List of contributors to the portable Zip project.
+install.doc     Documentation for Zip compilation and installation
+makecrc.c       * Generate the CRC table in util.c and shrink.c.
+match.s         Optimized 386 version of longest_match() (Unix & OS/2)
+mktime.c        Version of mktime for systems without it (currently unused)
+revision.h      Contains the program version number and revision date.
+tailor.h        * Tailors the compilation to the system being compiled on.
+trees.c         Encode source values using variable-length binary code trees.
+util.c          Miscellaneous utility routines.
+zip.1           Source for the Zip man page (zip.doc).
+zip.c           Main routine for Zip.
+zip.doc         Documentation for Zip (zip.1 processed).
+zip.h           Header for all Zip modules.
+zipcloak.c      * Dummy encryption sources.
+ziperr.h        Error messages in Zip.
+zipfile.c       Zip file format handler.
+zipgrep         Shell script to search a string or pattern in a zip file
+zipgrep.1       Man page for zipgrep
+zipnote.c       Main routine for ZipNote.
+zipsplit.c      Main routine for ZipSplit.
+zipup.c         Applies deflate or store methods to compress an entry.
+amiga/LMKfile         Amiga makefile for SAS/C version 5.10b
+amiga/SMakeFile       Amiga makefile for SAS/C version 6.x
+amiga/amiga.h         Amiga specific code
+amiga/amiga.c         Amiga specific code
+amiga/filedate.c      Amiga specific "set file time"  routine
+amiga/makefile.azt    Amiga makefile for Manx Aztec C version 5.2
+amiga/match.a         Optimized 68000 version of longest_match().
+amiga/match_68.a      Optimized 68020 version of longest_match().
+amiga/stat.c          Manx Aztec C callable version of stat()
+amiga/z-stat.h        Manx Aztec include file for stat()
+atari/atari.c         Atari ST specific routines
+atari/makefile.st     Turbo C makefile
+atari/stzip.lnk       Linker command file for zip
+atari/stzipn.lnk      Linker command file for zipnote
+atari/stzips.lnk      Linker command file for zipsplit
+human68k/Makefile.gcc Makefile for the Human68k system.
+human68k/human68k.c   Human68K specific routines
+human68k/match.s      Optimized 68k version of longest_match().
+mac/macfile.c         Macintosh specific routines
+mac/macstat.c         Macintosh specific routines
+mac/macstat.h         Macintosh specific header file
+msdos/makefile.bor    MSDOS Borland C++ make file.
+msdos/makefile.tc     MSDOS Turboc 2.0 make file.
+msdos/makefile.gcc    MSDOS DJGCC make file.
+msdos/makefile.msc    MSDOS Microsoft C make file.
+msdos/match.asm       Optimized 8086 version of longest_match().
+nt/makefile.nt        Makefile for Windows NT
+nt/nt.c               NT specific routines
+nt/ntzip.h            NT specific header file
+os2/makefile.os2      OS/2 make file.
+os2/match32.asm       Optimized 386 version of longest_match()
+os2/os2zip.c          * Directory routines for OS/2.
+os2/os2zip.h          * Definitions of functions in os2zip.c.
+os2/zip.def           OS/2 def file for Zip.
+os2/zip16.def         OS/2 def file for Zip (16 bit version)
+tops20/make.mic       TOPS 20 command file
+tops20/rename.mic     TOPS 20 command file
+vms/VMSmunch.c        file manipulation, adapted from Joe Meadows' FILE
+vms/VMSmunch.h        definitions for VMSmunch.c
+vms/descrip.mms       VMS makefile
+vms/make_gcc.com      VMS command file for compilation with gcc.
+vms/make_vaxc.com     VMS command file for compilation with Vax C.
+vms/makefile.vms      VMS makefile for use with Todd Aven's MAKE/VMS
+vms/vaxclib.opt       VMS option file
+vms/vms.c             VMS specific code
+vms/vms_zip.rnh       VMS manual page
+
+All of the files are in Unix (LF only) format. On MSDOS and OS/2
+systems, you can use the -a option of unzip to convert the source
+files to CRLF format.  This is only necessary if you use Turbo/Borland C
+-- they will compile as is with Microsoft C. You should be able to
+find unzip the same place you found this (see the file 'Where').

@@ -1,0 +1,244 @@
+
+
+           +--------------------------------------------------------+
+           |                                                        |
+           |  LIST OF OTHER PROGRAMS ETC. MADE BY SVERRE H. HUSEBY  |
+           |                                                        |
+           |      (Names in parentheses, are compressed files.)     |
+           |                                                        |
+           +--------------------------------------------------------+
+
+
+        ADJCLOCK    (ADCLKxxx)
+        ========    ==========
+
+        Program for automatic (non-resident) PC-clock adjustment. When
+        called periodically (for instance from AUTOEXEC.BAT), the program
+        tries to compensate for clock inaccuracy.
+
+        Requires: AT (286 or higher)
+        Size:     40 kb.
+
+
+
+        MOUSEBUF    (MOUSEBxx)
+        ========    ==========
+
+        Mousebased cut and paste in DOS' textmode programs. Highlight an
+        area in one program, and import it into another.
+
+        Requires: Microsoft compatible mouse driver.
+        Size:     10 kb.
+
+
+
+        DOSED    (DOSEDxxx)
+        =====    ==========
+
+        Resident program that gives extended operations on the DOS
+        commandline. The three new functions are:
+
+            * Editing
+            * History, recall previous commands
+            * Filename completion (with displaying of matching files)
+
+        Size: 25 kb.
+
+
+
+        FIVEROW    (5ROWxxx)
+        =======    =========
+
+        Simple five-in-a-row game (gomoku) for Windows.
+
+        Requires: Windows 3.1
+        Size:     50 kb.
+
+
+
+        GAMES    (SHH_GAME)
+        =====    ==========
+
+        Two small games, written in assemblylanguage:
+
+          SNAKE3: Traditional snake game, where the goal is to eat fruit
+            in order to grow. Has some nice extras not usually found in
+            this kind of games.
+
+          TETRIS: Tetris with no fancy backgrounds or space-occypying
+            effects.
+
+        Requires: EGA
+        Size:     30 kb.
+
+
+
+        GD   (GDxxx)
+        ==   =======
+
+        Quickly move to another directory. Maintains a hidden file in the
+        root directory, containing the treestructure of the drive. Give
+        parts of a directoryname, and GD finds it!
+
+        Size: 30 kb.
+
+
+
+        GIFSAVE    (GIFSAVE)
+        =======    =========
+
+        C-sourcecode for saving GIF-images. Originally written for
+        Borland C, but tested on Linux and SunOS (Unix) as well, so it
+        should be quite portable.
+        Note: This is for _saving_ images only, no loading!
+
+        Size: 50 kb.
+
+
+
+        Line Morph    (LMRPHxxx)
+        ==========    ==========
+
+        Screen saver for Windows. Displays line-figures that are
+        transformed into other figures.
+        Idea and mathematics: Glenn Terje Lines.
+
+        Requires: Windows 3.1, and a quite fast PC to avoid flickering.
+        Size:     50 kb.
+
+
+
+        MT32 Melodies    (SHH_BAL2)
+        =============    ==========
+
+        My own compositions for Roland MT-32, CM-32L or compatible synt,
+        using the sequencer program Ballade from DynaWare.
+
+        Requires: MPU-401 MIDI-card.
+                  Roland MT-32, CM-32L or compatible synth.
+                  The sequencer program Ballade.
+        Size:     720 kb.
+
+
+
+        MT32PROG    (SHH_MT32)
+        ========    ==========
+
+        Small program to change instrument on a Roland MT-32 or CM-32L.
+        No need to remember instrument codes, or start a huge sequencer
+        program.
+
+        Requires: MPU-401 MIDI-card.
+                  Roland MT-32, CM-32L or compatible synth.
+                  VGA
+        Size:     60 kb.
+
+
+
+        POPMENU    (POPMNUxx)
+        =======    ==========
+
+        Pop-up menu for Windows. Click on Windows' background with the
+        right mousebutton to pop up a user configurable menu. Unlimited
+        number of submenus. Why use Program Manager???
+
+        Requires: Windows 3.1
+        Size:     60 kb.
+
+
+
+        SHH ED    (SHHEDxxx)
+        ======    ==========
+
+        Simple Borland/WordStar-like texteditor. This is the editor I use
+        for programming etc. The program is only 17 kb, and thus loads
+        fast. Written totally in assembly.
+
+        Size: 45 kb.
+
+
+
+        TGASAVE    (TGASAVE)
+        =======    =========
+
+        C-sourcecode for saving uncompressed, 24 bit TGA-images. Originally
+        written for Borland C, but tested on Linux and SunOS (Unix) as
+        well, so it should be quite portable.
+        Note: This is for _saving_ images only, no loading!
+
+        Size: 40 kb.
+
+
+
+        WFVIEW    (WFVIEWxx)
+        ======    ==========
+
+        Windows File Viewer. Look at textfiles in Windows. Can be installed
+        directly on the menu of File Manager, to easily view highlighted
+        files.
+
+        Requires: Windows 3.1
+        Size:     80 kb.
+
+
+
+        WHICH    (WHICHxxx)
+        =====    ==========
+
+        This program is used to find locations of executables. It will look
+        for the program the way DOS does, by searching the PATH for .COM,
+        .EXE or .BAT -files (unless explicitely specified). It will also
+        recognize commands internal to DOS 6.2.
+
+        Size: 18 kb.
+
+
+
+        XD    (XDxxx)
+        ==    =======
+
+        Replacement for DOS' DIR-command, giving the user greater flexi-
+        bility specifying how the output should be formatted. Multi-column,
+        multi-color.
+
+        Size: 20 kb.
+
+
+
+        XDSKCPY    (XDCPYxxx)
+        =======    ==========
+
+        Copies entire diskettes in one drive, possibly using Extended
+        Memory (XMS) and harddisk space for buffering to avoid disk-
+        swapping. Also makes several copies of one diskette with just
+        a single read of the source diskette.
+
+        Size: 40 kb.
+
+
+
+
+                                  --- O ---
+
+
+
+        Most of these programs should be available somewhere, try for
+        instance ftp to garbo.uwasa.fi
+
+
+
+                                  --- O ---
+
+
+
+        If you find any of my programs useful, you could donate some
+        money to your favourite humanitarian or anti-war organisation.
+        Note that it's entirely up to you if you want to do this,
+        since my programs are free.
+
+
+
+                                           Have a nice life!
+
+                                           Sverre.
+

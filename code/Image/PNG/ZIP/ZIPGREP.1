@@ -1,0 +1,18 @@
+.TH ZIPGREP 1
+.SH NAME
+zipgrep \- search possibly zip files for a regular expression
+.SH SYNOPSIS
+.B zipgrep
+[ egrep_options ]
+.BI  [\ -e\ ] " pattern"
+.IR zipfile\ member ".\|.\|."
+.SH DESCRIPTION
+.IR  Zipgrep
+is used to invoke the
+.I egrep
+command on some or all members of a zip archive. All options specified are
+passed to
+.I egrep.
+If no member is specified, then all members of the zip archive are searched.
+.SH "SEE ALSO"
+grep(1), egrep(1), fgrep(1), zip(1), unzip(1)

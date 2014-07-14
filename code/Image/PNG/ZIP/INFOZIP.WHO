@@ -1,0 +1,131 @@
+These members of the INFO-ZIP group contributed to the development and
+testing of portable Zip.  They are responsible for whatever works in
+Zip.  Whatever doesn't work is solely the fault of the authors of Zip
+(Mark Adler, Rich Wales, Jean-loup Gailly, Kai Uwe Rommel, Igor
+Mandrichenko and John Bush). If you have contributed and your name has
+been forgotten, please send a reminder to the zip-bugs address given
+in the Readme file. The names are given here in alphabetical order,
+because it's impossible to classify them by importance of the
+contribution. Some have made a complete port to a new target, some
+have provided a one line fix. All are to be thanked.
+
+Mark Adler              madler@tybalt.caltech.edu       NeXT 2.x
+Glenn J. Andrews        oper1%drcv06.decnet@drcvax.af.mil       VAX VMS
+James Van Artsdalen     james@raid.dell.com             bug report
+Eric Backus             ericb@lsid.hp.com               bug report
+Mark E. Becker          mbecker@cs.uml.edu              bug report
+Michael Bernardi        mike@childsoc.demon.co.uk       RS6000
+Tom Betz                marob!upaya!tbetz@phri.nyu.edu  SCO Xenix 2.3.1
+James Birdsall          jwbirdsa@picarefy.com           AT&T 3B1
+Michael Bolton          bolton@vaxc.erim.org            VAX/VMS
+Wim Bonner              27313853@WSUVM1.CSC.WSU.EDU     HP 9000/840a HPUX
+Paul Borman             prb@cray.com                    Cray-X/YMP,2 UNICOS 6-8
+Scott Briggs            briggs@nashua.progress.com      Windows NT
+Leslie C. Brown         lbrown@BRL.MIL                  Pyramid MIS-4
+Ralf Brown              ralf@b.gp.cs.cmu.edu            Pyramid MIS-4
+Jeremy Daniel Buhler    jbuhler@owlnet.rice.edu         BC++
+John Bush               john.bush@east.sun.com          Amiga (SAS/C)
+Pietro Caselli          zaphod@petruz.sublink.org       Minix 1.5.10
+Bill Davidsen           davidsen@crdos1.crd.ge.com      Xenix (on what?)
+Daniel Deimert          daniel@pkmab.se		        zeus3.21 Zilog S8000
+Matthew J. D'Errico     doc@magna.com                   Bull
+James P. Dugal          jpd@usl.edu                     Pyramid 90X OSx4.1
+"Evil Ed"               esaffle@gmuvax2.gmu.edu         Ulrix-32 V3.1 (Rev. 9)
+Eric                    esr@snark.thyrsus.com           Unix
+David A. Feinleib       t-davefe@microsoft.com          Windows NT
+Greg Flint              afc@klaatu.cc.purdue.edu        ETA-10P* hybrid Sys V
+Jeff Foy                jfoy@glia.biostr.washington.edu IRIX Sys V Rel 3.3.1
+Mike Freeman            freeman@watsun.cc.columbia.edu  Vax VMS
+Kevin M. Fritz          kmfritz@apgea.army.mil          Turbo C++ 1.0
+Jean-loup Gailly        jloup@chorus.fr                 MS-DOS Microsoft C 5.1
+Scott D. Galloway       sgallowa@letterkenn-emh1.army.mil   Sperry 5000 SysV.3
+Wayne R. Graves         graves@csa2.lbl.gov             Vax VMS
+George Grimes           grimes@netcom.com               Apollo Domain SR10.4
+Hunter Goatley          goathunter@WKUVX1.BITNET        Vax VMS
+Arnt Gulbrandsen        agulbra@pvv.unit.no             Linux
+David Gundlach          david@rolf.stat.uga.edu         Sun SS1+ SunOS 4.1
+Peter Gutmann           pgut1@cs.aukuni.ac.nz           bug report
+Charles Hannum          mycroft@ai.mit.edu              bug report
+Bob Hardy               hardy@lucid.com                 Power C on MSDOS
+Zachary Heilig          heilig@plains.nodak.edu         Turbo C++ 3.0
+Aubrey Jaffer           jaffer@martigny.ai.mit.edu      Pixel
+Peter Jones             jones@info.uqam.ca              MIPS UMIPS 4.0
+Kjetil W. J{\o}rgensen  jorgens@lise.unit.no            OSF/1
+Bruce Kahn              bkahn@archive.webo.dg.com       MS-DOS Microsoft C 5.1
+Jonathan I. Kamens      jik@pit-manager.mit.edu         ultrix on DECstation
+Bob Kemp                Robert.V.Kemp@att.com           AT&T 3B2 SysV 3.2v2
+Earl Kiech              KIECH@utkvx.utk.edu             VAX VMS V5.4-1A
+Paul Kienitz            Paul.Kienitz@f28.n125.z1.fidonet.org  Amiga (Manx Aztec)
+David Kirschbaum        kirsch@usasoc.soc.mil           He got us all in this
+                                                        mess in the first place
+Bo Kullmar              bk@kullmar.se                   DNIX 5.3, SunOS 4.1
+Harry Langenbacher      harry@neuron6.Jpl.Nasa.Gov      Sun SS1+ SunOS 4.1
+Michael D. Lawler       mdlawler@bsu-cs.bsu.edu         Mt.Xinu BSD 4.3 on VAX
+Johnny Lee              johnnyl@microsoft.com           Microsoft C 7.0
+Michael Lemke           michael@io.as.utexas.edu        VMS
+David Lemson            lemson@ux1.cso.uiuc.edu         Sequent Dynix 3.0.17
+Tai-Shan Lin            tlin@snakeyes.eecs.wsu.edu      OS/2
+Onno van der Linden     vdlinden@fwi.uva.nl             SCO Unix 3.2.0, 386/BSD
+                                                        BC++ 3.0, djgcc 1.08
+Warner Losh             imp@Solbourne.COM               packing algorithm help
+John Lundin             lundin@urvax.urich.edu          VAX VMS
+Igor Mandrichenko       mandrichenko@m10.ihep.su        VAX VMS
+Cliff Manis             root@csoftec.csf.com            SCO 2.3.1 (386)
+Fulvio Marino           fulvio@iconet.ico.olivetti.it   X/OS 2.3 & 2.4
+Bill Marsh              bmarsh@cod.nosc.mil             SGI Iris 4D35
+Peter Mauzey            ptm@mtdcc.att.com               AT&T 6300
+Rafal Z. Maszkowski     rzm@mat.torun.edu.pl            Convex
+Robert McBroom (?)      rm3@ornl.gov                    DECsystem 5810
+Tom McConnell           tmcconne@sedona.intel.com       NCR SVR4
+Frank P. McIngvale      frankm@eng.auburn.edu           Bug report
+Michael                 kuch@mailserv.zdv.uni-tuebingen.de SGI
+Dan Mick                dmick@pongo.west.sun.com        Solaris
+Thomas S. Opheys        opheys@kirk.fmi.uni-passau.de   OS/2
+Humberto Ortiz-Zuazaga  zuazaga@ucunix.san.uc.edu       Linux
+James E. O'Dell         jim@fpr.com                     MacOS
+William O'Shaughnessy   williamo@hpcupt1.cup.hp.com     HPUX
+Enrico Renato Palmerini palmer@vxscaq.cineca.it         UNISYS 7000 Sys 5 r2.3
+Keith Petersen          w8sdz@simtel20.army.mil         Maintainer of Info-ZIP
+                                                        Pyramid UCB OSx4.4c
+Alan Phillips           postmaster@lancaster.ac.uk      Dynix/ptx 1.3
+Bruno Pillard           bp@chorus.fr                    SunOS 4.1
+Piet W. Plomp           piet@icce.rug.nl                MSC 7.0, SCO 3.2v4.0
+Yuval Rakavy            yuval@cs.huji.ac.il             MSDOS
+David A Rasmussen       dave@convex.csd.uwm.edu         Convex C220 with 9.0 OS
+Michael Regoli          mr@cica.indiana.edu             Ultrix 3.1 VAX 8650
+                                                        BSD 4.3 IBM RT/125
+                                                        BSD 4.3 MicroVAX 3500
+                                                        SunOS 4.0.3 Sun 4/330
+Rick Rodgers            rodgers@maxwell.mmwb.ucsf.EDU   Unix man page
+Greg Roelofs            roe2@midway.uchicago.edu        SunOS 4.1.1,4.1.2 Sun 4
+                                                        Unicos 5.1--6.1.5 Cray
+                                                        OS/2 1.3 MS C 6.0
+                                                        Ultrix 4.1,4.2 DEC 5810
+                                                        VMS 5.2, 5.4 VAX 8600
+                                                        Irix 3.3.2, SGI Iris 4D
+                                                        UTS 1.2.4 Amdahl 5880
+Phil Ritzenthaler       phil@cgrg.ohio-state.edu        SYSV
+Kai Uwe Rommel          rommel@informatik.tu-muenchen.de        OS/2
+Markus Ruppel           m.ruppel@imperial.ac.uk         OS/2
+Jon Saxton              jrs@panix.com                   Microsoft C 6.0
+Steve Salisbury         stevesa@microsoft.com           Microsoft C 6.0
+Timo Salmi              ts@uwasa.fi                     bug report
+NIIMI Satoshi           a01309@cfi.waseda.ac.jp         Human68K
+Tom Schmidt             tschmidt@vax.micron.com         SCO 286
+Martin Schulz           martin.schulz@isltd.insignia.com Windows NT, Atari
+W. T. Sidney            sidney@picard.med.ge.com        bug report
+Dave Sisson             daves@vtcosy.cns.vt.edu         AIX 1.1.1 PS/2 & 3090
+Fred Smith              fcshome!fredex@uunet.uu.net     Coherent
+Christian Spieler       spieler@linac.ikp.physik.th-darmstadt.de  VMS
+Ron Srodawa             srodawa@vela.acs.oakland.edu    SCO Xenix/386 2.3.3
+Bertil Stenstr|m        stenis@heron.dafa.se            HP-UX 7.0 HP9000/835
+Carl Streeter           streeter@oshkoshw.bitnet        OS/2
+Paul Telles             paul@pubnet.com                 SCO Xenix
+Christopher C. Tjon     tjon@plains.nodak.edu           bug report
+Robert F Tobler         rft@cs.stanford.edu             bug report
+Antoine Verheijen       antoine@sysmail.ucs.ualberta.ca envargs fix
+Arjan de Vet            devet@info.win.tue.nl           SunOS 4.1, MSC 5.1
+Johan Vromans           jv@mh.nl                        bug report
+Rich Wales              wales@cs.ucla.edu               SunOS 4.0.3 Sun-3/50
+Frank J. Wancho         wancho@wsmr-simtel20.army.mil   TOPS-20
+                        oyvind@stavanger.sgp.slb.com    Bug report.

@@ -1,0 +1,21 @@
+MAKE Version 3.7  Copyright (c) 1987, 1994 Borland International
+	tasm /ml/jP386N/m2 d:\input\intsa.asm
+Turbo Assembler  Version 4.0  Copyright (c) 1988, 1993 Borland International
+
+Assembling file:   d:\input\intsa.asm  to  intsa.OBJ
+Error messages:    None
+Warning messages:  None
+Passes:            2
+Remaining memory:  285k
+
+	tasm /ml/jP386N/m2 d:\input\jsticka.asm
+Turbo Assembler  Version 4.0  Copyright (c) 1988, 1993 Borland International
+
+Assembling file:   d:\input\jsticka.asm  to  jsticka.OBJ
+Error messages:    None
+Warning messages:  None
+Passes:            2
+Remaining memory:  294k
+
+	tlink /s/c/3 @editor.lnk
+Turbo Link  Version 7.00 Copyright (c) 1987, 1994 Borland International

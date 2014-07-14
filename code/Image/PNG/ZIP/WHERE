@@ -1,0 +1,169 @@
+__________________________________________________________________________
+
+  This is the Info-ZIP file ``Where,'' last updated on Sept 18th 1993.
+__________________________________________________________________________
+
+   Note that some ftp sites may not yet have the latest versions of
+   Zip and UnZip when you read this.  The latest versions, including
+   the crypt sources, are always in ftp.uu.net:/pub/archiving/zip/...
+
+   SITE OWNERS:  If you're listed in here but the information is not
+   correct (or if you're a big site but aren't listed at all), please
+   let us know!  E-mail to zip-bugs at the address given in README
+   and we'll update this file.
+__________________________________________________________________________
+
+
+Basic source-archive names for Info-ZIP's portable Zip, UnZip, and related
+utilities (on some ftp sites, the .zip files may have a .zoo equivalent
+in Zoo 2.10 format):
+
+   zip201.zip       Zip 2.1 (deflation; includes zipnote, zipsplit)
+   zip201.tar.Z     ditto, compress'd tar format
+
+   zip11.zip       Zip 1.1 (shrinking, implosion; compatible with PKUNZIP 1.1)
+   zip11.tar.Z     ditto, compress'd tar format
+
+   unz50p1.zip     UnZip 5.0, patchlevel 1 (all methods; incl. zipinfo, funzip)
+   unz50p1.tar.Z   ditto, compress'd tar format
+
+   wunz20sr.zip    WizUnZip 2.0 support files for Windows 3.1, UnZip 5.0p1
+                   (not yet released)
+
+   zcrypt20.zip    encryption/decryption support (includes zipcloak)
+
+Related archives and files:
+
+   UnzpHist.zip    complete changes history of UnZip and precursors
+
+   zip20x.zip      MSDOS executables and docs for zip, zipnote, zipsplit
+   zcryp20x.zip    MSDOS encryption executables and docs for zip, zipcloak
+   unz50p1.exe     MSDOS self-extracting executable (contains unzip, docs)
+
+   zip201x1.zip    OS/2 1.x 16-bit executables and docs
+   zip201x2.zip    OS/2 2.x 32-bit executables and docs
+   unz50x16.exe    OS/2 1.x 16-bit executables and docs
+   unz50x32.exe    OS/2 2.x 32-bit executables and docs
+
+   zip20x-vms.zip  VMS executables and docs for zip, zipnote, zipsplit
+   unz50p1x.exe    VMS executable for unzip
+
+   mac-unzip-50p1.hqx  Macintosh executable (unzip only, zip not done yet).
+
+   wunz20x.zip     WizUnZip 2.0 executable and docs for Windows 3.1, NT 3.1
+   wunl20x.zip     same as wunz20x.zip, plus two DLLs for Win 3.0 and OS/2 2.x
+
+   pkz204g.exe     MS-DOS PKZIP/PKUNZIP 2.04g (self-extracting archive)
+   pkz110eu.exe    MS-DOS PKZIP/PKUNZIP 1.1 (self-extracting)
+   pkz102-2.exe    OS/2 PKZIP/PKUNZIP 1.02 (self-extracting)
+
+ftp sites for the US-exportable sources and executables:
+
+   NOTE:  Look for the file names given above in the following
+   directories.  Some sites like to use slightly different names,
+   such as zip-2.1.tar-z instead of zip201.tar.Z.  In the case
+   of comp.sources.misc archive sites, directories may be used
+   (zip201/part01.Z ... part11.Z, zip201/patch01.Z).
+
+   ftp.uu.net:/pub/archiving/zip/...    [THIS MIRRORS THE INFO-ZIP HOME SITE]
+
+   wuarchive.wustl.edu:/mirrors/misc/unix/...
+   wuarchive.wustl.edu:/packages/compression/...
+   wuarchive.wustl.edu:/mirrors/misc/vaxvms/...
+   wuarchive.wustl.edu:/mirrors/msdos/zip/...
+   wuarchive.wustl.edu:/mirrors/msdos/windows3/...
+
+   ftp-os2.cdrom.com:/pub/os2/{2_x,all}/archivers/...
+   ftp-os2.nmsu.edu:/pub/os2/{2.x,all}/archivers/...
+   ftp.informatik.tu-muenchen.de:/pub/comp/os/os2/archiver/...
+
+   wuarchive.wustl.edu:/mirrors/msdos/zip/pkz204g.exe
+
+   sumex-aim.stanford.edu:/info-mac/util/mac-unzip-50p1.hqx
+
+ftp sites for the encryption and decryption sources and/or executables:
+
+   NOTE 1:  Non-US users, please do NOT ftp from the US sites (US
+   regulations and all that).  Likewise, US users, please do not
+   ftp from the European sites (it's not illegal, but it sure is
+   a waste of expensive bandwidth).
+
+   NOTE 2:  Some sites may carry both encryption and non-encryption
+   executables with slightly different names; for example, zip201c2.zip
+   instead of zip201x2.zip ("c" == crypt version).  Other sites may
+   include *only* the encryption-related executables (zip and zipcloak)
+   in a second archive (e.g., zcryp20x.zip).
+
+   From the US:
+      ftp.uu.net:/pub/archiving/zip/zcrypt20.zip
+
+   Outside the US:
+      garbo.uwasa.fi:/unix/arcers/zcrypt20.zip
+      ftp.inria.fr:/system/arch-compr/zcrypt20.zip
+      ftp.informatik.tu-muenchen.de:/pub/comp/os/os2/archiver/zcrypt20.zip
+         (mail server at ftp-mailer@informatik.tu-muenchen.de)
+
+      ftp.win.tue.nl:/pub/compression/zip/...
+      ftp.uni-erlangen.de:/pub/pc/msdos/utilities/zip/...
+
+ftp sites for VMS-format Zip/UnZip package (sources and executables, no
+encryption/decryption--see also "Mail servers" section below):
+
+      ftp.uu.net:/pub/archiving/zip/VMS/*
+
+   The ZIP-UNZIP package for VMS is available via anonymous ftp from
+   ftp.spc.edu [192.107.46.27]; the following files are needed:
+
+   [.MACRO32]AAAREADME.TXT
+   [.MACRO32]LZDCMP.EXE
+   [.MACRO32.SAVESETS]ZIP-UNZIP.BCK_Z
+
+   VMS sources and object files are also available from vmsnet.sources
+   archives (e.g., black.cerritos.edu:[.mailserv.zip_unzip]*.*).
+
+To find other ftp sites:
+
+   The "archie" ftp database utility can be used to find an ftp site
+   near you.  If you don't know how to use it, DON'T ASK US--check the
+   Usenet groups news.newusers.questions or news.answers or some such,
+   or ask your system administrator.
+
+UUCP sites:
+
+   uunet!~/pub/archiving/zip/ ...
+
+Bulletin boards (Atari only, so far; not there yet...):
+
+   Gilligan's Island (v.32, 24 hours/day, etc.):  (519) 895-1294
+   GEnie (Atari ST RoundTable)
+
+Mail servers:
+
+   If you don't have anonymous FTP capability, you can mail one
+   of the following commands (in the body of an e-mail message) to
+   listserv@vm1.nodak.edu or listserv@vm.ecs.rpi.edu in order to
+   get a copy via e-mail:
+
+      /pdget mail pd8:<misc.unix>unz50p1.tar-z uuencode
+      /pdget mail pd8:<misc.unix>zip201.zip uuencode
+
+   To get the encryption source by e-mail, send the following commands
+   to ftp-mailer@informatik.tu-muenchen.de:
+
+      get /pub/utils/archiver/zcrypt20.zip
+      quit
+
+   To get the VMS Zip/UnZip package by e-mail, send the following
+   commands in the body of a mail message to fileserv@wkuvx1.bitnet
+   or fileserv%wkuvx1.bitnet@ukcc.uky.edu (the "HELP" command is
+   also accepted):
+
+      SEND ZIP-UNZIP
+      SEND FILESERV_TOOLS
+
+__________________________________________________________________________
+
+   Again, if someone repackages any of the source or executable archives
+   in Mac- or Atari-specific formats, please let us know (send
+   e-mail to zip-bugs at the address listed in README).
+__________________________________________________________________________

@@ -42,7 +42,7 @@
 #include "fli.h"
 
 #ifndef MOUSE
-#error MOUSE needs to be defined! (old mouse is used in playgame).
+#error MOUSE needs to be defined! (old mouse is used in playgame).  Define this in MOUSEFN.H, del *.OBJ and recompile.
 #endif
 
 extern int mouinstall;

@@ -1,0 +1,1241 @@
+
+make(1S)             SunOS Specific Commands             make(1S)
+
+NAME
+     make - maintain, update, and regenerate related programs and
+     files
+
+SYNOPSIS
+     /usr/ccs/bin/make [ -f [4mmakefile[m ] ...  [ -d ] [ -dd ] [ -D ]
+          [ -DD ] [ -e ] [ -i ] [ -k ] [ -n ] [ -p ] [ -P ]
+          [ -q ] [ -r ] [ -s ] [ -S ] [ -t ] [ [4mtarget[m ...  ]
+          [ [4mmacro[m=[4mvalue[m ...  ]
+
+DESCRIPTION
+     make executes a list of shell commands associated with  each
+     [4mtarget[m,  typically  to  create  or update a file of the same
+     name.  [4mmakefile[m contains entries that describe how to  bring
+     a  target  up  to  date  with  respect  to those on which it
+     depends, which are called [4mdependencies[m.  Since  each  depen-
+     dency  is  a  target,  it  may have dependencies of its own.
+     Targets, dependencies, and sub-dependencies comprise a  tree
+     structure  that  make traces when deciding whether or not to
+     make recursively checks each [4mtarget[m  against  its  dependen-
+     cies,  beginning  with the first target entry in [4mmakefile[m if
+     no [4mtarget[m argument is supplied on  the  command  line.   If,
+     after  processing  all of its dependencies, a target file is
+     found either to be missing, or to be older than any  of  its
+     dependencies,  make  rebuilds it.  Optionally with this ver-
+     sion of make, a target can be treated  as  out-of-date  when
+     the commands used to generate it have changed since the last
+     time the target was built.
+
+     To build a given target, make executes the list of commands,
+     called  a  [4mrule[m.   This rule may be listed explicitly in the
+     target's makefile entry, or it may be supplied implicitly by
+     make.
+
+     When no [4mmakefile[m is specified with a -f option:
+
+          +o   If there is a file named makefile  in  the  working
+             directory,  make uses that file.  If, however, there
+             is an SCCS history file (SCCS/s.makefile)  which  is
+             newer,  make  attempts  to retrieve and use the most
+            recent version.
+
+          +o   In the absence of the  above  file(s),  if  a  file
+             named  Makefile is present in the working directory,
+             make attempts to use it.  If there is an  SCCS  his-
+             tory  file  (SCCS/s.Makefile)  that  is  newer, make
+             attempts to retrieve and use the  most  recent  ver-
+             sion.
+
+
+     If no [4mtarget[m is specified on the command line, make uses the
+     first target defined in [4mmakefile[m.
+
+     If a [4mtarget[m has no makefile entry, or if its  entry  has  no
+     rule,  make attempts to derive a rule by each of the follow-
+     ing methods, in turn, until a suitable rule is found.  (Each
+     method is described under USAGE below.)
+
+          +o   Pattern matching rules.
+
+           +o   Implicit  rules,  read  in  from  a  user-supplied
+             makefile.
+
+          +o   Standard  implicit  rules  (also  known  as  suffix
+             rules),    typically   read   in   from   the   file
+             </usr/share/lib/make/make.rules>.
+
+          +o   SCCS retrieval.  make  retrieves  the  most  recent
+             version  from  the  SCCS history file (if any).  See
+             the description of the  .SCCS_GET:  special-function
+             target for details.
+
+          +o   The rule from the .DEFAULT: target entry, if  there
+             is such an entry in the makefile.
+
+     If there is no makefile entry for a [4mtarget[m, if no  rule  can
+     be  derived  for building it, and if no file by that name is
+     present, make issues an error message and halts.
+
+OPTIONS
+     -f [4mmakefile[m
+          Use the description file  [4mmakefile[m.   A  ` - '  as  the
+          [4mmakefile[m argument denotes the standard input.  The con-
+          tents of [4mmakefile[m, when present, override the  standard
+          set of implicit rules and predefined macros.  When more
+          than one `-f  [4mmakefile[m'  argument  pair  appears,  make
+          uses  the  concatenation  of  those  files, in order of
+          appearance.
+
+     -d    Display the reasons why make chooses to rebuild a tar-
+          get;  make  displays  any and all dependencies that are
+          newer.  In addition, make displays options read in from
+          the MAKEFLAGS environment variable.
+
+     -dd   Display the dependency check and  processing  in  vast
+          detail.
+
+     -D    Display the text of the makefiles read in.
+     -DD   Display the text of the  makefiles,  make.rules  file,
+          the state file, and all hidden-dependency reports.
+
+     -e    Environment  variables  override  assignments  within
+          makefiles.
+
+     -i    Ignore error codes returned by  commands.   Equivalent
+          to the special-function target `.IGNORE:'.
+
+     -k    When a nonzero error status is returned by a rule,  or
+          when  make  cannot  find  a  rule,  abandon work on the
+          current target,  but  continue  with  other  dependency
+          branches that do not depend on it.
+
+     -n    No execution mode.  Print commands, but do not execute
+          them.   Even  lines  beginning  with  an @ are printed.
+          However, if a command line contains a reference to  the
+          $(MAKE)  macro,  that  line is always executed (see the
+          discussion of MAKEFLAGS in Reading  Makefiles  and  the
+          Environment).
+
+     -p    Print out the complete set of  macro  definitions  and
+          target descriptions.
+
+     -P    Merely report dependencies, rather than building them.
+
+     -q    Question mode.  make returns a zero or nonzero  status
+          code  depending on whether or not the target file is up
+          to date.
+
+     -r    Do   not   read   in    the    default    makefile
+          </usr/share/lib/make/make.rules>.
+
+     -s    Silent mode.  Do not print command lines  before  exe-
+          cuting them.  Equivalent to the special-function target
+          `.SILENT:'.
+
+     -S    Undo the effect of the - k  option.   Stop  processing
+          when a non-zero exit status is returned by a command.
+
+     -t    Touch the target files  (bringing  them  up  to  date)
+          rather  than  performing  their  rules.   [4mThis[m  [4mcan[m  [4mbe[m
+          [4mdangerous[m [4mwhen[m [4mfiles[m [4mare[m [4mmaintained[m [4mby[m  [4mmore[m  [4mthan[m  [4mone[m
+          [4mperson[m.   When  the  .KEEP_STATE: target appears in the
+          makefile, this option updates the state file just as if
+          the rules had been performed.
+
+     [4mmacro[m=[4mvalue[m
+          Macro definition.  This definition overrides any  regu-
+          lar  definition  for  the  specified  macro  within the
+          makefile itself, or in the environment.  However,  this
+          definition can still be overridden by conditional macro
+          assignments.
+
+USAGE
+     Refer to make in [4mProgramming[m [4mUtilities[m  [4mGuide[m  for  tutorial
+     information.
+
+  Reading Makefiles and the Environment
+     When make first starts, it reads the  MAKEFLAGS  environment
+     variable  to  obtain  any  the  following  options specified
+     present in its value:  -d, -D, -e, -i, -k, -l, -n, -p, -q, -
+     r,  -s, -S, or -t.  (Within the MAKEFLAGS value, the leading
+     `-' character for the option string is omitted.)  make  then
+     reads  the  command  line for additional options, which also
+     take effect.
+
+     Next, make reads in a default makefile that  typically  con-
+     tains  predefined  macro  definitions,  target  entries  for
+     implicit rules, and additional rules, such as the  rule  for
+     retrieving  SCCS  files.   If  present,  make  uses the file
+     make.rules in the current directory; otherwise it reads  the
+     file  </usr/share/lib/make/make.rules>,  which  contains the
+     standard definitions and rules.
+     Use the directive:
+
+          include </usr/share/lib/make/make.rules>
+
+     in your local make.rules file to include them.
+
+     Next, make imports variables from  the  environment  (unless
+     the -e option is in effect), and treats them as defined mac-
+     ros.  Because  make  uses  the  most  recent  definition  it
+     encounters,  a  macro  definition  in  the makefile normally
+     overrides an environment variable of the same name.  When -e
+     is  in  effect,  however,  environment variables are read in
+     [4mafter[m all makefiles have  been  read.   In  that  case,  the
+     environment  variables  take  precedence over definitions in
+     the makefile.
+
+     Next, make reads the state file, .make.state  in  the  local
+     directory  if  it exists, and then any makefiles you specify
+     with -f, or one of makefile or Makefile as described above.
+     Next, (after reading the environment if -e  is  in  effect),
+     make reads in any macro definitions supplied as command line
+     arguments.  These override macro definitions in the makefile
+     and  the  environment  both,  but  only for the make command
+     itself.
+
+     make exports environment variables, using the most  recently
+     defined  value.   Macro  definitions supplied on the command
+     line are not normally exported, unless the macro is also  an
+     environment variable.
+     make does not export macros defined in the makefile.  If  an
+     environment  variable is set, and a macro with the same name
+     is defined on the command line, make exports  its  value  as
+     defined  on  the command line. Unless -e is in effect, macro
+     definitions within the makefile take precedence  over  those
+     imported from the environment.
+
+     The macros MAKEFLAGS, MAKE, SHELL, HOST_ARCH, HOST_MACH, and
+     TARGET_MACH  are  special cases. See Special-Purpose Macros,
+     below, for details.
+
+  Makefile Target Entries
+     A target entry has the following format:
+
+          [4mtarget[m...  [:|::]  [[4mdependency[m] ...  [; [4mcommand[m] ...
+               [[4mcommand[m]
+               ...
+
+     The first line contains the name of a target,  or  a  space-
+     separated  list  of target names, terminated with a colon or
+     double colon.  If a  list  of  targets  is  given,  this  is
+     equivalent  to  having a separate entry of the same form for
+     each target.  The colon(s) may be followed by a  [4mdependency[m,
+ 
+     or a dependency list.  make checks this list before building
+     the target.  The dependency list may be  terminated  with  a
+     semicolon  (;),  which  in  turn can be followed by a single
+     Bourne shell command.  Subsequent lines in the target  entry
+     begin  with a TAB, and contain Bourne shell commands.  These
+     commands comprise the rule for building the target.
+
+[1;7m--More--(21%)[m     Shell commands may be continued across input lines by escap-
+[1;7m--More--(21%)[m     ing  the  NEWLINE with a backslash (\).  The continuing line
+     must also start with a TAB.
+
+     To rebuild a target, make expands macros, strips off initial
+     TAB  characters and either executes the command directly (if
+     it contains no shell metacharacters), or passes each command
+     line to a Bourne shell for execution.
+
+     The first line that does not begin with a TAB  or  #  begins
+     another target or macro definition.
+
+  Special Characters
+  [4mGlobal[m
+     #    Start a comment.  The comment ends at the next NEWLINE.
+          If  the  # follows the TAB in a command line, that line
+          is passed to the shell (which  also  treats  #  as  the
+          start of a comment).
+
+     include [4mfilename[m
+          If the word include appears as the first seven  letters
+          of a line and is followed by a SPACE or TAB, the string
+
+[1;7m--More--(23%)[mSunOS 5.4           Last change: 16 Mar 1993                    5
+[1;7m--More--(23%)[m 
+[K
+make(1S)             SunOS Specific Commands             make(1S)
+
+          that follows is taken as a filename to  interpolate  at
+          that  line.   include files can be nested to a depth of
+          no more than about 16.  If [4mfilename[m is a  macro  refer-
+          ence, it is expanded.
+
+  [4mTargets[m [4mand[m [4mDependencies[m
+     :    Target list terminator.  Words following the colon  are
+          added to the dependency list for the target or targets.
+          If a target is named in more than one  colon-terminated
+          target  entry, the dependencies for all its entries are
+          added to form that target's complete dependency list.
+
+     ::   Target terminator  for  alternate  dependencies.   When
+          used  in place of a `:'  the double-colon allows a tar-
+          get to be checked and updated with respect to alternate
+          dependency  lists.  When the target is out-of-date with
+          respect to dependencies listed in the first  alternate,
+          it  is built according to the rule for that entry. When
+          out-of-date with respect  to  dependencies  in  another
+[1;7m--More--(25%)[m          alternate, it is built according the rule in that other
+[1;7m--More--(25%)[m 
+          entry.  Implicit rules do  not  apply  to  double-colon
+          targets;  you must supply a rule for each entry.  If no
+          dependencies are specified, the  rule  is  always  per-
+          formed.
+
+     [4mtarget[m [+ [4mtarget[m...]  :
+          Target group.  The rule in the target entry builds  all
+          the  indicated targets as a group.  It is normally per-
+          formed only once per make run, but is checked for  com-
+          mand  dependencies  every time a target in the group is
+          encountered in the dependency scan.
+
+     %    Pattern matching wild card metacharacter.  Like the `*'
+          shell wild card, `%' matches any string of zero or more
+          characters in a target name or dependency, in the  tar-
+          get  portion  of  a  conditional  macro  definition, or
+          within a pattern replacement  macro  reference.   Note:
+          only  one  `%' can appear in a target, dependency-name,
+          or pattern-replacement macro reference.
+
+     ./[4mpathname[m
+          make ignores the leading `./' characters  from  targets
+[1;7m--More--(27%)[m          with  names  given  as pathnames relative to "dot," the
+[1;7m--More--(27%)[m 
+          working directory.
+
+  [4mMacros[m
+     =    Macro definition.  The word to the left of this charac-
+          ter  is the macro name; words to the right comprise its
+          value.  Leading and trailing white space characters are
+          stripped  from the value.  A word break following the =
+          is implied.
+
+SunOS 5.4           Last change: 16 Mar 1993                    6
+
+make(1S)             SunOS Specific Commands             make(1S)
+
+     $    Macro  reference.   The  following  character,  or  the
+          parenthesized  or bracketed string, is interpreted as a
+          macro reference:  make expands the reference (including
+          the $) by replacing it with the macro's value.
+
+     ( )
+     { }  Macro-reference name  delimiters.  A  parenthesized  or
+          bracketed  word appended to a $ is taken as the name of
+          the macro being referred to.  Without  the  delimiters,
+[1;7m--More--(29%)[m          make  recognizes  only the first character as the macro
+[1;7m--More--(29%)[m 
+          name.
+
+     $$   A reference to the  dollar-sign  macro,  the  value  of
+          which  is  the  character  `$'.   Used to pass variable
+          expressions beginning with $ to the shell, to refer  to
+          environment  variables which are expanded by the shell,
+          or to delay processing of  dynamic  macros  within  the
+          dependency list of a target, until that target is actu-
+          ally processed.
+
+     \$   Escaped  dollar-sign  character.   Interpreted   as   a
+          literal dollar sign within a rule.
+
+     +=   When used in place of `=', appends a string to a  macro
+          definition  (must  be surrounded by white space, unlike
+          `=').
+
+     :=   Conditional macro assignment.  When preceded by a  list
+          of  targets  with  explicit  target  entries, the macro
+          definition that follows takes  effect  when  processing
+          only those targets, and their dependencies.
+
+[1;7m--More--(31%)[m     :sh =[K
+[1;7m--More--(31%)[m 
+          Define the value of a macro to be the output of a  com-
+          mand (see Command Substitutions, below).
+
+     :sh  In a macro reference, execute the command stored in the
+          macro,  and  replace  the  reference with the output of
+          that command (see Command Substitutions).
+
+  [4mRules[m
+     -     make ignores any nonzero error code returned by a com-
+          mand line for which the first non-TAB character is a `-
+          '.  This character is not passed to the shell  as  part
+          of  the  command line.  make normally terminates when a
+          command returns nonzero status, unless the -i  or   - k
+          options,  or the .IGNORE: special-function target is in
+          effect.
+
+     @    If the first non-TAB character is a @,  make  does  not
+          print the command line before executing it.  This char-
+          acter is not passed to the shell.
+
+     ?    Escape  command-dependency  checking.   Command   lines
+          starting with this character are not subject to command
+          dependency checking.
+
+     !    Force command-dependency  checking.  Command-dependency
+          checking is applied to command lines for which it would
+          otherwise be suppressed.   This  checking  is  normally
+          suppressed for lines that contain references to the `?'
+          dynamic macro (for example, `$?').
+
+     When any combination of `-', `@', `?', or `!'  appear as the
+     first  characters after the TAB, all that are present apply.
+     None are passed to the shell.
+
+  Special-Function Targets
+     When incorporated in a makefile, the following target  names
+     perform special-functions:
+
+     .DEFAULT:
+          If it has an entry in the makefile, the rule  for  this
+          target  is  used  to  process a target when there is no
+          other entry for it, no rule for  building  it,  and  no
+
+          SCCS history file from which to retrieve a current ver-
+          sion.  make ignores any dependencies for this target.
+
+     .DONE:
+          If defined in the makefile, make processes this  target
+          and its dependencies after all other targets are built.
+          This target is also performed when make halts  with  an
+          error, unless the .FAILED target is defined.
+
+     .FAILED:
+          This target, along with its dependencies, is  performed
+          instead  of .DONE when defined in the makefile and make
+          halts with an error.
+
+     .IGNORE:
+          Ignore  errors.   When  this  target  appears  in   the
+          makefile,  make  ignores  non-zero error codes returned
+          from commands.
+
+     .INIT:
+          If defined in the makefile, this target and its  depen-
+          dencies  are  built  before  any other targets are pro-
+          cessed.
+
+     .KEEP_STATE:
+          If this target appears in the  makefile,  make  updates
+          the  state file, .make.state, in the current directory.
+          This target also activates  command  dependencies,  and
+          hidden  dependency  checks.  If either the .KEEP_STATE:
+          target appears in  the  makefile,  or  the  environment
+          variable  KEEP_STATE is set ("setenv KEEP_STATE"), make
+          will rebuild everything in order to collect  dependency
+          information,  even  if  all the targets were up to date
+          due to previous make runs.  (See also  the  ENVIRONMENT
+          section.)
+
+     .MAKE_VERSION:
+          A target-entry of the form:
+
+               .MAKE_VERSION:  VERSION-[4mnumber[m
+
+          enables version  checking.   If  the  version  of  make
+          differs from the version indicated, make issues a warn-
+          ing message.
+
+     .NO_PARALLEL:
+          Currently, this target has no effect, it  is,  however,
+          reserved for future use.
+
+     .PARALLEL:
+          Currently of no effect, but reserved for future use.
+
+     .PRECIOUS:
+          List of files not to delete.  make does not remove  any
+          of  the  files  listed  as dependencies for this target
+          when interrupted.  make normally  removes  the  current
+          target when it receives an interrupt.
+ 
+
+     .SCCS_GET:
+          This  target  contains  the  rule  for  retrieving  the
+          current  version of an SCCS file from its history file.
+          To suppress automatic retrieval, add an entry for  this
+          target with an empty rule to your makefile.
+          Run silently. When this target appears in the makefile,
+          make does not echo commands before executing them.
+
+     .SUFFIXES:
+          The suffixes list for selecting implicit rules (see The
+          Suffixes List).
+
+     .WAIT:
+          Currently of no effect, but reserved for future use.
+
+  [4mClearing[m [4mSpecial[m [4mTargets[m
+     In this version of make, you can clear the definition of the
+     following special targets by supplying entries for them with
+     no dependencies and no rule:
+
+          .DEFAULT,  .SCCS_GET,  and .SUFFIXES
+
+     When the .KEEP_STATE: target appears in the  makefile,  make
+     checks  the  command for building a target against the state
+     file, .make.state.  If the command  has  changed  since  the
+     last make run, make rebuilds the target.
+
+  Hidden Dependencies
+     When the .KEEP_STATE: target appears in the  makefile,  make
+     reads  reports  from cpp(1) and other compilation processors
+     for any "hidden" files, such as #include files.  If the tar-
+     get  is out of date with respect to any of these files, make
+     rebuilds it.
+
+  Macros
+     Entries of the form
+
+          [4mmacro[m=[4mvalue[m
+
+     define macros.  [4mmacro[m is the name of the macro,  and  [4mvalue[m,
+     which  consists  of all characters up to a comment character
+     or unescaped NEWLINE, is the value.  make strips both  lead-
+     ing and trailing white space in accepting the value.
+
+     Subsequent references to the macro, of the  forms:   $([4mname[m)
+     or ${[4mname[m} are replaced by [4mvalue[m.  The parentheses or brack-
+     ets can be omitted in a reference to a macro with a  single-
+     character name.
+
+     Macro references can contain references to other macros,  in
+     which case nested references are expanded first.
+
+  [4mSuffix[m [4mReplacement[m [4mMacro[m [4mReferences[m
+     Substitutions within macros can be made as follows:
+
+          $([4mname[m:[4mstring1[m=[4mstring2[m)
+
+     where [4mstring1[m is either a suffix, or a word to  be  replaced
+     in the macro definition, and [4mstring2[m is the replacement suf-
+     fix or word.  Words in a macro value are separated by SPACE,
+     TAB, and escaped NEWLINE characters.
+
+  [4mPattern[m [4mReplacement[m [4mMacro[m [4mReferences[m
+     Pattern matching replacements can also be applied to macros,
+     with a reference of the form:
+          $([4mname[m:  [4mop[m%[4mos[m= [4mnp[m%[4mns[m)
+
+     where [4mop[m is the existing (old) prefix and [4mos[m is the existing
+     (old)  suffix,  [4mnp[m and [4mns[m are the new prefix and new suffix,
+     respectively, and the pattern matched by % (a string of zero
+     or more characters), is carried forward from the value being
+     replaced.  For example:
+          PROGRAM=fabricate
+          DEBUG= $(PROGRAM:%=tmp/%-g)
+
+     sets the value of DEBUG to tmp/fabricate-g.
+
+     Note: pattern replacement macro references cannot be used in
+     the  dependency list of a pattern matching rule; the % char-
+     acters are not evaluated independently.  Also, any number of
+     % metacharacters can appear after the equal-sign.
+
+  [4mAppending[m [4mto[m [4ma[m [4mMacro[m
+     Words can be appended to macro values as follows:
+
+          [4mmacro[m += [4mword[m ...
+
+  Special-Purpose Macros
+     When the MAKEFLAGS variable is present in  the  environment,
+     make  takes  options  from  it,  in combination with options
+     entered on the command line.   make  retains  this  combined
+     value  as  the MAKEFLAGS macro, and exports it automatically
+     to each command or shell it invokes.
+
+     Note: flags passed by way of MAKEFLAGS  are  only  displayed
+     when the -d, or -dd options are in effect.
+
+     The MAKE macro is another special case.  It  has  the  value
+     make by default, and temporarily overrides the -n option for
+     any line in which it is referred  to.   This  allows  nested
+     invocations of make written as:
+
+          $(MAKE) ...
+
+     to run recursively, with the -n flag in effect for all  com-
+     mands  but  make.  This  lets  you  use `make -n' to test an
+     entire hierarchy of makefiles.
+
+     For compatibility with the 4.2 BSD make, the MFLAGS macro is
+     set from the MAKEFLAGS variable by prepending a `-'.  MFLAGS
+     is not exported automatically.
+
+     The SHELL macro, when set to a  single-word  value  such  as
+     /usr/bin/csh,  indicates  the  name of an alternate shell to
+     use.  The default is /bin/sh.  Note:  make executes commands
+     that  contain no shell metacharacters itself.  Built-in com-
+     mands, such as dirs in  the  C  shell,  are  not  recognized
+     unless  the  command  line  includes  a  metacharacter  (for
+     instance, a semicolon).   This  macro  is  neither  imported
+     from, nor exported to the environment, regardless of -e.  To
+     be sure it is set  properly,  you  must  define  this  macro
+     within every makefile that requires it.
+
+     The following  macros  are  provided  for  use  with  cross-
+     compilation:
+
+     HOST_ARCH
+          The  machine  architecture  of  the  host  system.   By
+          default,  this  is  the  output of the arch(1B) command
+          prepended with `-'.  Under normal  circumstances,  this
+          value should never be altered by the user.
+
+     HOST_MACH
+          The  machine  architecture  of  the  host  system.   By
+          default,  this is the output of the mach(1B), prepended
+          with `- '.   Under  normal  circumstances,  this  value
+          should never be altered by the user.
+
+     TARGET_ARCH
+          The machine architecture  of  the  target  system.   By
+          default, the output of mach, prepended with `-'.
+
+  Dynamic Macros
+     There are several dynamically  maintained  macros  that  are
+     useful  as  abbreviations within rules.  They are shown here
+     as references; if you were to define them, make would simply
+     override the definition.
+
+     $*   The basename of  the  current  target,  derived  as  if
+          selected for use with an implicit rule.
+
+     $<   The name of a dependency file, derived as  if  selected
+          for use with an implicit rule.
+
+     $@   The name of the  current  target.   This  is  the  only
+          dynamic  macro  whose value is strictly determined when
+          used in a dependency list. (In which case it takes  the
+          form `$$@'.)
+
+     $?   The list of dependencies that are newer than  the  tar-
+          get.    Command-dependency  checking  is  automatically
+          suppressed for lines that contain this macro,  just  as
+          if  the  command had been prefixed with a `?'.  See the
+          description of  `?',  under  Makefile  Special  Tokens,
+          above.   You  can  force this check with the ! command-
+          line prefix.
+
+     $%   The name of the library member being  processed.   (See
+          Library Maintenance, below.)
+
+     To refer to the $@ dynamic macro within a  dependency  list,
+     precede  the  reference with an additional `$' character (as
+     in, `$$@').  Because make assigns $< and $* as it would  for
+     implicit  rules  (according  to  the  suffixes  list and the
+     directory contents), they may be unreliable when used within
+     explicit target entries.
+
+     These macros can be modified to apply either to the filename
+     part,  or  the directory part of the strings they stand for,
+     by adding an upper case F or D, respectively (and  enclosing
+     the resulting name in parentheses or braces).  Thus, `$(@D)'
+     refers to the directory part of the string `$@'; if there is
+     no  directory  part,  `.'  is assigned.  $(@F) refers to the
+     filename part.
+
+  Conditional Macro Definitions
+     A macro definition of the form:
+
+          [4mtarget[m-[4mlist[m := [4mmacro[m = [4mvalue[m
+
+     indicates that when processing any of the targets listed [4mand[m
+     [4mtheir[m  [4mdependencies[m  ,  [4mmacro[m is to be set to the [4mvalue[m sup-
+     plied.  Note that if a conditional macro is referred to in a
+     dependency  list,  the  $  must be delayed (use $$ instead).
+     Also, [4mtarget[m-[4mlist[m may contain a % pattern, in which case the
+     macro  will be conditionally defined for all targets encoun-
+     tered that match the pattern.  A pattern replacement  refer-
+     ence can be used within the [4mvalue[m.
+
+     You can temporarily append to a macro's value with a  condi-
+     tional definition of the form:
+
+          [4mtarget[m-[4mlist[m := [4mmacro[m += [4mvalue[m
+
+  Predefined Macros
+     make supplies the macros shown in the table that follows for
+     compilers  and  their options, host architectures, and other
+     commands.  Unless these macros are read  in  as  environment
+     variables,  their  values  are not exported by make.  If you
+     run make with any of these set in the environment, it  is  a
+     good idea to add commentary to the makefile to indicate what
+     value each is expected to take.  If -r is  in  effect,  make
+     does   not   read  the  default  makefile  (./make.rules  or
+     </usr/share/lib/make/make.rules>)  in  which   these   macro
+     definitions are supplied.
+
+     Table of Predefined Macros
+
+     Use           Macro         Default Value
+
+     Library       AR            ar
+     Archives      ARFLAGS       rv
+
+     Assembler     AS            as
+     Commands      ASFLAGS
+                   COMPILE.s     $(AS) $(ASFLAGS)
+                   COMPILE.S     $(CC)$(ASFLAGS)$(CPPFLAGS)-c
+
+     C Compiler    CC            cc
+     Commands      CFLAGS
+                   CPPFLAGS
+                   COMPILE.c     $(CC)$(CFLAGS)$(CPPFLAGS)-c
+                   LINK.c        $(CC)$(CFLAGS)$(CPPFLAGS)$(LDFLAGS)
+
+     C++           CCC           CC
+
+     Compiler      CCFLAGS       CFLAGS
+     Commands      CPPFLAGS
+                   COMPILE.cc    $(CCC)$(CCFLAGS)$(CPPFLAGS)-c
+                   LINK.cc       $(CCC)$CCFLAGS)$(CPPFLAGS)$(LDFLAGS)
+
+     FORTRAN       77            FCf77
+     Compiler      FFLAGS
+     Commands      COMPILE.f     $(FC)$(FFLAGS)-c
+                   LINK.f        $(FC)$(FFLAGS)$(LDFLAGS)
+                   COMPILE.F     $(FC)$(FFLAGS)$(CPPFLAGS)-c
+                   LINK.F        $(FC)$(FFLAGS)$(CPPFLAGS)$(LDFLAGS)
+
+     Link          Editor        LDld
+     Command       LDFLAGS
+
+     lex           LEX           lex
+     Command       LFLAGS
+                   LEX.l         $(LEX)$(LFLAGS)-t
+
+     lint          LINT          lint
+     Command       LINTFLAGS
+                   LINT.c        $(LINT)$(LINTFLAGS)$(CPPFLAGS)
+
+     Modula        2             M2Cm2c
+     Commands      M2FLAGS
+                   MODFLAGS
+                   DEFFLAGS
+                   COMPILE.def   $(M2C)$(M2FLAGS)$(DEFFLAGS)
+                   COMPILE.mod   $(M2C)$(M2FLAGS)$(MODFLAGS)
+
+     Pascal        PC            pc
+     Compiler      PFLAGS
+     Commands      COMPILE.p     $(PC)$(PFLAGS)$(CPPFLAGS)
+                   LINK.p        $(PC)$(PFLAGS)$(CPPFLAGS)$(LDFLAGS)
+
+     Ratfor        RFLAGS
+     Compilation   COMPILE.r     $(FC)$(FFLAGS)$(RFLAGS)
+     Commands      LINK.r        $(FC)$(FFLAGS)$(RFLAGS)
+                   $(LDFLAGS)
+
+     rm            RM            rm-f
+     Command
+
+     sccs          SCCSFLAGS
+     Command       SCCSGETFLAGS  -s
+
+     yacc          YACC          yacc
+     Command       YFLAGS
+                   YACC.y        $(YACC)$(YFLAGS)
+
+     Suffixes      SUFFIXES      .o .c .c~ .cc .cc~ .y .y~ .l .l~
+     List                        .s .s~ .sh .sh~ .S .S~ .ln .h .h~
+                                 .f .f~ .F .F~  .mod .mod~ .sym
+                                 .def .def~ .p .p~ .r .r~ .cps
+                                 .cps~ .C .C~ .Y .Y~ .L .L~
+
+  Implicit Rules
+     When a target has no entry in the makefile, make attempts to
+     determine  its  class  (if  any) and apply the rule for that
+     class.  An implicit rule describes how to build  any  target
+     of  a  given class, from an associated dependency file.  The
+     class of a target can be determined either by a pattern,  or
+     by  a  suffix;  the  corresponding dependency file (with the
+     same basename) from which such a target might be built.   In
+     addition  to a predefined set of implicit rules, make allows
+     you to define your own, either by pattern, or by suffix.
+
+  [4mPattern[m [4mMatching[m [4mRules[m
+     A target entry of the form:
+
+          [4mtp[m%[4mts[m:  [4mdp[m%[4mds[m
+               [4mrule[m
+
+     is a pattern matching rule, in which [4mtp[m is a target  prefix,
+     [4mts[m  is a target suffix, [4mdp[m is a dependency prefix, and [4mds[m is
+     a dependency suffix (any of  which  may  be  null).   The  %
+     stands  for  a  basename  of zero or more characters that is
+     matched in the target, and is used to construct the name  of
+     a  dependency.   When  make encounters a match in its search
+     for an implicit rule, it uses the rule in that target  entry
+     to  build  the  target  from  the dependency file.  Pattern-
+     matching implicit rules typically make use of the $@ and  $<
+     dynamic macros as placeholders for the target and dependency
+     names.  Other, regular dependencies may occur in the  depen-
+     dency list.  An entry of the form:
+
+          [4mtp[m%[4mts[m:   [[4mdependency[m ...]   [4mdp[m%[4mds[m   [[4mdependency[m ...]
+                        [4mrule[m
+
+     is a valid pattern matching rule.
+
+  [4mSuffix[m [4mRules[m
+     When no pattern matching rule applies, make checks the  tar-
+     get  name  to see if it ends with a suffix in the known suf-
+     fixes list.  If so, make checks for  any  suffix  rules,  as
+
+SunOS 5.4           Last change: 16 Mar 1993                   15
+
+make(1S)             SunOS Specific Commands             make(1S)
+
+     well  as a dependency file with same root and another recog-
+     nized suffix, from which to build it.
+
+     The target entry for a suffix rule takes the form:
+
+          [4mDsTs[m:
+               [4mrule[m
+
+     where [4mTs[m is the suffix of the target, [4mDs[m is  the  suffix  of
+     the  dependency  file,  and  [4mrule[m is the rule for building a
+     target in the class.  Both [4mDs[m and [4mTs[m must appear in the suf-
+ 
+     fixes  list.   (A  suffix  need  not begin with a `.'  to be
+     recognized.)
+
+     A suffix rule with only one suffix describes how to build  a
+     target  having  a null (or no) suffix from a dependency file
+     with the indicated suffix.  For instance, the .c rule  could
+     be  used  to build an executable program named file from a C
+     source file named `file.c'.  If a target with a null  suffix
+     has an explicit dependency, make omits the search for a suf-
+     fix rule.
+
+              Table of Standard Implicit (Suffix) Rules
+
+     Use         Implicit  Command Line(s)
+                 Rule
+
+     Assembly     .s.o    $(COMPILE.s) -o $@ $<
+     Files        .s      $(COMPILE.s) -o $@ $<
+                  .s.a    $(COMPILE.s) -o $% $<
+                          $(AR) $(ARFLAGS) $@ $%
+                          $(RM) $%
+                  .S.o    $(COMPILE.S) -o $@ $<
+                  .S.a    $(COMPILE.S) -o $% $<
+ 
+                          $(AR) $(ARFLAGS) $@ $%
+                          $(RM) $%
+
+     C            .c      $(LINK.c) -o $@ $< $(LDLIBS)
+     Files        .c.ln   $(LINT.c) $(OUTPUT_OPTION) -i $<
+                  .c.o    $(COMPILE.c) $(OUTPUT_OPTION) $<
+                  .c.a    $(COMPILE.c) -o $% $<
+                          $(AR) $(ARFLAGS) $@ $%
+                          $(RM) $%
+
+     C++          .cc      $(LINK.cc) -o $@ $< $(LDLIBS)
+     Files        .cc.o    $(COMPILE.cc) $(OUTPUT_OPTION) $<
+                  .cc.a    $(COMPILE.cc) -o $% $<
+                           $(AR) $(ARFLAGS) $@ $%
+                           $(RM) $%
+
+     FORTRAN 77  .f       $(LINK.f) -o $@ $< $(LDLIBS)
+     Files       .f.o     $(COMPILE.f) $(OUTPUT_OPTION) $<
+
+                 .f.a     $(COMPILE.f) -o $% $<
+                          $(AR) $(ARFLAGS) $@ $%
+                          $(RM) $%
+                 .F       $(LINK.F) -o $@ $< $(LDLIBS)
+                 .F.o     $(COMPILE.F) $(OUTPUT_OPTION) $<
+                 .F.a     $(COMPILE.F) -o $% $<
+                          $(AR) $(ARFLAGS) $@ $%
+                          $(RM) $%
+
+     lex         .l       $(RM) $*.c
+     Files                $(LEX.l) $< > $*.c
+                          $(LINK.c) -o $@ $*.c $(LDLIBS)
+                          $(RM) $*.c
+                 .l.c     $(RM) $@
+                          $(LEX.l) $< > $@
+                 .l.ln    $(RM) $*.c
+                          $(LEX.l) $< > $*.c
+                          $(LINT.c) -o $@ -i $*.c
+                          $(RM) $*.c
+                 .l.o     $(RM) $*.c
+                          $(LEX.l) $< > $*.c
+                          $(COMPILE.c) -o $@ $*.c
+                          $(RM) $*.c
+
+     Modula 2   .mod      $(COMPILE.mod) -o $@ -e $@ $<
+     Files      .mod.o    $(COMPILE.mod) -o $@ $<
+                .def.sym  $(COMPILE.def) -o $@ $<
+
+     NeWS       .cps.h    cps $*.cps
+
+     Pascal     .p        $(LINK.p) -o $@ $< $(LDLIBS)
+     Files      .p.o      $(COMPILE.p) $(OUTPUT_OPTION) $<
+
+     Ratfor     .r        $(LINK.r) -o $@ $< $(LDLIBS)
+     Files      .r.o      $(COMPILE.r) $(OUTPUT_OPTION) $<
+                .r.a      $(COMPILE.r) -o $% $<
+                          $(AR) $(ARFLAGS) $@ $%
+                          $(RM) $%
+
+     SCCS       .SCCS_GET sccs $(SCCSFLAGS) get $(SCCSGETFLAGS) $@ -G$@
+     Files
+
+     Shell      .sh       cat $< >$@
+     Scripts              chmod +x $@
+
+     yacc       .y        $(YACC.y) $<
+
+     Files                $(LINK.c) -o $@ y.tab.c $(LDLIBS)
+                          $(RM) y.tab.c
+                .y.c      $(YACC.y) $<
+                          mv y.tab.c $@
+                .y.ln     $(YACC.y) $<
+                          $(LINT.c) -o $@ -i y.tab.c
+                          $(RM) y.tab.c
+                .y.o      $(YACC.y) $<
+                          $(COMPILE.c) -o $@ y.tab.c
+                          $(RM) y.tab.c
+
+     make reads in the standard set of implicit  rules  from  the
+     file  </usr/share/lib/make/make.rules>,  unless   - r  is in
+     effect, or there is a make.rules file in the local directory
+     that does not include that file.
+
+  The Suffixes List
+     The suffixes list is given as the list of  dependencies  for
+      the `.SUFFIXES:'  special-function target.  The default list
+     is contained in the SUFFIXES macro (See [4mTable[m [4mof[m  [4mPredefined[m
+     [4mMacros[m  for  the standard list of suffixes).  You can define
+     additional .SUFFIXES: targets; a .SUFFIXES  target  with  no
+     dependencies clears the list of suffixes.  Order is signifi-
+     cant within the list; make selects a rule  that  corresponds
+     to  the target's suffix and the first dependency-file suffix
+     found in the list.  To place suffixes at  the  head  of  the
+     list,  clear  the list and replace it with the new suffixes,
+     followed by the default list:
+
+          .SUFFIXES:
+          .SUFFIXES: [4msuffixes[m $(SUFFIXES)
+
+     A tilde (~) indicates that if a  dependency  file  with  the
+     indicated suffix (minus the ~) is under SCCS its most recent
+     version should be retrieved, if necessary, before the target
+     is processed.
+
+  Library Maintenance
+     A target name  of the form:
+
+          [4mlib[m([4mmember[m ...)
+ 
+     refers to a member, or a space-separated list of members, in
+     an ar(1) library.
+
+     The dependency of the library member  on  the  corresponding
+     file  must  be  given  as an explicit entry in the makefile.
+     This can be handled by a pattern matching rule of the form:
+
+          [4mlib[m(%.[4ms[m): %.[4ms[m
+
+     where .[4ms[m is the suffix of the member; this suffix  is  typi-
+     cally .o for object libraries.
+
+     A target name of the form
+
+          [4mlib[m(([4msymbol[m))
+
+SunOS 5.4           Last change: 16 Mar 1993                   18
+
+make(1S)             SunOS Specific Commands             make(1S)
+
+     refers to the member of a  randomized  object  library  that
+     defines the entry point named [4msymbol[m.
+
+  Command Execution
+     Command lines are executed one at a time, [4meach[m  [4mby[m  [4mits[m  [4mown[m
+     [4mprocess[m  [4mor[m  [4mshell[m. Shell commands, notably cd, are ineffec-
+     tual across an unescaped NEWLINE in the makefile.  A line is
+     printed  (after macro expansion) just before being executed.
+     This is suppressed if it starts with a `@', if  there  is  a
+     `.SILENT:'   entry  in  the makefile, or if make is run with
+     the -s option.  Although the -n  option  specifies  printing
+     without  execution,  lines  containing the macro $(MAKE) are
+     executed regardless, and  lines  containing  the  @  special
+     character  are  printed.   The -t (touch) option updates the
+     modification date of a file  without  executing  any  rules.
+     This  can  be  dangerous when sources are maintained by more
+     than one person.
+
+     make invokes the shell with the - e  (exit-on-errors)  argu-
+     ment.   Thus,  with  semicolon-separated  command sequences,
+     execution of the later commands depends on  the  success  of
+     the  former.  This behavior can be overriden by starting the
+     command line with a '-', or by writing a shell  script  that
+     returns a non-zero status only as it finds appropriate.
+ 
+  Bourne Shell Constructs
+     To use the Bourne shell if control structure for  branching,
+     use a command line of the form:
+          if [4mexpression[m ; \
+          then [4mcommand[m ; \
+               ... ; \
+          else [4mcommand[m ; \
+               ... ; \
+          fi
+
+     Although composed of several input lines, the  escaped  NEW-
+     LINE  characters  insure  that  make  treats them all as one
+     (shell) command line.
+
+     To use the Bourne shell for control structure for loops, use
+     a command line of the form:
+          for [4mvar[m in [4mlist[m ; \
+               do [4mcommand[m; \
+               ... ;\
+          done
+
+     To refer to a shell variable, use a double-dollar-sign ($$).
+[1;7m--More--(83%)[m     This prevents expansion of the dollar-sign by make.
+[1;7m--More--(83%)[m 
+[K
+SunOS 5.4           Last change: 16 Mar 1993                   19
+
+make(1S)             SunOS Specific Commands             make(1S)
+
+  Command Substitutions
+     To incorporate the standard output of a shell command  in  a
+     macro, use a definition of the form:
+
+          [4mMACRO[m:sh =[4mcommand[m
+
+     The command is executed only once, standard error output  is
+     discarded,  and NEWLINE characters are replaced with SPACEs.
+     If the command has a non-zero exit status, make  halts  with
+     an error.
+
+     To capture the output of a shell command in a  macro  refer-
+     ence, use a reference of the form:
+
+          $([4mMACRO[m:sh)
+
+     where [4mMACRO[m is the name of a macro containing a valid Bourne
+[1;7m--More--(85%)[m     shell  command  line.  In this case, the command is executed
+[1;7m--More--(85%)[m 
+     whenever the reference is evaluated.  As with shell  command
+     substitutions,  the  reference is replaced with the standard
+     output of the command.  If the command has a  non-zero  exit
+     status, make halts with an error.
+
+  [4mSignals[m
+     INT, SIGTERM, and QUIT signals received  from  the  keyboard
+     halt  make and remove the target file being processed unless
+     that target is in the dependency list for `.PRECIOUS:'.
+
+EXAMPLES
+     This makefile says that pgm depends on  two  files  a.o  and
+     b.o,  and  that  they  in turn depend on their corresponding
+     source files (a.c and b.c) along with a common file incl.h:
+          pgm: a.o b.o
+               $(LINK.c) -o $@ a.o b.o
+          a.o: incl.h a.c
+               cc -c a.c
+          b.o: incl.h b.c
+               cc -c b.c
+
+     The following makefile uses implicit rules  to  express  the
+[1;7m--More--(87%)[m     same dependencies:
+[1;7m--More--(87%)[m 
+          pgm: a.o b.o
+               cc a.o b.o -o pgm
+          a.o b.o: incl.h
+
+ENVIRONMENT
+     KEEP_STATE
+          This environment variable has the same  effect  as  the
+          .KEEP_STATE:  special-function target.  It enables com-
+          mand dependencies, hidden dependencies and  writing  of
+          the state file.
+
+SunOS 5.4           Last change: 16 Mar 1993                   20
+
+make(1S)             SunOS Specific Commands             make(1S)
+
+     USE_SVR4_MAKE
+          This environment variable causes  make  to  invoke  the
+          generic      System      V      version     of     make
+          (/usr/ccs/lib/sv4.make).  See sysV-make(1).
+
+FILES
+     /usr/ccs/make       make
+[1;7m--More--(88%)[m     makefile
+[1;7m--More--(88%)[m 
+     Makefile            current version(s) of  make  description
+                         file
+     SCCS/s.makefile
+     SCCS/s.Makefile     SCCS  history  files   for   the   above
+                         makefile(s)
+     make.rules          default file for  user-defined  targets,
+                         macros, and implicit rules
+     </usr/share/lib/make/make.rules>
+                         makefile for standard implicit rules and
+                         macros (not read if make.rules is)
+     .make.state         state file in the local directory
+
+SEE ALSO
+     ar(1), cd(1), passwd(4)
+
+     [4mSolaris[m [4mAdvanced[m [4mUser[m'[4ms[m [4mGuide[m
+     [4mProgramming[m [4mUtilities[m [4mGuide[m
+
+DIAGNOSTICS
+     make returns an exit status of 1 when it halts as  a  result
+     of an error.  Otherwise it returns an exit status of 0.
+
+[1;7m--More--(90%)[m     Don't know how to make target '[4mtarget[m'
+[1;7m--More--(90%)[m 
+          There is no makefile entry  for  [4mtarget[m,  and  none  of
+          make's  implicit  rules  apply  (there is no dependency
+          file with  a  suffix  in  the  suffixes  list,  or  the
+          target's suffix is not in the list).
+
+     *** [4mtarget[m removed.
+          make was interrupted  while  building  [4mtarget[m.   Rather
+          than  leaving  a  partially-completed  version  that is
+          newer than its  dependencies,  make  removes  the  file
+          named [4mtarget[m.
+
+     *** [4mtarget[m not removed.
+          make was interrupted while building [4mtarget[m  and  [4mtarget[m
+          was not present in the directory.
+
+     *** [4mtarget[m could not be removed, [4mreason[m
+          make was interrupted while building [4mtarget[m,  which  was
+          not removed for the indicated reason.
+
+     Read of include file `[4mfile[m' failed
+          The makefile indicated in an include directive was  not
+
+[1;7m--More--(92%)[mSunOS 5.4           Last change: 16 Mar 1993                   21
+[1;7m--More--(92%)[m 
+[K
+make(1S)             SunOS Specific Commands             make(1S)
+
+          found, or was inaccessible.
+
+     Loop detected when expanding macro value `[4mmacro[m'
+          A reference to the macro being defined was found in the
+          definition.
+
+     Could not write state file `[4mfile[m'
+          You used the .KEEP_STATE: target, but do not have write
+          permission on the state file.
+
+     *** Error code [4mn[m
+          The previous shell command  returned  a  nonzero  error
+          code.
+
+     *** [4msignal[m [4mmessage[m
+          The previous shell command was aborted due to a signal.
+          If  ` -  core dumped' appears after the message, a core
+          file was created.
+
+[1;7m--More--(93%)[m     Conditional macro conflict encountered
+[1;7m--More--(93%)[m 
+          Displayed only when -d is in effect, this message indi-
+          cates that two or more parallel targets currently being
+          processed depend on a target which is built differently
+          for  each  by  virtue of conditional macros.  Since the
+          target cannot simultaneously  satisfy  both  dependency
+          relationships, it is conflicted.
+
+BUGS
+     Some commands  return  nonzero  status  inappropriately;  to
+     overcome  this difficulty, prefix the offending command line
+     in the rule with a `-'.
+
+     Filenames with the characters `=', `:', or `@', do not work.
+
+     You cannot build file.o from lib(file.o).
+
+     Options supplied by MAKEFLAGS should be reported for  nested
+     make  commands.   Use the -d option to find out what options
+     the nested command picks up from MAKEFLAGS.
+
+     This version of make is  incompatible  in  certain  respects
+     with previous versions:
+[1;7m--More--(95%)[m[K
+[1;7m--More--(95%)[m 
+          +o   The -d option output is much briefer in  this  ver-
+             sion.    - dd now produces the equivalent voluminous
+             output.
+
+          +o   make attempts to derive values for the dynamic mac-
+             ros  `$*', `$<', and `$?', while processing explicit
+             targets.  It uses the same method  as  for  implicit
+             rules;  in  some cases this can lead either to unex-
+             pected values, or to an empty value being  assigned.
+
+SunOS 5.4           Last change: 16 Mar 1993                   22
+
+make(1S)             SunOS Specific Commands             make(1S)
+ 
+
+             (Actually,  this  was  true  for earlier versions as
+             well, even though the  documentation  stated  other-
+             wise.)
+
+          +o   make no longer searches  for  SCCS  history  "(s.)"
+             files.
+
+          +o   Suffix replacement  in  macro  references  are  now
+[1;7m--More--(97%)[m             applied after the macro is expanded.
+[1;7m--More--(97%)[m[K
+     There is no guarantee that makefiles created for  this  ver-
+     sion of make will work with earlier versions.
+
+     If there is no make.rules file in the current directory, and
+     the  file  </usr/share/lib/make/make.rules> is missing, make
+     stops before processing any targets.  To force make  to  run
+     anyway,  create  an  empty  make.rules  file  in the current
+     directory.
+
+     Once a dependency is made, make assumes the dependency  file
+     is  present  for the remainder of the run.  If a rule subse-
+     quently removes that file and future targets depend  on  its
+     existence, unexpected errors may result.
+
+     When hidden dependency checking is in effect, the $? macro's
+     value  includes  the names of hidden dependencies.  This can
+     lead to improper filename arguments to commands when  $?  is
+     used in a rule.
+
+     Pattern replacement macro references cannot be used  in  the
+     dependency list of a pattern matching rule.
+[1;7m--More--(98%)[m[K
+[1;7m--More--(98%)[m 
+     Unlike previous versions, this  version  of  make  strips  a
+     leading `./' from the value of the `$@' dynamic macro.
+
+     With automatic SCCS retrieval, this version of make does not
+     support tilde suffix rules.
+
+     The only dynamic macro whose value  is  strictly  determined
+     when used in a dependency list is $@ (takes the form `$$@').
+
+     make invokes the shell with the -e argument.  This cannot be
+     inferred from the syntax of the rule alone.
+
+SunOS 5.4           Last change: 16 Mar 1993                   23
+
+
+
+
+

@@ -1,0 +1,1333 @@
+
+
+
+
+
+
+
+
+
+
+
+                Turbo C FLI Library Documentation
+           For FLI Files Created by Autodesk Animator
+
+                        November 20, 1989
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Copyright 1989-1990 Dancing Flame, San Francisco
+Program Code and Library by Jim Kent
+Documentation by Jim Kent and Heidi Brumbaugh
+
+                       Turbo C FLI Library
+                        Table of Contents
+
+
+
+
+
+1. Introduction to the Turbo C FLI library. . . . . . . . . .   1
+
+2. Sample FLI programs. . . . . . . . . . . . . . . . . . . .   1
+     2.1 PLAY.C . . . . . . . . . . . . . . . . . . . . . . .   1
+     2.2 ALLFLIS.C. . . . . . . . . . . . . . . . . . . . . .   2
+     2.3 SLICEFLI.C . . . . . . . . . . . . . . . . . . . . .   3
+
+3. Usage of FLI routines. . . . . . . . . . . . . . . . . . .   5
+     3.1 Playback Routines. . . . . . . . . . . . . . . . . .   5
+     3.2 Save Routines. . . . . . . . . . . . . . . . . . . .   6
+
+4. VGA Graphics Support . . . . . . . . . . . . . . . . . . .   7
+
+5. MS-DOS Support . . . . . . . . . . . . . . . . . . . . . .   8
+
+6. The FLILIB header files. . . . . . . . . . . . . . . . . .  10
+     6.1 AAFLISAV.H . . . . . . . . . . . . . . . . . . . . .  10
+     6.2 AAFLI.H. . . . . . . . . . . . . . . . . . . . . . .  11
+     6.3 AATYPES.H  . . . . . . . . . . . . . . . . . . . . .  13
+     6.4 AADOS.H. . . . . . . . . . . . . . . . . . . . . . .  14
+     6.5 AAERR.H. . . . . . . . . . . . . . . . . . . . . . .  16
+     6.6 AASCREEN.H . . . . . . . . . . . . . . . . . . . . .  16
+
+8. Autodesk Animator files. . . . . . . . . . . . . . . . . .  18
+     8.1 Flic Files (.FLI). . . . . . . . . . . . . . . . . .  18
+     8.2 Picture Files (.GIF) . . . . . . . . . . . . . . . .  21
+     8.3 Cel Files (.CEL and .PIC). . . . . . . . . . . . . .  21
+     8.4 Palette Files (.COL) . . . . . . . . . . . . . . . .  22
+     8.5 Mask Files (.MSK). . . . . . . . . . . . . . . . . .  22
+     8.6 Text Files (.TXT). . . . . . . . . . . . . . . . . .  22
+     8.7 Font Files (.FNT). . . . . . . . . . . . . . . . . .  22
+     8.8 Polygon and Path files (.PLY). . . . . . . . . . . .  24
+     8.9 Optics Files (.OPT). . . . . . . . . . . . . . . . .  24
+     8.10 Record Files (.REC) . . . . . . . . . . . . . . . .  24
+
+
+1. Introduction to the Turbo C FLI library
+
+     FLI.LIB is a Turbo C large model library for manipulating 
+Autodesk Animator FLI files.  It also contains some general-
+purpose MS-DOS functions and a few VGA graphics primitives.
+
+     The main Turbo C library is contained in the file FLI.LIB. 
+Additionally, you will need to include the header file AAFLI.H to
+read a FLI file and AAFLISAV.H to save a FLI file.  AAFLI.H will 
+include the additional files AATYPES.H, AADOS.H, AAERR.H and
+AASCREEN.H if they are not already included.  AAFLISAV.H will
+include AAFLI.H if it is not already included.
+
+     The 58 source file routines to load or save a FLI are in the
+folder LIBSOURC; however, these modules are not necessary as they
+are already included in FLI.LIB.
+
+     Your disk also includes three sample C files to load and
+play a FLI file.  The sample batch file which compiles these
+files in Turbo C is:
+
+tcc -ml play.c fli.lib 
+tcc -ml allflis.c fli.lib 
+tcc -ml slicefli.c fli.lib
+
+     In sum, the files you will need to use the Turbo C FLI
+library are:
+
+AATYPES.H
+AADOS.H
+AAERR.H
+AASCREEN.H
+AAFLI.H
+AAFLISAV.H
+FLI.LIB
+
+2. Sample FLI programs
+
+     Once the header files are included in your code and your
+make file is set up to properly link your program with the
+library, calling the high-level FLI routines is very
+straightforward.  In fact, the sample programs show that you can
+write a program to play back a FLI in about twenty-five lines --
+and most of that code is to verify that a VGA is connected!
+
+2.1 PLAY.C
+
+This program will play a FLI file until a key is pressed.
+ 
+#include "aafli.h" 
+ 
+main(int argc, char *argv[]) 
+{ 
+int ivmode; 
+Errval err; 
+if (argc != 2)   /* If command line looks wrong give a little help */
+
+   { 
+   puts("Play will play a FLI file until a key is hit"); 
+   puts("Example usage: play pretty.fli"); 
+   } 
+else 
+   { 
+   ivmode = dos_get_vmode();  /* Get video mode to restore at exit */ 
+   dos_set_vmode(0x13);       /* Go into 320x200 256 color mode */ 
+   if (dos_get_vmode() == 0x13) 
+      { 
+      err = fli_play(argv[1]); 
+      dos_set_vmode(ivmode); 
+      if (err < AA_SUCCESS) 
+         puts(fli_error_message(err) ); 
+      } 
+   else 
+      puts("Not a VGA/MCGA display"); 
+   } 
+} 
+ 
+2.2 ALLFLIS.C
+
+This program plays all the FLI files in the current directory
+once and exits.
+ 
+#include "aafli.h" 
+ 
+main() 
+{ 
+Fndata *fn; 
+int ivmode; 
+Errval err; 
+ 
+fn = dos_get_dta(); 
+if (dos_first("*.FLI", DOS_ATTR_NORMAL)) 
+   { 
+   ivmode = dos_get_vmode(); 
+   dos_set_vmode(0x13); 
+   if (dos_get_vmode() == 0x13) 
+      { 
+      for (;;) 
+         { 
+         if (dos_key_is()) /* check keyboard to abort between FLI's */
+            { 
+            dos_key_in(); 
+            break; 
+            } 
+         err = fli_once(fn->name); 
+         if (err < AA_SUCCESS) 
+            { puts(fli_error_message(err)); 
+            } 
+         if (!dos_next()) 
+            break; 
+         } 
+      dos_set_vmode(ivmode); 
+      } 
+   else 
+      { 
+      puts("Not a VGA/MCGA display"); 
+      } 
+   } 
+else 
+   { 
+   puts("No .FLI files"); 
+   } 
+} 
+
+2.3 SLICEFLI.C
+
+This program cuts out every other line of a FLI file, creating a
+new FLI.
+ 
+#include "aaflisav.h" 
+ 
+main(int argc, char *argv[]) 
+{ 
+int i; 
+Errval err; 
+int ivmode; 
+ 
+if (argc != 3) 
+   { 
+   puts("slicefli - a program to cut out every other line of a FLI.");
+   puts("   usage:  slicefli infile.fli outfile.fli"); 
+   exit(0); 
+   } 
+ivmode = dos_get_vmode(); 
+dos_set_vmode(0x13); /* To VGA/MCGA 320x200 256 color mode */ 
+if (dos_get_vmode() != 0x13) 
+   { 
+   puts("Not a VGA/MCGA display, sorry"); 
+   } 
+else 
+   { 
+   err = convert_fli(argv[1], argv[2]); 
+   if (err >= AA_SUCCESS) 
+      { 
+      fli_play(argv[2]); 
+      } 
+   dos_set_vmode(ivmode); 
+   if (err < AA_SUCCESS)puts(fli_error_message(err)); 
+   } 
+} 
+
+/* zero out every other line of a screen */ 
+void slice_screen(Vscreen *s) 
+{ 
+int i; 
+Pixel *p; 
+ 
+p = s->p; 
+for (i=0; i<s->h; i+=2) 
+   { 
+   i86_bzero(p, s->bpr); 
+   p += 2*s->bpr; 
+   } 
+} 
+ 
+Errval convert_fli(char *in, char *out) 
+{ 
+Errval err = AA_SUCCESS;   /* start out optimistic! */ 
+Vscreen *bs; 
+Fli_head inhead, outhead; 
+Jfile infile = 0, outfile = 0; 
+int i; 
+ 
+if ((bs = aa_alloc_mem_screen()) == NULL) 
+   { 
+   err = AA_ERR_NOMEM; 
+   goto EXIT; 
+   } 
+if ((infile = fli_open(in, &inhead)) < 0) 
+   { 
+   err = infile; 
+   goto EXIT; 
+   } 
+if ((outfile = fli_create(out, &outhead, inhead.speed)) < AA_SUCCESS) 
+   { 
+   goto EXIT; 
+   } 
+for (i=0; i<inhead.frame_count; i++) 
+   { 
+   aa_copy_screen(&aa_screen, bs); 
+   if ((err = fli_next_frame(infile)) < AA_SUCCESS) 
+      { 
+      goto EXIT; 
+      } 
+   slice_screen(&aa_screen); 
+   if ((err = fli_write_next(outfile, &outhead, &aa_screen, bs)) <
+AA_SUCCESS) 
+      { 
+      goto EXIT; } 
+   } 
+if ((err = fli_end(outfile, &outhead, &aa_screen, bs)) < AA_SUCCESS) 
+   { 
+   goto EXIT; 
+   } 
+EXIT: 
+if (infile != 0) 
+   dos_close (infile); 
+if (outfile != 0) 
+   dos_close (outfile); 
+aa_free_mem_screen(bs); 
+if (err < AA_SUCCESS) 
+   { 
+   dos_delete (out); 
+   } 
+return(err); 
+} 
+
+3. Usage of FLI routines
+
+3.1 Playback Routines
+
+     These are the main routines you will need to use to play
+back a FLI animation.  Note that you do not need to call some of
+the routines directly if you use only the high-level routines. 
+See the sample programs above for details.
+
+Play a FLI on VGA screen until a key is hit. 
+   Errval fli_play(char *fliname) 
+
+Play a FLI through once on VGA screen. 
+   Errval fli_once(char *fliname) 
+
+Open up a FLI file, read in it's header, and check magic values
+to verify that it is a FLI file.  Returns open file handle on
+success, a negative error code on failure. 
+   Jfile fli_open(char *fliname, Fli_head *fh) 
+
+Read next frame of file and update VGA screen. 
+   Errval fli_next_frame(Jfile ff) 
+
+Update a screen with the next frame of a FLI file.  Note that
+fli_read_display_frame(ff, &aa_screen, TRUE) is the same thing as
+fli_next_frame(ff). 
+   Errval fli_read_display_frame( 
+      Jfile ff,            /* File handle */ 
+      Vscreen *v,          /* Screen to update */ 
+      Boolean see_colors)  /* Update hardware color registers? */ 
+
+This routine decompresses from memory onto a screen. Use if you
+want to play FLI's from RAM rather than off the disk. 
+   void fli_uncomp( 
+      Vscreen *v,          /* Screen to update */ 
+      Fli_frame *frame,    /* Header for this frame */   
+      Cbuf *cbuf,          /* Compressed data for this frame */ 
+      Boolean see_colors)  /* Update hardware color registers? */ 
+
+This plays a FLI from disk until the user-supplied function
+returns false.  The 'until' function is called every frame at
+least once, and as many times as possible until it's time for the
+next frame.  See fli_until_finished and fli_until_key. 
+   Errval fli_until( 
+      char *fliname,       /* Name of FLI to play */ 
+      int speed,           /* Speed to play.  If negative uses speed
+                           in file */ 
+      Boolean (*until)())  /* User-supplied function.  (See below.) */
+
+This function returns (cur_frame < frame_count).  It's used to
+implement fli_once(). 
+   Boolean fli_until_finished( 
+      int cur_frame,       /* How many frames we've played */ 
+      int frame_count,     /* Number of frames in this FLI */ 
+      int cur_loop)        /* How many times have played FLI so far */
+
+This function ignores all it's arguments, and returns FALSE only
+if a key is hit.  Used to implement fli_play(). 
+   Boolean fli_until_key( 
+      int cur_frame,       /* How many frames we've played */ 
+      int frame_count,     /* Number of frames in this FLI */ 
+      int cur_loop)        /* How many times have played FLI so far */
+
+Return a descriptive name for the error code. 
+   char *fli_error_message(Errval err) 
+
+
+3.2 Save Routines
+
+     The following routines are used to save a FLI file to disk.
+
+Start writing a FLI file.  Open file and initialize Fli_head
+structure. Returns file handle if everything is ok, a negative
+error code if not. 
+   Jfile fli_create( 
+      char *fliname,       /* Name for new FLI file */ 
+      Fli_head *fh,        /* Non-initialized fli-header */ 
+      int speed)           /* Speed (in 1/70th of a second) of FLI */ 
+
+Write next frame to FLI file.  On first frame the value in 'last'
+is ignored. 
+   Errval fli_write_next( 
+      Jfile ff,            /* FLI file returned by fli_create */
+      Fli_head *fh,        /* Same header used by fli_create */
+      Vscreen *this,       /* Current frame */ 
+      Vscreen *last)       /* Previous frame */ 
+
+Close FLI up:  calculate and write the ring frame, that is the
+difference between the first and last frame of a FLI.  Rewrite fh
+at start of file with final frame and byte counts.  Firstf_buf
+will be  loaded with the  first frame of the FLI as a side
+effect. 
+   Errval fli_end( 
+      Jfile ff,            /* FLI file handle */ 
+      Fli_head *fh,        /* Header as initialized by fli_create */ 
+      Vscreen *end_frame,  /* The final frame in the animation */ 
+      Vscreen *firstf_buf) /* A full screen buffer for 1st frame */ 
+
+Compress a frame into comp_buf and return size after compression. 
+Types should be FLI_BRUN for  first frame and  FLI_LCCOMP for
+later frames (see AAFLI.H).  If you use fli_create,
+fli_write_next, and fli_end to create your  FLI files, you won't
+need to call this.
+long fli_comp_frame( 
+   Cbuf *comp_buf,         /* Buffer--should be CBUF_SIZE or bigger */
+   Pixel *last_screen,     /* Pixels from previous frame */ 
+   Cmap *last_cmap,        /* Colors from previous frame */ 
+   Pixel *this_screen,     /* Pixels from current frame */ 
+   Cmap *this_cmap,        /* Colors from previous frame. */ 
+   int type);              /* FLI_BRUN, FLI_LCCOMP etc. */  
+
+ 
+4. VGA Graphics Support
+
+     Most of these are lower-level routines you won't need to
+call directly; however, they are included in the library and
+supported here.
+
+Sets up a 320x200 screen in memory that is structured the same as
+the VGA Mode 0x13. (The Vscreen structure is in AASCREEN.H.) 
+   Vscreen *aa_alloc_mem_screen() 
+
+Set all pixels in screen to zero. 
+   void aa_clear_screen(Vscreen *s) 
+
+Software echo of color map associated with aa_screen, the Vscreen
+for the VGA. 
+   Cmap aa_colors[256*3] 
+Copy the pixels and color maps from one screen to another.
+(Doesn't update VGA hardware registers.  Use aa_set_colors(0,
+256, dest->cmap) to do that.) 
+   void aa_copy_screen(Vscreen *source, Vscreen *dest) 
+
+Does nothing but call C library free(pt).  Used by all flilib
+functions to free aa_malloc()'d memory.   If you need to manage
+your own memory override these two symbols with your own. 
+   void aa_free(void *pt) 
+
+Frees up memory screen gotten with aa_alloc_mem_screen(). Will
+check 's' for NULL before calling aa_free. 
+   void aa_free_mem_screen(Vscreen *s) 
+
+Returns a AACLOCK_HZ frequency clock.  (AACLOCK_HZ is defined in
+AACLOCK.H as 4608 currently, but this may change. The clock
+management part of library is still unstable.) You must call
+aa_goclock() before calling this. 
+   long aa_getclock() 
+
+Initialize clock. 
+   long aa_goclock() 
+
+Does nothing but call C library malloc(size). See aa_free(). 
+   void *aa_malloc(unsigned size) 
+
+A Vscreen structure refering to the VGA pixel memory. Useful as
+an argument to the many flilib functions that work on a Vscreen. 
+   Vscreen aa_screen 
+
+Set some VGA color map entries from a memory table. Table is
+three bytes per color, one byte each for  each red, green, blue
+component.  The value of an rgb component should be from 0 to 63.
+   void aa_set_colors(int start_ix, int count, Cmap *table) 
+
+Return when VGA is out of vertical blank. 
+   void aa_wait_no_vblank() 
+
+Return when VGA is in vertical blank. 
+   void aa_wait_vblank() 
+
+5. MS-DOS Support 
+ 
+     These are some general-purpose DOS routines.
+
+That Jfile is typedef'd as an int in AADOS.H. Close a file opened
+with dos_open or dos_create. 
+   void dos_close(Jfile file) 
+
+Tries to delete file. Returns TRUE (1) on success, FALSE (0) on
+failure. 
+   Boolean dos_delete(char *file_name) 
+Returns TRUE if file exists. 
+   Boolean dos_exists(char *file_name) 
+
+Pattern is typically something of the form "*.FLI" and attribute
+DOS_ATTR_NORMAL as defined in AADOS.H.  This will return TRUE if
+there is a file matching the wildcard pattern and put the name of
+this file in the data transfer area (see dos_get_dta below).
+   Boolean dos_first(char *pattern, int attribute) 
+
+Gets data transfer area from DOS for directory searches. See
+dos_first() and dos_next(). 
+   Fndata dos_get_dta(void) 
+
+Returns current display mode. 
+   int dos_get_vmode() 
+
+Returns a 16-bit keyboard scan code.  Lower 8 bits are usually
+ASCII values, or zero if it's a special key such as the cursor
+arrows. 
+   int dos_key_in() 
+
+Returns TRUE if a key is ready to be read from keyboard.
+   Boolean dos_key_is() 
+
+Returns a value with bits for the Shift/Alt/Control keys.
+   int dos_key_shift() 
+
+Tries to make a new directory. 
+   Boolean dos_make_dir(char *dir_name) 
+
+Fetches next filename matching wildcard set up by dos_first()
+into the data transfer area.  Returns FALSE if there are no more
+matches. 
+   Boolean dos_next() 
+
+Tries to open a file from MS-DOS.  Returns zero if can't open
+file.  (Not negative as standard.) See AADOS.H for definitions of
+JREAD_ONLY, etc. for mode.
+   Jfile dos_open(char *filename, int mode) 
+
+Read from file into memory buffer.  Note that size can be larger
+than 64K. 
+   long dos_read(Jfile file, void *buf, long size) 
+
+Rename a file.  Return success. 
+   Boolean dos_rename(char *oldname, char *newname) 
+
+This is used to implement dos_read() and dos_write() macros.
+Should not be called directly. 
+   long dos_rw(...) 
+Write from memory buffer into file.  Note that size can be larger
+than 64K. 
+   long dos_write(Jfile file, void *buf, long size) 
+
+See AADOS.H for definitions of JSEEK_START etc. for mode.
+   long dos_seek(Jfile file, long offset, int mode) 
+
+Set display mode.  0x13 for 256 color 320x200. 
+   void dos_set_vmode(int mode) 
+
+Returns file position in bytes from beginning. 
+   long dos_tell(Jfile file) 
+
+
+6. The FLILIB header files
+
+     Following are the constants, structures and variables used
+in the header files you will need to play back and save a FLI
+file.
+
+6.1 AAFLISAV.H
+
+#ifndef AAFLISAV_H 
+#define AAFLISAV_H 
+ 
+#ifndef AAFLI_H 
+#include "aafli.h" 
+#endif /* AAFLI_H */ 
+ 
+/* Compress a frame into a RAM buffer.  Return size of frame. */ 
+long fli_comp_frame(Cbuf *comp_buf,       /* Buffer FLI_CBUF_SIZE or
+                                          bigger */ 
+   Pixel *last_screen, Cmap *last_cmap,   /*Data from previous frame*/
+   Pixel *this_screen, Cmap *this_cmap,   /* Data for this frame */ 
+   int type);                             /* FLI_BRUN?  FLI_LC? */ 
+ 
+/* Open FLI file and write out first frame.  Return file handle if
+things go well, error code otherwise. */ 
+Jfile fli_create(char *fliname,  /* file name */ 
+   Fli_head *fh,                 /* fli_create will initialize this */
+   int speed);                   /* Speed in 1/70th of a second */ 
+ 
+/* Write succeeding frames of a FLI. */ 
+Errval fli_write_next(Jfile ff,  /* FLI file returned by fli_create */
+   Fli_head *fh,                 /* Same header used by fli_create */ 
+   Vscreen *this,                /* Current frame */ 
+   Vscreen *last);               /* Previous frame */ 
+ 
+/* Finish up writing a FLI file. Write the 'ring frame', which is the
+difference between the first and last frame of a FLI.  Pass in the
+final frame of the FLI in last_frame.  firstf_buf will be loaded with
+the first frame of the FLI as a side effect.  */  Errval fli_end(Jfile ff, Fli_head *fh,  
+   Vscreen *end_frame, Vscreen *firstf_buf); 
+ 
+#endif /* AAFLISAV_H */ 
+
+6.2 AAFLI.H
+ 
+#ifndef AAFLI_H 
+#define AAFLI_H 
+ 
+#ifndef AATYPES_H 
+#include "aatypes.h" 
+#endif /* AATYPES_H */ 
+ 
+#ifndef AADOS_H 
+#include "aados.h" 
+#endif /* AADOS_H */ 
+ 
+#ifndef AAERR_H 
+#include "aaerr.h" 
+#endif /* AAERR_H */ 
+ 
+#ifndef AASCREEN_H 
+#include "aascreen.h" 
+#endif /* AASCREEN_H */ 
+ 
+#define FLI_MAXFRAMES (4*1000)   /* Max number of frames. */ 
+#define FLIH_MAGIC 0xaf11        /* Fileheader Magic */ 
+#define FLIF_MAGIC 0xf1fa        /* Frame Magic */ 
+ 
+typedef struct fli_head 
+   { 
+   long size; 
+   USHORT type;                  /* = FLIH_MAGIC */ 
+   USHORT frame_count; 
+   USHORT width; 
+   USHORT height; 
+   USHORT bits_a_pixel; 
+   SHORT flags; 
+   SHORT speed; 
+   long next_head; 
+   long frames_in_table; 
+   SHORT file;          /* Used by players.  Contains 0's on disk. */ 
+   long frame1_off;     /* Used by players.  Contains 0's on disk. */ 
+   long strokes;        /* how many paint strokes etc. made. */ 
+   long session;        /* strokes since file's been loaded. */ 
+   char reserved[88];   /* all zeroes on disk */ 
+   } Fli_head; 
+ 
+/* bit defines for flags field */ 
+#define FLI_FINISHED 1  /* finished writing fli */ 
+#define FLI_LOOPED   2  /* fli has a loop frame */  
+typedef struct fli_frame 
+   { 
+   long size; 
+   USHORT type;      /* FLIF_MAGIC */ 
+   SHORT chunks; 
+   char pad[8]; 
+   } Fli_frame; 
+ 
+typedef struct fli_chunk 
+   { 
+   long size; 
+   SHORT type; 
+   } Fli_chunk; 
+
+typedef UBYTE Cbuf;     /* compression buffer */ 
+ 
+/* size of buffer big enough to hold worst case FLI frame */ 
+#define FLI_CBUF_SIZE
+(64000L+3*AA_COLORS+2*sizeof(Fli_chunk)+sizeof(Fli_frame)) 
+ 
+/* types of chunk in a fli_frame */ 
+#define FLI_COLOR 11 
+#define FLI_LC 12 
+#define FLI_BLACK 13 
+#define FLI_BRUN 15 
+#define FLI_COPY 16 
+
+/** Higher-level FLI playing functions **/ 
+/* Decompress a single frame that's in RAM */ 
+void fli_uncomp(Vscreen *f,   /* The screen to update */ 
+   Fli_frame *frame,          /* Header for this frame */ 
+   Cbuf *cbuf,                /* Compressed data for this frame */
+   Boolean see_colors);       /* update the hardware color map? */ 
+
+/* Read in FLI header, verify that it's a FLI file and return handle.
+See AAERR.H for negative return values if there are problems. */ 
+Jfile fli_open(char *fliname, Fli_head *fh); 
+ 
+/* Read in next frame and uncompress onto screen, optionally updating
+hardware color palette */ 
+Errval fli_read_display_frame(Jfile ff, Vscreen *v, Boolean
+see_colors); 
+
+/* Read and display next frame onto VGA display */ 
+Errval fli_next_frame(Jfile ff); 
+
+/* Play FLI, going on forever or until 'until' function returns FALSE. 
+until is called with the current frame, the total frame in the FLI,
+and how many times have played entire FLI. */ 
+Errval fli_until(char *fliname, /* name of FLI to play */ 
+   int speed,              /* if speed negative, use speed in file */ 
+   AAivec until);          /* function to call to see when to stop */ 
+ 
+/* The 'until' function we use to construct fli_play */ 
+Boolean fli_until_key(int cur_frame, int frame_count, int cur_loop); 
+ 
+/* Play FLI looping forever until any key is hit */ 
+Errval fli_play(char *fliname); 
+ 
+/* Play FLI once */ 
+Errval fli_once(char *fliname); 
+ 
+#endif /* AAFLI_H */ 
+
+6.3 AATYPES.H 
+ 
+#ifndef AATYPES_H 
+#define AATYPES_H 
+ 
+#ifndef NULL 
+#define NULL ((void *)0L) 
+#endif /* NULL */ 
+ 
+void *aa_malloc(unsigned); /* heap allocator */ 
+void aa_free(void *);      /* heap free'er */ 
+ 
+#ifndef UBYTE 
+#define UBYTE unsigned char 
+#endif /* UBYTE */ 
+#ifndef BYTE 
+#define BYTE signed char 
+#endif /* BYTE */ 
+#ifndef SHORT 
+#define SHORT short 
+#endif /* SHORT */ 
+#ifndef SHORT 
+#define SHORT short 
+#endif /* SHORT */ 
+#ifndef USHORT  
+#define USHORT unsigned short 
+#endif /* USHORT */ 
+#ifndef LONG 
+#define LONG long 
+#endif /* LONG */ 
+#ifndef ULONG 
+#define ULONG unsigned long 
+#endif /* ULONG */ 
+ 
+typedef void (*AAvec)();   /* pointer to a void-valued function */ 
+typedef int (*AAivec)();   /* pointer to an integer valued function */
+typedef int Boolean;      /* functions explicitly returning 0 or 1 */
+#define TRUE 1 
+#define FALSE 0 
+ 
+/* useful macro to count elements in an array */ 
+#define Array_els(arr) (sizeof(arr)/sizeof(arr[0])) 
+ 
+#endif /* AATYPES_H */ 
+
+6.4 AADOS.H
+
+#ifndef AADOS_H 
+#define AADOS_H 
+ 
+#ifndef AATYPES_H 
+#include "aatypes.h" 
+#endif /* AATYPES_H */ 
+ 
+typedef int Jfile; 
+ 
+dos_key_is(void);  /* return 1 if a key is ready to read, 0 if not */ 
+dos_key_in(void);  /* return next keyboard input.  Wait for it. */ 
+ 
+/* open a file that already exists.*/ 
+Jfile dos_open(char *title, int mode); 
+
+/* defines for mode parameter to dos_open  */ 
+#define DOS_READ_ONLY 0 
+#define DOS_WRITE_ONLY 1 
+#define DOS_READ_WRITE 2 
+ 
+Jfile dos_create(char *title);   /* Create a new read/write file */ 
+void dos_close(Jfile f);         /* close file */ 
+ 
+/* File read/write. Normally go through macros rather than use this
+function. */
+long dos_rw(Jfile f,void *buf,long size,int ah); 
+#define dos_read(f,b,size) dos_rw(f,b,size,0x3f) 
+#define dos_write(f,b,size) dos_rw(f,b,size,0x40) 
+ 
+long dos_seek (Jfile f, long offset, int mode); 
+long dos_tell (Jfile f); 
+
+/* defines for mode parameter to dos_seek  */ 
+#define DOS_SEEK_START  0 
+#define DOS_SEEK_RELATIVE  1 
+#define DOS_SEEK_END 2 
+ 
+/* size of a buffer long enough to hold any MS-DOS path */ 
+#define DOS_PATH_SIZE 80 
+/* this is the data structure used by dos_first() and dos_next () in
+searching directories */ 
+typedef struct fndata  
+   { 
+   char reserved[21]; 
+   char attribute; 
+   USHORT time, date; 
+   long size; 
+   char name[13]; 
+   char fordos[128-43]; 
+   } Fndata; 
+ 
+Fndata *dos_get_dta (void); /* get the DTA for directory search */ 
+
+Boolean dos_first(char *pattern, int attributes); 
+
+/* defines for attributes parameters */ 
+#define DOS_ATTR_DIR 16 
+#define DOS_ATTR_NORMAL  0 
+Boolean dos_next (void); 
+  
+/* This gets rid of the MS-DOS abort/retry/fail message. Afterwards
+MS-DOS acts like it was always a fail. dos_get_devlist () calls     
+this. */ 
+void dos_no_abort_retry_cancel (void);  
+ 
+/* Changes device and directory. For example, name could be
+C:\VPAINT\FISHIES */ 
+Boolean dos_change_dir(char *name); 
+ 
+/* Tell DOS it's time to go to another drive number.  0 = A:, 1 = B:,
+etc. */ 
+Boolean dos_change_dev(int newdev); 
+ 
+/* Get current drive. 0 = A:, etc. */ 
+int dos_get_dev (void); 
+ 
+/* Get the current device and directory into path */ 
+Boolean dos_get_dir (char path[DOS_PATH_SIZE]); 
+ 
+/* Create a directory.  (Don't include device info.  If needed do a
+dos_change_dev(dev) first.) */ 
+Boolean dos_make_dir(char *name); 
+ 
+/* Figure how much free space is on a device.  0 = current device. 1 =
+A:, etc. */ 
+long dos_dfree(int dev); 
+ 
+#endif /* AADOS_H */ 
+
+6.5 AAERR.H
+
+#ifndef AAERR_H 
+#define AAERR_H 
+ 
+#define AA_SUCCESS 0             /* No Problem! */ 
+#define AA_ERR_MISC -1           /* Unclassified error */ 
+#define AA_ERR_NOMEM -2          /* Not enough memory */ 
+#define AA_ERR_CANTFIND -3       /* File doesn't exist */ 
+#define AA_ERR_CANTMAKE -4       /* Can't create file */ 
+#define AA_ERR_BADTYPE -5        /* File is not the right type */ 
+#define AA_ERR_BADDATA -6        /* File damaged internally */ 
+#define AA_ERR_WRONGREZ -7       /* File isn't 320x200 */ 
+#define AA_ERR_SHORTREAD -8      /* Not all of file is there */ 
+#define AA_ERR_SHORTWRITE -9     /* Couldn't write all of file */ 
+#define AA_ERR_SEEK  -10         /* Error during file seek */ 
+ 
+typedef int Errval;   
+/* return something to say about error */ 
+char *fli_error_message(Errval err); 
+ 
+#endif /* AAERR_H */ 
+
+6.6 AASCREEN.H
+
+#ifndef AASCREEN_H 
+#define AASCREEN_H 
+ 
+#ifndef AATYPES_H 
+#include "aatypes.h" 
+#endif /* AATYPES_H */ 
+ 
+/* Graphics types */ 
+typedef unsigned char Cmap; 
+typedef unsigned char Pixel; 
+typedef unsigned char Bitplane; 
+ 
+/* Constants pertaining to 320x200 256 color mode mostly */ 
+#define AA_VGA_SCREEN ((Pixel *)0xa0000000) 
+#define AA_XMAX 320 
+#define AA_YMAX 200 
+#define AA_BPR 320 
+#define AA_COLORS 256 
+ 
+/* This structure is something we can draw on. */ 
+struct vscreen 
+   { 
+   int x, y;         /* upper left corner in screen coordinates */ 
+   unsigned w, h;    /* width, height */ 
+   unsigned bpr;     /* bytes per row of image p */ 
+   Pixel *p;         /* Starts on segment boundary */ 
+   Cmap *cmap; long psize;/* size of pixels */ 
+   Pixel *allocedp;  /* for memory based screens only */ 
+   }; 
+typedef struct vscreen Vscreen; 
+extern Vscreen aa_screen; 
+extern Cmap aa_colors[];            /* software echo of color map */ 
+Boolean aa_open_vga_screen(void);   /* opens 256 color screen */ 
+void aa_close_vga_screen(void); 
+
+/* Open a screen you can draw on but not see */ 
+Vscreen *aa_alloc_mem_screen(void); 
+void aa_free_mem_screen(Vscreen *ms);  /* dispose of memory screen */ 
+void aa_copy_screen(Vscreen *source, Vscreen *dest); 
+void aa_clear_screen(Vscreen *vs); 
+ 
+/* Get the current video mode */ 
+int dos_get_vmode(void); 
+/* Set video mode.  Mode 0x13 is 320x200 256 color */ 
+void dos_set_vmode(int mode); 
+/* Set the VGA color map. */ 
+void aa_set_colors(int start, int count, Cmap *cmap);  
+/* Wait until in vertical blank */ 
+void aa_wait_vblank(void); 
+/* Wait until out of vertical blank */ 
+void aa_wait_no_vblank(void); 
+ 
+#endif /* AASCREEN_H */ 
+
+
+7. Reserved Routine Names
+
+   What follows is a summary of low-level routines which you
+should not call directly as they are subject to future
+modification.  They are listed here only to prevent you from
+inadvertently duplicating the names elsewhere in your own code.
+
+    fii_brun 
+    fii_fccomp 
+    fii_lccomp 
+    fii_mem_fcuncomp 
+    fii_reg_fcuncomp 
+    fii_tnsame 
+    fii_tnskip 
+    fii_unbrun 
+    fii_unlccomp 
+ 
+    i86_bcompare 
+    i86_bcontrast 
+    i86_bcopy 
+    i86_bsame 
+    i86_bzero 
+    i86_enorm_ptr     i86_even_copy 
+    i86_make_long 
+    i86_make_ptr 
+    i86_norm_ptr 
+    i86_ptr_offset 
+    i86_ptr_seg 
+    i86_ptr_to_long 
+    i86_sysint 
+    i86_wcompare 
+    i86_wcontrast 
+    i86_wcopy 
+    i86_wsame 
+    i86_wzero 
+
+8. Autodesk Animator files
+
+     Following is a detailed description of the FLI file format,
+as well as the formats for Autodesk Animator's other main file
+types.
+
+8.1 Flic Files (.FLI)
+
+     The details of a FLI file are moderately complex, but the
+idea behind it is simple: don't bother storing the parts of a
+frame that are the same as the last frame.  Not only does this
+save space, but it's very quick.  It's faster to leave a pixel
+alone than to set it.
+
+     A FLI file has a 128-byte header followed by a sequence of
+frames. The first frame is compressed using a bytewise run-length
+compression scheme.  Subsequent frames are stored as the
+difference from the previous frame.  (Occasionally the first
+frame and/or subsequent frames are uncompressed.)  There is one
+extra frame at the end of a FLI which contains the difference
+between the last frame and the first frame.
+
+     The FLI header:
+
+     byte size name      meaning
+     offset
+
+     0    4    size      Length of file, for programs that want
+                         to read the FLI all at once if possible.
+     4    2    magic     Set to hex AF11.  Please use another
+                         value here if you change format (even to
+                         a different resolution) so Autodesk
+                         Animator won't crash trying to read it.
+     6    2    frames    Number of frames in FLI.  FLI files have
+                         a maxium length of 4000 frames.
+     8    2    width     Screen width (320).
+     10   2    height    Screen height (200).
+     12   2    depth     Depth of a pixel (8).142flagsMust be 0.
+     16   2    speed     Number of video ticks between frames.
+     18   4    next      Set to 0.
+     22   4    frit      Set to 0.
+     26   102  expand    All zeroes -- for future enhancement.
+
+     Next are the frames, each of which has a header:
+
+     byte size name      meaning
+     offset
+     0    4    size      Bytes in this frame.  Autodesk Animator
+                         demands that this be less than 64K.
+     4    2    magic     Always hexadecimal F1FA
+     6    2    chunks    Number of 'chunks' in frame.
+     8    8    expand    Space for future enhancements.  All
+                         zeros.
+
+     After the frame header come the chunks that make up the
+frame.  First comes a color chunk if the color map has changed
+from the last frame.  Then comes a pixel chunk if the pixels have
+changed.  If the frame is absolutely identical to the last frame
+there will be no chunks at all.
+
+     A chunk itself has a header, followed by the data.  The
+chunk header is:
+
+     byte size name meaning
+     offset
+     0    4    size Bytes in this chunk.
+     4    2    type Type of chunk (see below).
+
+     There are currently five types of chunks you'll see in a FLI
+file.
+
+     number    name      meaning
+     11        FLI_COLOR Compressed color map
+     12        FLI_LC    Line compressed -- the most common type
+                         of compression for any but the first
+                         frame.  Describes the pixel difference
+                         from the previous frame.
+     13        FLI_BLACK Set whole screen to color 0 (only occurs
+                         on the first frame).
+     15        FLI_BRUN  Bytewise run-length compression -- first
+                         frame only
+     16        FLI_COPY  Indicates uncompressed 64000 bytes soon
+                         to follow.  For those times when
+                         compression just doesn't work!
+
+     The compression schemes are all byte-oriented.  If the
+compressed data ends up being an odd length a single pad byte is
+inserted so that the FLI_COPY's always start at an even address
+for faster DMA.
+FLI_COLOR Chunks
+     The first word is the number of packets in this chunk. This
+is followed directly by the packets.  The first byte of a packet
+says how many colors to skip.  The next byte says how many colors
+to change.  If this byte is zero it is interpreted to mean 256. 
+Next follows 3 bytes for each color to change (one each for red,
+green and blue).
+
+FLI_LC Chunks
+     This is the most common, and alas, most complex chunk.   The
+first word (16 bits) is the number of lines starting from the top
+of the screen that are the same as the previous frame. (For
+example, if there is motion only on the bottom line of screen
+you'd have a 199 here.)  The next word is the number of lines
+that do change.  Next there is the data for the changing lines
+themselves.  Each line is compressed individually; among other
+things this makes it much easier to play back the FLI at a
+reduced size.
+
+     The first byte of a compressed line is the number of packets
+in this line.  If the line is unchanged from the last frame this 
+is zero.  The format of an individual packet is:
+
+skip_count
+size_count
+data
+
+     The skip count is a single byte.  If more than 255 pixels
+are to be skipped it must be broken into 2 packets. The size
+count is also a byte.  If it is positive, that many bytes of data
+follow and are to be copied to the screen.  If it's negative a
+single byte follows, and is repeated -skip_count times.
+
+     In the worst case a FLI_LC frame can be about 70K.  If it
+comes out to be 60000 bytes or more Autodesk Animator decides
+compression isn't worthwhile and saves the frame as FLI_COPY.
+
+FLI_BLACK Chunks
+     These are very simple.  There is no data associated with
+them at all. In fact they are only generated for the first frame
+in Autodesk Animator after the user selects NEW under the FLIC
+menu.
+
+FLI_BRUN Chunks
+     These are much like FLI_LC chunks without the skips.  They
+start immediately with the data for the first line, and go line-
+by-line from there.  The first byte contains the number of
+packets in that line.  The format for a packet is:
+
+size_count
+data
+     If size_count is positive the data consists of a single byte
+which is repeated size_count times. If size_count is negative
+there are -size_count bytes of data which are copied to the
+screen. In Autodesk Animator if the "compressed" data shows signs
+of exceeding 60000 bytes the frame is stored as FLI_COPY instead.
+
+FLI_COPY Chunks
+     These are 64000 bytes of data for direct reading onto the
+screen.
+
+8.2 Picture Files (.GIF)
+
+     GIF (Graphics Interchange Format) is a format developed by
+CompuServe Information Services.  GIF files are as close to
+computer- and resolution-independent as we're likely to see in
+the next few years -- there are GIF viewers available for the
+Amiga, the Atari ST and 8-bit line, the Tandy Color Computer, the
+Apple II, the MacIntosh, Sun workstations, PC compatibles and
+most other computers with any sort of graphics display at all. 
+There are also programs to convert from the more "native" file
+formats (such as DEGAS on the ST, IFF on the Amiga, and MacPaint
+on the Mac) to GIF.  Many of these conversion programs are
+available free on Compuserve.
+
+     GIF files are also fairly densely compressed, using a
+modified Lempel-Zif-Welch "ladder" compression scheme similar to
+that used in the popular archive programs ARC and PKZIP.  
+
+     Unfortunately the nitty-gritty details of what goes into a
+GIF file are rather complex, and CompuServe holds the copyright
+to much of the documentation.  The PICS forum on CompuServe (type
+"go pics" at any exclamation mark prompt) will provide GIF
+documentation and much more in the way of useful information to
+graphics programmers if you fill out a simple developer's
+registration form.  Another place to look for GIF information is
+the Autodesk forum on CompuServe; type "go autodesk" to learn
+more.
+
+8.3 Cel Files (.CEL and .PIC)
+
+     A cel file has a 32-byte header followed by the uncompressed
+color map (768 bytes) followed by the uncompressed pixel image.  
+
+     The header is:
+     Byte Offset    Contents
+           0        Magic Number - 9119 Hexadecimal
+           2        Width of cel
+           4        Height of cel
+           6        Horizontal screen position of upper left
+                    corner
+           8        Vertical screen position 10Number of bits in a pixel (8)
+           11       Compression type (0 for uncompressed)
+           12       Size in bytes of cel image (a 4-byte long
+                    word)
+           16       16 bytes of zero reserved for future use.
+
+     A .PIC file uses the same format, with width and height
+320x200 and screen position 0x0.  (.PIC files are generated in
+Autodesk Animator if you supply a .PIC file suffix while loading
+or saving a single frame.  Otherwise a GIF file is made.)
+
+8.4 Palette Files (.COL)
+
+     A color file is just a binary image of the color palette. 
+It consists of 768 bytes -- three bytes for each color.  Each
+byte has a value from 0 to 63.  The red byte comes first, then
+the green, then the blue.
+
+8.5 Mask Files (.MSK)
+
+     A mask file is is an 8000-byte file.  It contains one bit
+for each pixel of the screen.  It goes from left to right, top to
+bottom.
+
+8.6 Text Files (.TXT)
+
+   These are just ordinary ASCII files.
+
+8.7 Font Files (.FNT)
+
+     My font files are a slightly strange hybrid.  They started
+out as the same type of file that GEM on the ST uses.  Then some
+additions were made to make it easier to convert MacIntosh fonts
+to a format Autodesk Animator could use.  My apologies for
+creating yet another font file format for the PC (this only makes
+about 12 I know of...), especially as I don't completely
+understand this one myself!
+
+     A font file starts out with an 88-byte header.  This is
+followed by up to three tables of various sizes:  
+     Byte Offset    Name      Meaning
+          0         id        Identifier.  Hex 9000 if
+                              Mac-converted
+          2         size      Point size of font.  Not used by
+                              Animator
+          4         facename  32 byte name of font.  Not used by
+                              Animator
+          36        ADE_lo    Lowest ASCII character in font.  
+                              More often than not this is 20 hex
+                              (space character).
+          38        ADE_hi    Highest character in font.
+          40        top_dist  unknown, unused by Animator42asc_distunknown, unused by Animator
+          44        hlf_dist  unknown, unused by Animator
+          46        des_dist  unknown, unused by Animator
+          48        bot_dist  unknown, unused by Animator
+          50        wchr_wdt  widest character width
+          52        wcel_width     widest 'cell' width (includes
+                                   distance to next character)
+          54        lft_ofst  unknown, unused by Animator
+          56        rgt_ofst  if Mac font, is negative of Mac
+                              maxKern value.  Else unknown &
+                              unused.
+          58        thckning  How bold is bold? Unused by
+                              Animator
+          60        undrline  How far down to underline? Unused
+                              by Animator
+          62        lghtng_m  Lightening mask. Mask for light
+                              style.  Unused by Animator
+          64        skewng_m  Skewing mask for italics.  Rotate
+                              line on a 1 bit.  Unused by
+                              Animator
+          66        flags     Will swap bytes of image if bit 2
+                              is non-zero.  (Part of DRI's
+                              attempt to make 8086/68000 work
+                              together.)
+          68        hz_ofst   Unknown, unused in Animator
+          72        ch_ofst   Unknown, unused in Animator
+          76        fnt_dta   Unknown, unused in Animator
+          80        frm_wdt   Byte width of bitmap
+          82        frm_hgt   Pixel height of bitmap
+          84        nxt_fnt   Unknown, unused in Animator
+
+     The first table is a series of 16-bit words containing the
+horizontal offset into the font bitmap image of the start of each
+letter.  The width of the letter is calculated by subtracting the
+offset of the next character from the offset of current
+character.  There's one offset for each character in the font,
+plus an extra one to give the width of the last character.  This
+table is always present.
+
+     The second table contains the font image.  This is a single
+bit-map for the whole font (as opposed to a series of bitmaps one
+for each character).  This table is always present.
+
+     The third table is only present in fonts we've translated
+from the MacIntosh (that is, if the id field in the header is
+hexadecimal 9000).  There are two bytes for each character in the
+font.  If both bytes are FF hexidecimal it is a 'missing
+character', and will not be drawn.  The first byte is added to
+the rgt_ofst field of the header to tell how many pixels to move
+to the right (or left if the result is negative) before drawing
+this character.  The second byte is how many pixels to move to
+the right after drawing this character.
+8.8 Polygon and Path files (.PLY)
+
+     A polygon file has an 8-byte header followed by 6 bytes for
+each point of the polygon (2 bytes each x,y,z with z always zero
+currently).
+
+   Here is the header:
+     Byte Offset    Contents
+     0              16-bit point count
+     2              4 bytes of zero
+     6              1 if polygon closed, 0 otherwise
+     7              Magic number - hex 99
+
+8.9 Optics Files (.OPT)
+
+     An optics file has a 4-byte header followed by a series of
+optical moves records of 50 bytes each.  Each time you click on
+CONTINUE MOVE in the OPTICS menu in Autodesk Animator another
+record is generated.  The header format is:
+     Byte Offset    Contents
+     0              Magic Number - 1A3F Hexadecimal
+     2              Number of moves in this file.  16-bit count
+
+   Here's the format for an individual record:
+     Byte Offset    Contents
+     0              4 bytes of zero (room for pointer to next
+                    record when it's loaded into memory)
+     4              Spin center.  x/y/z location (16 bits each)
+     10             Spin axis.  x/y/z location (16 bits each)
+     16             Spin turns  x/y/z (16 bits each)
+     22             Intermediate turns.  Two 16-bit words.  These
+                    are values for a conjugation matrix that
+                    corresponds to spin axis.
+     26             Size center x/y/z location (16 bits each)
+     32             x multiplier -- together with x divisor
+                    determines how to stretch along x
+                    (horizontal) dimension
+     34             x divisor
+     36             y multiplier
+     38             y divisor
+     40             both multiplier - applied to both x and y
+                    dimensions
+     42             both divisor
+     44             linear move x/y/z offset (16 bits each)
+
+8.10 Record Files (.REC)
+
+     A record file has a 16-byte header followed by any number of
+8-byte input records.  The header format is:
+     Byte Offset    Contents
+     0              Magic Number - 0713 Hexadecimal2long word (4 byte) count of number of input
+                    records
+     6              4 bytes of 0 
+     10             1 if real-time macro, 0 otherwise
+     11             5 bytes of 0
+
+   The format of a input record is:
+     Byte Offset    Contents
+     0              Time (in 70th of second) from last record if
+                    real-time, 0 otherwise.
+     1              Mouse button state.  Bit 0 is left button,
+                    bit 1 is right button.  (i.e. the value is 3
+                    if both buttons down, 1 if only left button,
+                    0 if no buttons down.)
+     2              16-bit keyboard code if key pressed, 0
+                    otherwise.
+     4              16-bit mouse horizontal position
+     6              16-bit mouse vertical position

@@ -1,0 +1,123 @@
+HOW TO INSTALL ZIP
+     Zip is distributed as C source code that can be compiled on a
+     wide range of Unix machines, VAXes running VMS, and MSDOS
+     machines using Microsoft or Borland C++, and OS/2 machines using
+     Microsoft C.  You will need Unzip 5.0p1 (under Unix, MSDOS, or VMS)
+     or PKUNZIP 2.04g or later (under MSDOS) to unpack the distribution
+     file, zip201.zip. But since you read this, you have unpacked it
+     already, or you cheated and got a tar.Z file...
+
+     Let's assume however that you start from scratch and have not yet
+     unpacked the sources. First, unpack the source as follows,
+     assuming that you have zip201.zip in the current directory.
+
+          mkdir zipsrc
+          cd zipsrc
+          unzip ../zip201
+
+     This extracts all source files and documentation in the
+     directory called "zipsrc". If you wish to build a version
+     of zip with encryption capabilities, you must also get the
+     separate package zcrypt20.zip and uncomment the definition
+     of MAKE at the beginning of the makefile.
+
+     You then do:
+
+          make system
+
+     where "system" is one of: generic, 386bsd, 3b1, aix, att6300, aux, bsd,
+     bsdold, bull, convex, coherent, cray, cray_v3, dec_osf1, dnix,
+     dynix, hpux, isc, linux, minix, next10, next2x, next3x, nextfat, pixel,
+     ptx, rs6000, scodos, sco_x286, sgi, sun, sun_gcc, sysv, sysv_gcc,
+     sysv_386, sys_386_gcc, sysv_old, ultrix, v7, xenix, xos, zilog.
+     Try "make generic" first, this works on most systems. If this
+     fails, then use one of the special targets given above.
+
+     If you are using a NeXT, then make next for help about various
+     NeXT targets.  Among other special systems are HPUX, DNIX 5.2 or
+     5.3, Cray Unicos, AT&T 3B1 (also known as Unix PC or PC 7300),
+     Zilog Zeus, A/UX, Convex, AIX, MINIX, ISC System V/386, Dynix,
+     Ultrix and DEC OSF/1.
+
+     If you are using BSD Unix, try bsd.  If the linker cannot find
+     _memset or _memcpy, try bsdold or v7.  If you are using System V
+     Unix or SCO Unix, try sysv or sysv_old.  Also use sysv on a
+     Silicon Graphics (SGI) machine.  You can also cross-compile Zip
+     for MSDOS under SCO 386 Unix using "make scodos". If you get
+     error messages "constant expected" in deflate.c, add -DDYN_ALLOC
+     to CFLAGS in your makefile entry.
+
+     If you have lots of memory, try compiling with -DBIG_MEM. If your
+     system supports mmap(), try compiling with -DMMAP. This generally
+     gives faster compression but uses more memory. See the Makefile
+     entry mmap_gcc for an example.
+
+     If none of these compiles, links, and functions properly on
+     your Unix system, see the file README for how to get help.
+
+     If the appropriate system was selected, then the executables
+     zip, zipnote and zipsplit will be created.  You can copy them
+     to an appropriate directory in the search path using:
+
+          make install
+
+     The defaults are /usr/local/bin for the executables and
+     /usr/man/man1 for the manual page. Change the macros BINDIR
+     and MANDIR in makefile if appropriate.
+
+     You can use the command "set" to see the current search
+     path.  If you are using the C-Shell (csh), enter the com-
+     mand:
+
+          rehash
+
+     so csh can find the new command in the path.  You are now
+     ready to use Zip.
+
+     You can get rid of the now unnecessary source and object
+     files with:
+
+          cd ..
+          rm -r zipsrc
+
+     This will remove the directory zip and its contents created
+     by unzip.  You should keep the zip20.zip file around though,
+     in case you need to build it again or want to give it to a
+     colleague.
+
+     You can add the following lines to the file /etc/magic for
+     usage by the 'file' command:
+
+0	string		PK\003\004	Zip archive
+>4	string		\011		(at least v0.9 to extract)
+>4	string		\012		(at least v1.0 to extract)
+>4	string		\013		(at least v1.1 to extract)
+>4	string		\024		(at least v2.0 to extract)
+
+
+     The steps for installation under MSDOS, OS/2, and VMS are
+     similar to the above: first unzip the distribution files
+     into their own directory. The system dependant files are
+     stored in special subdirectories. You may have to
+     copy or move them to the main sources directory.
+     Then under MSDOS do one of:
+
+          make makefile.msc
+          make -fmakefile.bor
+
+     for Microsoft or Borland C++, respectively. For Turbo C 2.0,
+     use the configuration file tcconfig.tc, the batch file
+     doturboc.bat and the project files zip.prj, zipnote.prj
+     and zipsplit.prj. Make sure to use the compact model.
+
+     Under OS/2:
+
+          nmake -f makefile.os2
+
+     for Microsoft C 6.00.  Under VAX VMS:
+
+          @make_vaxc
+     or:  @make_gcc
+
+     For command help on any of the zip* utilities, simply enter
+     the name with no arguments.

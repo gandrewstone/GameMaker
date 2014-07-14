@@ -72,7 +72,7 @@ class VideoDriver
   };
 
 VideoDriver* LoadVideoDriver(char *FileName);
-extern "C" void TextMode(void);
+void TextMode(void);
 
 #endif
-
+

@@ -1,0 +1,95 @@
+UnZip, version 5.12, 28 August 1994
+
+New features, you betcha:
+
+5.12a:
+ - added zipinfo patch for empty space within zipfile (Novell/PKZIP bug); moved
+    newzip variable out of crypt.[ch] [CN]
+ - MS-DOS, OS/2:  added EMX, EMXOPT, GO32 and GO32TMP environment-variable info
+    to unzip -v output [CN]
+ - OS/2:  replaced watcom.dif with wat_met.dif (support for Metaware C++ as
+    well as 16/32-bit Watcom) [Kai Uwe]
+5.12b:
+ - added another acknowledgment example to COPYING [CN]
+ - VMS:  modified VMSWILD to use () instead of [] for sets; had been disallowed
+    entirely [Charles Bailey, CN]
+ - VMS:  added .hlp file for unzipsfx and MAKESFX.COM script [Martin Zinser]
+5.12c:
+ - MS-DOS:  updated README with djgpp 1.12 and QEMM 7.04 info [CN, Kevin
+    Fritz]
+ - added timezone-debugging code to file_io.c (define DEBUG_TIME) [CN]
+ - MS-DOS:  updated gcc_dos Makefile target and README to include notes about
+    GNU make and djgpp timezone bugs [CN]
+ - changed "unzip -v" to print only version*100 if -qqqq (or greater) [CN]
+ - changed all putc/putchar calls to PUTC macro for future DLL use [CN]
+ - Unix, NT:  changed all local printf/fprintf calls to macros; deleted a bunch
+    of OS/2 stuff in nt.c [CN]
+ - updated README to note Kevin's finding:  32-bit DOS UnZip *faster* than
+    PKUNZIP on most archives...whoa. [CN, Keven F]
+ - added SFX_EXDIR option to allow use of -d in UnZipSFX [CN]
+5.12d:
+ - Mac:  updated version numbers in *.hqx files [Antoine]
+ - MS-DOS:  added _gcc_dos_new sub-target to unix/Makefile, to be used when
+    djgpp 1.12m1 is released (new coff2exe -g option) [CN]
+ - added AOL info to Where file [Audrey Beck, CN]
+ - removed obsolete DEBUG_STRUC code [CN]
+ - added regulus target and zstat() function [Paul Klahr, CN]
+ - updated docs, version numbers for release [CN]
+ - VMS:  last(!) Ident and clean: tweaks [Igor, Christian, Hunter]
+5.12e:
+ - Unix:  changed "strip" to "$(STRIP)" for easier debugging [Marty Leisner]
+ - MS-DOS:  updated msdos/README with djgpp 1.12m1 timezone fixes info [CN]
+
+Bugs fixed:
+
+5.12a:
+ - ifdef'd two unused string variables in non-crypt extract.c [CN]
+ - put newzip back into crypt.h:  CRYPT not yet defined in unzip.h [CN]
+ - fixed unzipsfx bug:  first filespec ignored [Paul Weiss, CN]
+ - updated unzipsfx man page to note problem with "foo -x *.c" [CN, Paul Weiss]
+5.12b:
+ - VMS:  updated Where file entry for VMS ftp sites [Brian Tillman, Hunter]
+ - updated README.CR and INSTALL to note that zipcloak is for zip sources only
+    [CN, Richard Lloyd]
+ - fixed -d bug w.r.t. extraction to / (all but VMS, TOPS-20) [CN, Piet]
+ - Amiga, Mac, etc.:  fixed non-OLD_EXDIR bug [CN]
+ - OS/2, MS-DOS:  removed left-over EMX,EMXOPT notes [CN]
+ - VMS:  fixed VMS_SEVERITY return values [Charles Bailey]
+ - VMS:  fixed(?) MAKE.COM to check for DEC C and use VAXC option [CN, Hunter]
+5.12c:
+ - VMS:  fixed various descrip.mms bugs [Christian Spieler]
+ - MS-DOS:  added LOCAL_UNZIP support to makefile.msc and makefile.bc;
+    fixed MED_MEM typo in unzip.h [Christian]
+ - moved extern declaration of CompiledWith[] from unzip.h into local files
+    (avoid VMS warnings) [CN, Christian]
+ - fixed one overlooked fprintf/FPRINTF macro in unzip.h [CN]
+ - VMS:  fixed /DIRECTORY bug; fixed __DEBUG__ stuff in descrip.mms [Igor]
+ - VMS:  tweaked RETURN_SEVERITY levels some more [CN, Christian, Igor, Rodney]
+ - documented -b option in unzip.1 and UnZipSFX usage line [CN]
+ - fixed a bunch of broken Trace() statements in extract.c [Christian]
+5.12c2:
+ - VMS:  real fix for do_wild() bug [Christian]
+5.12d:
+ - swapped two PUTC's for a PRINTF in zipinfo.c [CN]
+ - VMS:  removed incorrect Where file info [Hunter]
+ - VMS:  fixed do_wild() and descrip.mms again [Christian, CN]
+ - MS-DOS:  updated INSTALL and Makefile to note problems with long command
+    lines and LOCAL_UNZIP [Piet, CN]
+ - VMS:  fixed make.com [Rodney, Hunter, CN, Christian]
+ - VMS:  fixed cmdline.c double usage() bug with unzipsfx, VMSCLI [Rodney, CN]
+ - VMS:  added lots of typecasts and fixed some initializers for DEC C; added
+    a newline to an inflate.c debug line [Christian]
+ - MS-DOS:  improved gcc_dos target's creation of empty zipinfo file via FIND
+    instead of COPY [Jean-loup, Kai Uwe]
+ - added some more typecasts [CN, Kai Uwe]
+5.12e:
+ - fixed explode.c comment (long-lost patch from Feb 93, blush...) [Mark]
+ - VMS:  fixed makefiles for unzipsfx+VMSCLI [CN, Hunter]
+
+==================
+
+These changes occurred in beta versions 5.12a to 5.12e.  This list may have 
+left out some bugfixes and even some features...the brain cell is going, 
+folks (as Mark would say).  Apologies, etc.
+
+Greg Roelofs (a.k.a. Cave Newt)

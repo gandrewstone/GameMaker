@@ -1,0 +1,80 @@
+# Makefile for Zip, ZipCloak, ZipNote and ZipSplit for
+# djgcc 1.08
+
+# ------------- djgcc -------------
+CFLAGS=-Wall -O2
+UTILFLAGS=-c -DUTIL $(CFLAGS) -o
+CC=gcc
+LD=gcc
+LDFLAGS=-s
+
+# variables
+OBJZ = zip.o zipfile.o zipup.o fileio.o util.o globals.o crypt.o
+OBJI = deflate.o trees.o bits.o match.o
+OBJU = zipfile_.o zipup_.o fileio_.o util_.o globals.o
+OBJN = zipnote.o  $(OBJU)
+OBJC = zipcloak.o $(OBJU) crypt_.o
+OBJS = zipsplit.o $(OBJU)
+
+zips:	zip zipnote zipsplit zipcloak
+
+zip.o:	      zip.h ziperr.h tailor.h revision.h zip.c
+
+zipfile.o:    zip.h ziperr.h tailor.h zipfile.c
+
+zipup.o:      zip.h ziperr.h tailor.h revision.h zipup.c
+
+fileio.o:     zip.h ziperr.h tailor.h fileio.c
+
+util.o:       zip.h ziperr.h tailor.h util.c
+
+globals.o:    zip.h ziperr.h tailor.h globals.c
+
+deflate.o:    zip.h ziperr.h tailor.h deflate.c
+
+trees.o:      zip.h ziperr.h tailor.h trees.c
+
+bits.o:       zip.h ziperr.h tailor.h bits.c
+
+crypt.o:      zip.h ziperr.h tailor.h crypt.c
+
+zipcloak.o:   zip.h ziperr.h tailor.h revision.h zipcloak.c
+
+zipnote.o:    zip.h ziperr.h tailor.h revision.h zipnote.c
+
+zipsplit.o:   zipsplit.c zip.h ziperr.h tailor.h revision.h
+
+zipfile_.o:   zipfile.c zip.h ziperr.h tailor.h
+	$(CC) $(UTILFLAGS) $@ zipfile.c
+
+zipup_.o:     zipup.c zip.h ziperr.h tailor.h
+	$(CC) $(UTILFLAGS) $@ zipup.c
+
+fileio_.o:    fileio.c zip.h ziperr.h tailor.h
+	$(CC) $(UTILFLAGS) $@ fileio.c
+
+util_.o:    util.c zip.h ziperr.h tailor.h
+	$(CC) $(UTILFLAGS) $@ util.c
+
+crypt_.o:     crypt.c zip.h
+	$(CC) $(UTILFLAGS) $@ crypt.c
+
+zip: $(OBJZ) $(OBJI)
+	$(LD) $(LDFLAGS) $(OBJZ) $(OBJI) -o $@
+	aout2exe $@
+	del $@
+
+zipcloak: $(OBJC)
+	$(LD) $(LDFLAGS) $(OBJC) -o $@
+	aout2exe $@
+	del $@
+
+zipnote: $(OBJN)
+	$(LD) $(LDFLAGS) $(OBJN) -o $@
+	aout2exe $@
+	del $@
+
+zipsplit: $(OBJS)
+	$(LD) $(LDFLAGS) $(OBJS) -o $@
+	aout2exe $@
+	del $@

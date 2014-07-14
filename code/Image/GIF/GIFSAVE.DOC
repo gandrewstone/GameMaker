@@ -1,0 +1,363 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      G I F S A V E
+
+
+                         C-functions to save an image using GIF
+
+
+
+
+                                  Written 26/9-1992 by
+
+                                    Sverre H. Huseby
+                                     Bjoelsengt. 17
+                                       N-0468 Oslo
+                                         Norway
+
+                                   Phone: +47 2 230539
+
+                                   sverrehu@ifi.uio.no
+
+
+
+
+
+
+
+
+
+          GIFSAVE reference                                       PAGE 2
+
+
+
+
+                                      INTRODUCTION
+                                      ============
+
+
+          The GIFSAVE functions (hereafter called GIFSAVE) make it possible 
+          to save GIF-images from your own graphic-producing C-programs.
+
+              The Graphics Interchange Format(c) is the Copyright property of 
+              CompuServe Incorporated. GIF(tm) is a Service Mark property of 
+              CompuServe Incorporated. 
+
+          (According to CompuServe Inc, the above note must be included in 
+          documentation of programs using GIF-files.)
+
+          GIFSAVE creates simple GIF-files following the GIF87a standard. 
+          Interlaced images can not be created, and there should only be one 
+          image pr file.
+
+          GIFSAVE is hereby dedicated to the Public Domain. Feel free to 
+          change the source code as you wish !!!
+
+
+
+
+
+
+
+
+
+
+          GIFSAVE reference                                       PAGE 3
+
+
+
+
+                                      USING GIFSAVE
+                                      =============
+
+
+          GIFSAVE consists of four functions, all decleared in GIFSAVE.H:
+
+              GIF_Create() creates new GIF-files. It takes parameters 
+                  specifying the filename, screen size, number of colors, and 
+                  color resolution. 
+
+              GIF_SetColor() sets up the red, green and blue color 
+                  components. It should be called once for each possible 
+                  color. 
+
+              GIF_CompressImage() performs the compression of the image. It 
+                  accepts parameters describing the position and size of the 
+                  image on screen, and a user defined callback function that 
+                  is supposed to fetch the pixel values. 
+
+              GIF_Close() terminates and closes the file. 
+
+          The functions should be called in the listed order for each 
+          GIF-file. One file must be closed before a new one can be created.
+
+
+          To use these functions, you must create a callback function that 
+          will do what is needed to get the pixel values for each point in 
+          the image.
+
+
+
+
+
+                                       PORTABILITY
+                                       ===========
+
+
+          GIFSAVE is written using streams only, and all word (16 bits) 
+          outputs are split into byte outputs to force the byte swapping 
+          required in GIF-files. This should make the functions rather 
+          portable.
+
+          File output is done through the functions Create(), Write(), 
+          WriteByte(), WriteWord() and Close(). If you want to rewrite 
+          GIFSAVE to use other file I/O than streams, you need only change 
+          theese functions.
+
+
+
+
+
+
+
+
+
+
+          GIFSAVE reference                                       PAGE 4
+
+
+
+
+                                      THE FUNCTIONS
+                                      =============
+
+
+          GIF_Create() 
+
+                  Function  Creates a new GIF-file, and stores info on the 
+                            screen. 
+
+                    Syntax  int GIF_Create(
+                                    char *filename,
+                                    int width, int height,
+                                    int numcolors, int colorres
+                                ); 
+
+                   Remarks  Creates a new (or overwrites an existing) 
+                            GIF-file with the given filename. No 
+                            .GIF-extension is added.
+
+                            The width- and height- parameters specifies the 
+                            size of the screen.
+
+                            numcolors is the number of colors used in the 
+                            image.
+
+                            colorres is number of bits used to encode a 
+                            primary color (red, green or blue). In GIF-files, 
+                            colors are built by combining given amounts of 
+                            each primary color. On VGA-cards, each color is 
+                            built by combining red, green and blue values in 
+                            the range [0, 63]. Encoding the number 63 would 
+                            require 6 bits, so colorres would be set to 6. 
+
+              Return value  GIF_OK        - OK
+                            GIF_ERRCREATE - Error creating file
+                            GIF_ERRWRITE  - Error writing to file
+                            GIF_OUTMEM    - Out of memory
+
+
+
+
+
+
+
+
+
+
+
+          GIFSAVE reference                                       PAGE 5
+
+
+
+
+          GIF_SetColor() 
+
+                  Function  Specifies the primary color component of a color 
+                            used in the image. 
+
+                    Syntax  void GIF_SetColor(
+                                     int colornum,
+                                     int red, int green, int blue
+                                 ); 
+
+                   Remarks  This function updates the colortable-values for 
+                            color number colornum in the image.
+
+                            Should be called for each color in the range
+
+                                [0, numcolors]
+
+                            with red, green and blue components in the range
+
+                                [0, (1 << colorres) - 1]
+
+                            colorres and colornum are values previousely 
+                            given to the function GIF_Create(). 
+
+              Return value  None 
+
+
+
+
+
+
+
+
+
+
+          GIFSAVE reference                                       PAGE 6
+
+
+
+
+          GIF_CompressImage() 
+
+                  Function  Compresses an image and stores it in the current 
+                            file. 
+
+                    Syntax  int GIF_CompressImage(
+                                    int left, int top,
+                                    int width, int height,
+                                    int (*getpixel)(int x, int y)
+                                ); 
+
+                   Remarks  The left- and top- parameters indicate the image 
+                            offset from the upper left corner of the screen. 
+                            They also give the start values for calls to the 
+                            userdefined callback function.
+
+                            width and height give the size of the image. A 
+                            value of -1 indicates the equivalent screen size 
+                            given in the call to GIF_Create().
+
+                            If the image is supposed to cover the entire 
+                            screen, values 0, 0, -1, -1 should be given.
+
+                            GIF_CompressImage() obtains the pixel values by 
+                            calling a user specified function. This function 
+                            is passed in the parameter getpixel. See "THE 
+                            CALLBACK FUNCTION" further down for a description 
+                            of this function. 
+
+              Return value  GIF_OK        - OK
+                            GIF_ERRWRITE  - Error writing to file
+                            GIF_OUTMEM    - Out of memory
+
+
+
+
+
+
+
+
+
+
+
+          GIFSAVE reference                                       PAGE 7
+
+
+
+
+          GIF_Close() 
+
+                  Function  Closes the GIF-file. 
+
+                    Syntax  int GIF_Close(void); 
+
+                   Remarks  This function writes a terminating descriptor to 
+                            the file, and then closes it. Also frees memory 
+                            used by the other functions of GIFSAVE. 
+
+              Return value  GIF_OK        - OK
+                            GIF_ERRWRITE  - Error writing to file
+
+
+
+
+
+
+
+
+
+
+
+          GIFSAVE reference                                       PAGE 8
+
+
+
+
+                                  THE CALLBACK FUNCTION
+                                  =====================
+
+
+          callback() 
+
+                  Function  Obtains pixel-values for the GIF_CompressImage() 
+                            -function. 
+
+                    Syntax  int callback(int x, int y); 
+
+                   Remarks  This function (or these functions) must be 
+                            written by the programmer using GIFSAVE. It 
+                            should accept two integer parameters specifying a 
+                            point on the screen, and return the pixel value 
+                            at this point.
+
+                            The ranges for these parameters are as follows:
+
+                                x : [img_left, img_left + img_width - 1]
+                                y : [img_top, img_top + img_height - 1]
+
+                            where img_left, img_top, img_width and img_height 
+                            are the values left, top, width and height passed 
+                            to GIF_CompressImage().
+
+                            An example; if the screen has width 640 and 
+                            height 350, and the image covers the entire 
+                            screen, x will be in the range [0, 639] and y in 
+                            the range [0, 349].
+
+                            Of course callback() need not get its values from 
+                            the screen. The values can be fetched from a 
+                            memory array, they can be calculated for each 
+                            point requested, etc.
+
+                            The function is passed as a parameter to 
+                            GIF_CompressImage(), and can thus have any name, 
+                            not only callback(). 
+
+              Return value  Pixel value at the point requested. Should be in 
+                            the range [0, numcolors - 1], where numcolors is 
+                            as specified to the GIF_Create() -function. 
+
+
+
+
+
+
+

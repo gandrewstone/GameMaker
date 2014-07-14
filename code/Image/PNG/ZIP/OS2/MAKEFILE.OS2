@@ -1,0 +1,285 @@
+# Makefile for Zip, ZipCloak, ZipNote and ZipSplit
+
+# Supported Make utilities:
+# - Microsoft/IBM nmake
+# - dmake 3.8 (parallel make, use -P4 if you have the memory)
+# - GNU make, at least version 3.68
+# - NOT watcom make (brain dead, apparently doesn't know lines cont'd with \)
+
+# Supported 16-bit C Compilers (created programs run under OS/2 1.x and 2.x):
+# - Microsoft C 6.00
+
+# Supported 32-bit C Compilers (created programs run under OS/2 2.x only):
+# - GNU gcc (emx kit 0.8g or newer)
+# - IBM C Set/2 or C Set++   - does not yet work with ASM code
+# - Watcom C/C++/386         - does not yet work with ASM code
+# - Borland C++              - no ASM code yet
+
+# Supported Assemblers:
+# - Microsoft MASM 6.00 with Microsoft C, IBM C, Watcom C
+# - Microsoft MASM 5.xx with Microsoft C, uncomment "masm" line near line 240
+# - GNU as with GNU gcc
+
+# To use, enter "make/nmake/dmake -f makefile.os2" 
+# (this makefile depends on its name being "makefile.os2").
+
+# Add -DNO_ASM to CFLAGS and remove match.obj if you do not have masm or ml.
+# Add -DDYN_ALLOC to ASFLAGS if you have defined it in tailor.h or CFLAGS
+
+# Notes on 16-bit (Microsoft C 6.00) compilation:
+
+#   The resulting programs can be used under OS/2 protected mode only.
+#   A larger stack has to be used for OS/2 because system calls
+#   use more stack than under DOS, 8k is recommended by Microsoft.
+#   Note that __STDC__ has to be defined explicitly with C 6.00 when -Ze
+#   is given, because Microsoft disables __STDC__ when their extensions
+#   are enabled. This is different from the C 5.10 behaviour.
+
+# Notes on 32-bit (IBM C/C++, Watcom C, Borland C++ or GNU gcc) compilation:
+
+#   The resulting programs can be used under OS/2 protected
+#   mode of OS/2 2.x only, not under 1.x and not under DOS.
+#   It makes no difference if __STDC__ is defined or not.
+#   Watcom C/C++, IBM C/C++ Set and Borland C++ work with DYN_ALLOC only.
+
+# Special Notes on IBM C/C++ compilation:
+
+#   The older C compiler (C Set/2) breaks, while optimizing, on deflate.c
+#   and trees.c (generates incorrect code). The newer C++ compiler (C Set++)
+#   doesn't but instead breaks on crypt.c. See the NFLAGS macro definition
+#   and change it's use as needed when you experience problems.
+
+default:
+	@echo "Enter $(MAKE) -f makefile.os2 target"
+	@echo "where target is one of:"
+	@echo "   msc mscdos ibm ibmdyn ibmdebug ibmprof"
+	@echo "   watcom gcc gccdyn gccdebug borland"
+
+# crosscompilation for MS-DOS with MS C 6.00
+mscdos:
+	$(MAKE) -f makefile.os2 zips \
+	CC="cl -nologo -AL -Oaict -Gs $(FP)" \
+	CFLAGS="-W3 -Zep" \
+	AS="ml -nologo -Zm -Cp" \
+	ASFLAGS="-D__LARGE__" \
+	LDFLAGS="-F 2000 -Lr -Fe" \
+        LDFLAGS2="-link /noe /exe" \
+        OUT="-Fo" \
+        OBJ=".obj" \
+	OBJA=match.obj
+
+# MS C 6.00 for OS/2, 16-bit
+msc:
+	$(MAKE) -f makefile.os2 zips \
+	CC="cl -nologo -AL -Ocegit -Gs $(FP)" \
+	CFLAGS="-W1 -Zep -J -G2 -D__STDC__ -DOS2" \
+	AS="ml -nologo -Zm -Cp" \
+	ASFLAGS="-D__LARGE__" \
+	LDFLAGS="-F 2000 -Lp -Fe" \
+        LDFLAGS2="-link /noe /pm:vio" \
+        OUT="-Fo" \
+        OBJ=".obj" \
+	OBJA="match.obj" \
+        DEF="zip16.def"
+
+# IBM C Set/2, statically linked runtime
+ibm:
+	$(MAKE) -f makefile.os2 zips \
+	CC="icc -Q -O -Gs" \
+	CFLAGS="-Sm -Sp1 -DOS2 -DDYN_ALLOC -DNO_ASM" \
+	NFLAGS="-O-" \
+	AS="ml -nologo" \
+	ASFLAGS="-Zm -Cp" \
+	LDFLAGS="-Fe" \
+        LDFLAGS2="" \
+        OUT="-Fo" \
+        OBJ=".obj" \
+	OBJA="" \
+        DEF="zip.def"
+
+# IBM C Set/2, dynamically linked runtime
+ibmdyn:
+	$(MAKE) -f makefile.os2 zips \
+	CC="icc -Q -O -Gd -Gs" \
+	CFLAGS="-Sm -Sp1 -DOS2 -DDYN_ALLOC -DNO_ASM" \
+	NFLAGS="-O-" \
+	AS="ml -nologo" \
+	ASFLAGS="-Zm -Cp" \
+	LDFLAGS="-Fe" \
+        LDFLAGS2="" \
+        OUT="-Fo" \
+        OBJ=".obj" \
+	OBJA="" \
+        DEF="zip.def"
+
+# IBM C Set/2, debug version
+ibmdebug:
+	$(MAKE) -f makefile.os2 zips \
+	CC="icc -Q -Ti" \
+	CFLAGS="-Sm -Sp1 -DOS2 -D__DEBUG_ALLOC__ -DDYN_ALLOC -DNO_ASM" \
+	AS="ml -nologo" \
+	ASFLAGS="-Zm -Cp" \
+	LDFLAGS="-Fe" \
+        LDFLAGS2="" \
+        OUT="-Fo" \
+        OBJ=".obj" \
+	OBJA="" \
+        DEF="zip.def"
+
+# IBM C Set/2, profiling version for PROFIT
+ibmprof:
+	$(MAKE) -f makefile.os2 zips \
+	CC="icc -Q -O -Gs -Gh -Ti" \
+	CFLAGS="-Sm -Sp1 -DOS2 -DDYN_ALLOC -DNO_ASM" \
+	NFLAGS="-O-" \
+	AS="ml -nologo" \
+	ASFLAGS="-Zm -Cp" \
+	LDFLAGS="-Fe" \
+        LDFLAGS2="profit.obj" \
+        OUT="-Fo" \
+        OBJ=".obj" \
+	OBJA="" \
+        DEF="zip.def"
+
+# Watcom C/386 9.0
+watcom:
+	$(MAKE) -f makefile.os2 zips \
+	CC="wcl386 -zq -Ox -s" \
+	CFLAGS="-Zp1 -DOS2 -DDYN_ALLOC -DNO_ASM" \
+	AS="ml -nologo" \
+	ASFLAGS="-Zm -Cp" \
+	LDFLAGS="-k0x40000 -x -Fe=" \
+        LDFLAGS2="" \
+        OUT="-Fo" \
+        OBJ=".obj" \
+	OBJA=""
+
+# Borland C++ (TOPAZ)
+borland:
+	$(MAKE) -f makefile.os2 zips \
+	CC="bcc -O" \
+	CFLAGS="-w- -DOS2 -DDYN_ALLOC -DNO_ASM" \
+	AS="ml -nologo" \
+	ASFLAGS="-Zm -Cp" \
+	LDFLAGS="-e" \
+        LDFLAGS2="" \
+        OUT="-o" \
+        OBJ=".obj" \
+	OBJA="" \
+        DEF="-sDzip.def"
+
+# emx 0.8f, gcc, OMF format, statically linked C runtime and emx
+gcc:
+	$(MAKE) -f makefile.os2 zips \
+	CC="gcc -Zomf -Zsys -O" \
+	CFLAGS="-DOS2" \
+	AS="gcc -Zomf" \
+	ASFLAGS="" \
+	LDFLAGS="-o ./" \
+        LDFLAGS2="-s -los2" \
+        OUT="-o" \
+        OBJ=".obj" \
+	OBJA="matchgcc.obj" \
+        DEF="zip.def"
+
+# emx 0.8g, gcc, OMF format, dynamically linked C runtime and emx
+gccdyn:
+	$(MAKE) -f makefile.os2 zips \
+	CC="gcc -Zomf -Zmtd -O" \
+	CFLAGS="-DOS2" \
+	AS="gcc -Zomf" \
+	ASFLAGS="" \
+	LDFLAGS="-o ./" \
+        LDFLAGS2="-s -los2" \
+        OUT="-o" \
+        OBJ=".obj" \
+	OBJA="matchgcc.obj" \
+        DEF="zip.def"
+
+# emx, gcc, a.out format, with debug info for gdb
+gccdebug:
+	$(MAKE) -f makefile.os2 zips \
+	CC="gcc -g" \
+	CFLAGS="-DOS2" \
+	AS="gcc" \
+	ASFLAGS="" \
+	LDFLAGS="-o ./" \
+        LDFLAGS2="-los2" \
+        OUT="-o" \
+        OBJ=".o" \
+	OBJA="matchgcc.o" \
+        DEF="zip.def"
+
+OBJZ =  zip$(OBJ) zipfile$(OBJ) zipup$(OBJ) fileio$(OBJ) util$(OBJ) \
+        globals$(OBJ) deflate$(OBJ) trees$(OBJ) bits$(OBJ) crypt$(OBJ) \
+	os2zip$(OBJ)
+
+OBJU =  zipfile_$(OBJ) zipup_$(OBJ) fileio_$(OBJ) util_$(OBJ) \
+	globals$(OBJ) os2zip_$(OBJ)
+
+OBJN =  zipnote$(OBJ) $(OBJU)
+OBJC =  zipcloak$(OBJ) crypt_$(OBJ) $(OBJU)
+OBJS =  zipsplit$(OBJ) $(OBJU)
+
+.c$(OBJ):
+	$(CC) -c $(CFLAGS) $<
+
+zips:	zip.exe zipnote.exe zipsplit.exe zipcloak.exe
+
+zip$(OBJ):	zip.c zip.h ziperr.h tailor.h revision.h
+zipfile$(OBJ):	zipfile.c zip.h ziperr.h tailor.h
+zipup$(OBJ):	zipup.c zip.h ziperr.h tailor.h revision.h os2zip.h
+fileio$(OBJ):	fileio.c zip.h ziperr.h tailor.h os2zip.h
+util$(OBJ):	util.c zip.h ziperr.h tailor.h os2zip.h
+globals$(OBJ):	globals.c zip.h ziperr.h tailor.h
+deflate$(OBJ):	deflate.c zip.h ziperr.h tailor.h
+trees$(OBJ):	trees.c zip.h ziperr.h tailor.h
+bits$(OBJ):	bits.c zip.h ziperr.h tailor.h
+crypt$(OBJ):	crypt.c zip.h ziperr.h tailor.h
+	$(CC) -c $(CFLAGS) $(NFLAGS) $*.c
+os2zip$(OBJ):	os2zip.c os2zip.h
+
+match$(OBJ):	match.asm
+	$(AS) -c $(ASFLAGS) $*.asm
+# use the following for MASM 5.x instead of 6.00
+#	masm -ml -t $(ASFLAGS) $*.asm;
+
+match32$(OBJ):	match32.asm
+	$(AS) -c $(ASFLAGS) $*.asm
+
+matchgcc$(OBJ):	match.s
+	$(AS) -c $(ASFLAGS) -x assembler-with-cpp -o $@ match.s
+
+zipcloak$(OBJ):	zipcloak.c zip.h ziperr.h tailor.h revision.h
+zipnote$(OBJ):	zipnote.c zip.h ziperr.h tailor.h revision.h
+zipsplit$(OBJ): zipsplit.c zip.h ziperr.h tailor.h revision.h
+
+zipfile_$(OBJ):	zipfile.c zip.h ziperr.h tailor.h
+	$(CC) -c $(CFLAGS) -DUTIL $(OUT)$@ zipfile.c
+
+zipup_$(OBJ):	zipup.c zip.h ziperr.h tailor.h
+	$(CC) -c $(CFLAGS) -DUTIL $(OUT)$@ zipup.c
+
+fileio_$(OBJ):	fileio.c zip.h ziperr.h tailor.h
+	$(CC) -c $(CFLAGS) -DUTIL $(OUT)$@ fileio.c
+
+util_$(OBJ):	util.c zip.h ziperr.h tailor.h os2zip.h
+	$(CC) -c $(CFLAGS) -DUTIL $(OUT)$@ util.c
+
+crypt_$(OBJ):	crypt.c zip.h ziperr.h tailor.h
+	$(CC) -c $(CFLAGS) -DUTIL $(OUT)$@ crypt.c
+
+os2zip_$(OBJ): os2zip.c os2zip.h
+	$(CC) -c $(CFLAGS) -DUTIL $(OUT)$@ os2zip.c
+
+zip.exe: $(OBJZ) $(OBJI) $(OBJA)
+	$(CC) $(LDFLAGS)$@ $(DEF) $(OBJZ) $(OBJI) $(OBJA) $(LDFLAGS2)
+
+zipcloak.exe: $(OBJC)
+	$(CC) $(LDFLAGS)$@ $(DEF) $(OBJC) $(LDFLAGS2)
+
+zipnote.exe: $(OBJN)
+	$(CC) $(LDFLAGS)$@ $(DEF) $(OBJN) $(LDFLAGS2)
+
+zipsplit.exe: $(OBJS)
+	$(CC) $(LDFLAGS)$@ $(DEF) $(OBJS) $(LDFLAGS2)

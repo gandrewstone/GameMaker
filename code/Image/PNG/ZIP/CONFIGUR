@@ -1,0 +1,97 @@
+:
+#!/bin/sh
+# The above : is necessary on some buggy systems.
+
+# configure: Guess values for system-dependent variables
+# Output the flag definitions to stdout.
+# You can invoke 'configure' interactively to see the results.
+# When invoked with a file argument, the flags are written to this file.
+# To construct zip automatically using this file, type "make generic".
+# If this fails, then type "make list" to get a list of special targets.
+
+trap "rm -f conftest* core; exit 1" 1 2 3 15
+
+CFLAGS=""
+
+echo Check for the C compiler
+# Check which compiler we have and if it supports -O or -O2
+CC=cc
+OPT=""
+echo 'int foo() {return 0;}' > conftest.c
+
+if test -z "`(gcc -c -O2 conftest.c) 2>&1`" ; then
+  CC=gcc OPT="-O2"
+elif test -z "`(gcc -c -O conftest.c) 2>&1`" ; then
+  CC=gcc  OPT="-O"
+elif test -z "`cc -c -O  conftest.c 2>&1`" ; then
+  OPT="-O"
+fi
+CFLAGS="${CFLAGS} ${OPT}"
+
+echo Check for the C preprocessor
+# on SVR4, cc -E does not produce correct assembler files. Need /lib/cpp.
+CPP="${CC} -E"
+[ -f /usr/lib/cpp ] && CPP=/usr/lib/cpp
+[ -f /lib/cpp ] && CPP=/lib/cpp
+
+echo Check if we can use asm code
+OBJA=""
+if eval "$CPP match.s > _match.s 2>/dev/null"; then
+  if test ! -s _match.s || grep error < _match.s > /dev/null; then
+    :
+  elif eval "$CC -c _match.s >/dev/null 2>&1" && test -f _match.o; then
+    CFLAGS="${CFLAGS} -DASMV"
+    OBJA=match.o
+  fi
+fi
+rm -f _match.s _match.o
+
+echo Check if compiler generates underlines
+if nm conftest.o | grep _foo > /dev/null 2>&1 ; then
+  :
+else
+  CPP="${CPP} -DNO_UNDERLINE"
+fi
+
+rm -f conftest.c conftest.o
+
+echo Check for BSD/SYSV
+OPT=""
+[ -f /usr/include/sys/dir.h ]    && OPT="-DSYSDIR"
+[ -f /usr/include/sys/ndir.h ]   && OPT="-DSYSNDIR"
+[ -f /usr/include/sys/dirent.h ] && OPT="-DDIRENT"
+[ -f /usr/include/sys/termio.h ] && OPT="-DSYSV"
+CFLAGS="${CFLAGS} ${OPT}"
+
+echo Check for /usr/local/bin and /usr/local/man
+BINDIR=$HOME/bin
+[ -d /usr/local/bin ] && BINDIR=/usr/local/bin
+
+MANDIR=manl
+[ -d /usr/man/manl ]       && MANDIR=/usr/man/manl
+[ -d /usr/local/man/manl ] && MANDIR=/usr/local/man/manl
+[ -d /usr/local/man/man1 ] && MANDIR=/usr/local/man/man1
+
+LFLAGS2="-s"
+
+echo Check for NeXT
+if test -f /usr/bin/hostinfo; then
+  if /usr/bin/hostinfo | grep NeXT > /dev/null; then
+    if /usr/bin/hostinfo | grep -s "Mach 1"; then
+       CFLAGS="-O" LFLAGS2="-s -lsys_s"
+
+    elif /usr/bin/hostinfo | grep -s "Mach 2"; then
+       CFLAGS="-O" LFLAGS2="-s -object"
+    else
+       CFLAGS="-O2" LFLAGS2="-s -object"
+    fi
+  fi
+fi
+
+if test $# = 0; then
+  echo CC=${CC} CFLAGS=\"${CFLAGS}\"  CPP=\"${CPP}\" OBJA=${OBJA}
+  echo BINDIR=${BINDIR} MANDIR=${MANDIR} LFLAGS2=\"${LFLAGS2}\"
+else
+  echo CC=${CC} CFLAGS=\"${CFLAGS}\"  CPP=\"${CPP}\" OBJA=${OBJA} \
+       BINDIR=${BINDIR} MANDIR=${MANDIR} LFLAGS2=\"${LFLAGS2}\" > $1
+fi

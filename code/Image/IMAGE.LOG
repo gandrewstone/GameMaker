@@ -1,0 +1,21 @@
+MAKE Version 3.7  Copyright (c) 1987, 1994 Borland International
+	bcc -f -c -C -ml -v -3 -P -N -O2 d:\image\image.cpp
+Borland C++ 4.5 Copyright (c) 1987, 1994 Borland International
+d:\image\image.cpp:
+Warning pal.h 46: Functions containing for are not expanded inline
+Warning pal.h 76: Functions containing for are not expanded inline
+Warning D:\DRV\fileclss.hpp 65: Functions containing for are not expanded inline
+Warning d:\image\image.cpp 45: Temporary used for parameter 'Bytes' in call to 'FileRead::Peek(unsigned int &)' in function GIFfamily::Startup(FileRead &,VideoMode *,Palette *)
+Warning d:\image\image.cpp 70: Temporary used for parameter 'Bytes' in call to 'FileRead::Peek(unsigned int &)' in function GIFfamily::Startup(FileRead &,VideoMode *,Palette *)
+Warning d:\image\image.cpp 286: Parameter 'Pos' is never used in function GIFImage::Draw(Coord2d)
+Warning d:\image\image.cpp 361: Parameter 'Pos' is never used in function GISImage::Draw(Coord2d)
+Warning d:\image\image.cpp 662: Initializing enum with char in function CopyFile(const char *,const char *)
+Warning d:\image\image.cpp 663: 'attr' is assigned a value that is never used in function CopyFile(const char *,const char *)
+Turbo Assembler  Version 4.0  Copyright (c) 1988, 1993 Borland International
+
+Assembling file:   image.ASM
+Error messages:    None
+Warning messages:  None
+Passes:            1
+Remaining memory:  133k
+
