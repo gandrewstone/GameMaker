@@ -77,7 +77,7 @@ extern uchar          HiCols[4];
 
 /*
 unsigned char         *FBuf=NULL,*FCur;
-unsigned long int     FLen=0,BLen=0,FCurCount=0;
+gm_ulong     FLen=0,BLen=0,FCurCount=0;
 #define NEXTCHAR { FCur++;    FCurCount++; }
 #define REWIND   { FCur=FBuf; FCurCount=0; }
 */
@@ -118,7 +118,7 @@ QuitCodes main(int argc,char *argv[])
     writestr(0,1,31,"  Palette  Block  Monster  Map  Character  Image  Sound  Integrator  Main  Help ");
     attr = openmenu(40,3,28,13,w);
     writestr(40,3,PGMTITLECOL,"    GRAPHICS IMAGE READER   ");
-    writestr(40,4,PGMTITLECOL,"        Version  "GMVER"       ");
+    writestr(40,4,PGMTITLECOL,"        Version  " GMVER "       ");
     writestr(40,5,PGMTITLECOL,"       By Oliver Stone      ");
     writestr(40,6,PGMTITLECOL,"      Copyright(C) 1994     ");
     writestr(40,8,attr+14, " Choose GIF File ");

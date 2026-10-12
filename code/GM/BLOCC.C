@@ -13,7 +13,7 @@
 #include "windio.h"
 #include "bloc.h"
 
-extern unsigned long int far Clock;
+extern gm_ulong far Clock;
 
 int lastbl=BACKBL;
 char wrap =1;
@@ -91,7 +91,7 @@ int saveblks(int btype,char *buffer)
 void scroll_list(int dir,int x,int y,int listlen,int totalen,int *current,int (*dra)(int))
   {
   static unsigned int Rate=0;
-  unsigned long int OldClock;
+  gm_ulong OldClock;
   unsigned int RotCnt=0;
   register int i=0;
   int l1,draw;
@@ -178,7 +178,7 @@ void drawlist(int x,int y,int listlen,int totalen,int *current,int (*dra)(int))
 void vscroll_list(int dir,int x,int y,int listlen,int totalen,int *current,int (*dra)(int))
  {
   static unsigned int Rate=0;
-  unsigned long int OldClock;
+  gm_ulong OldClock;
   unsigned int RotCnt=0;
   register int i=0;
   int l1,draw;

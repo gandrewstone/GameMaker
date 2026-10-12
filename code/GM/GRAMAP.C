@@ -634,7 +634,7 @@ static void DrawAllButs(unsigned char col[4])
 /*
 void prevb(int x,int y, unsigned char col[4])
   {
-  char array[]= {" n ¥U	U%U%U–¥™Y™Y™Yš¥™U™U™U•U–¥™Y™Y™Yš¥™•™e™Y•U–¥™Y™U–•™U™U™Y–¥•U™Y™Y™Y–e–e–e••%•%U	UU ¥ n"};
+  char array[]= {"\000n\000¥U	U%U%U–¥™Y™Y™Yš¥™U™U™U•U–¥™Y™Y™Yš¥™•™e™Y•U–¥™Y™U–•™U™U™Y–¥•U™Y™Y™Y–e–e–e••%•%U	UU\000¥\000n"};
   array[1]=10;
   array[91]=10;  
    draw4dat(x,y,array,7,45,col);
@@ -642,7 +642,7 @@ void prevb(int x,int y, unsigned char col[4])
 
 void doneb(int x,int y, unsigned char col[4])
   {
-  char array[]= {" n ¥U	U%U%Uš•™e™Y™Y™Y™Y™eš••U–¥™Y™Y™Y™Y™Y™Y–¥•U™¥šY™Y™Y™Y™Y™Y™Y•U–¥™Y™U–•™U™U™Y&¥%U	UU ¥ n"};
+  char array[]= {"\000n\000¥U	U%U%Uš•™e™Y™Y™Y™Y™eš••U–¥™Y™Y™Y™Y™Y™Y–¥•U™¥šY™Y™Y™Y™Y™Y™Y•U–¥™Y™U–•™U™U™Y&¥%U	UU\000¥\000n"};
   array[1]=10;
   array[91]=10;  
 
@@ -651,14 +651,14 @@ void doneb(int x,int y, unsigned char col[4])
 
 void nextb(int x,int y, unsigned char col[4])
   {
-  char array[]= {"  Z U€U`UXUXf–ifefefefefefefUVZ–efeVZVeVeVefZ–UVefefY–VVVVY–efefUVj¦VVVVVVVVVVVVVXUXU`U€Z   "};
+  char array[]= {" \000Z\000U€U`UXUXf–ifefefefefefefUVZ–efeVZVeVeVefZ–UVefefY–VVVVY–efefUVj¦VVVVVVVVVVVVVXUXU`U€Z\000 \000"};
   draw4dat(x,y,array,7,45,col);
 
   }
 
 void helpb(int x,int y, unsigned char col[4])
   {
-  char array[]= {"  Z U€U`UXUXefefefj¦efefefefUVZ–efeVZVeVeVefZ–UVeVeVeVeVeVeVeVZ¦UVZ–efefefj–eVeVeXUXU`U€Z   "};
+  char array[]= {" \000Z\000U€U`UXUXefefefj¦efefefefUVZ–efeVZVeVeVefZ–UVeVeVeVeVeVeVeVZ¦UVZ–efefefj–eVeVeXUXU`U€Z\000 \000"};
   draw4dat(x,y,array,7,45,col);
 
   }
@@ -666,19 +666,19 @@ void helpb(int x,int y, unsigned char col[4])
 
 void linkb(int x,int y, unsigned char col[4])
   {
-  static char array[] = " UU UUPiUT©UTU©UUU©UUU©UUU©UUU©UUU©UUU©UUUªªUªªTj©TUUP UU ";
+  static char array[] = "\000UU\000UUPiUT©UTU©UUU©UUU©UUU©UUU©UUU©UUU©UUUªªUªªTj©TUUP\000UU\000";
   draw4dat(x,y,array,15,15,col);
   }
 
 static void prevb(int x,int y, unsigned char col[4])
   {
-  static char prevar[] = "      UUUUUUUUUUõýuuW]×uuuWõý}uuWU×u]Õ—U×WUUUUUU)UUUUUªªªªª";
+  static char prevar[] = "\000\000\000\000\000\000UUUUUUUUUUõýuuW]×uuuWõý}uuWU×u]Õ—U×WUUUUUU)UUUUUªªªªª";
   draw4dat(x,y,prevar,23,10,col);
   }
 
 static void nextb(int x,int y, unsigned char col[4])
   {
-  static char nextar[] = "      UUUUU@UUUUUT]wý×ô_wU×WU_÷õ}WU]÷U×WU]wý×WVUUUUUTUUUUUhªªªªª€";
+  static char nextar[] = "\000\000\000\000\000\000UUUUU@UUUUUT]wý×ô_wU×WU_÷õ}WU]÷U×WU]wý×WVUUUUUTUUUUUhªªªªª€";
   draw4dat(x,y,nextar,23,10,col);
   }
 

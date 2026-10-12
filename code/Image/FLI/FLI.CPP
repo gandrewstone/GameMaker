@@ -8,7 +8,7 @@
 #include <conio.h>
 #include "gen.h"
 #include "debug.hpp"
-#include "fileclss.hpp"
+#include <fileclss.hpp>   // <> so the DRV version is found first, as with the Borland include rules
 #include "viddrive.hpp"
 
 //#define STANDALONE
@@ -33,7 +33,7 @@ for faster DMA.
 
 typedef struct
   {
-  long int   Size;
+  gm_long   Size;
   ChunkTypes Type;
   } ChunkHeader;
 
@@ -77,6 +77,7 @@ boolean FLI::StepInit(void)
 boolean FLI::Step(void)
   {
   if (FrameIdx>=Head.NumFrames) return(False);
+  if (File.EOFflag) return(False);   // Truncated file
   File.Get(&CurFrame,sizeof(FrameHeader));
   FrameIdx++;
   return(CurFrame.View(Head,File,Vid,Pos));
@@ -92,6 +93,7 @@ boolean FLI::View(void)
   if (!Head.Validate()) { DEBUG("Invalid FLI.\n"); return(False); }
   for(uint Frame=0;((Frame<Head.NumFrames)&&(result));Frame++)
     {
+    if (File.EOFflag) break;       // Truncated file: no more frames (reading on would reuse the last header)
     File.Get(&CurFrame,sizeof(FrameHeader));
     result=CurFrame.View(Head,File,Vid,Pos);
     //gotoxy(1,10);
@@ -156,7 +158,7 @@ void DoRunLength(char *Data,VideoMode *Vid,Coord2d Start)
       if (PacketLen<=0)
         {
         PacketLen*=-1;
-        Vid->RepCols (Start+Pos,PacketLen,Data,Vid);
+        Vid->RepCols (Start+Pos,PacketLen,(Pixel*)Data,Vid);
         sprintf(LogStr,"RepCols((%d,%d),%d)\n",(Start+Pos).x,(Start+Pos).y,PacketLen);
         LOG(LogStr);
         Data+=PacketLen;
@@ -206,7 +208,7 @@ static void DoLineCompress(char *Data,VideoMode *Vid,Coord2d Pos)
       Data+=2;
       if (PacketLen>=0)
         {
-        Vid->RepCols(Pos+MakeCoord2d(x,Lines),PacketLen,Data,Vid);
+        Vid->RepCols(Pos+MakeCoord2d(x,Lines),PacketLen,(Pixel*)Data,Vid);
         Data+=PacketLen;
         x+=PacketLen;
         }
@@ -235,6 +237,7 @@ boolean FrameHeader::View(FLIHeader &H,FileRead &f,VideoMode *Vid,Coord2d Pos)
 
   for (Chunk=0;Chunk<NumChunks;Chunk++)
     {
+    if (f.EOFflag) return(False);   // Truncated file: the header says more chunks than the file holds
     f.Get(&c,sizeof(ChunkHeader));
 
     sprintf(s,"  New Chunk: Size:%5lu ",c.Size,c.Type);
@@ -246,12 +249,22 @@ boolean FrameHeader::View(FLIHeader &H,FileRead &f,VideoMode *Vid,Coord2d Pos)
       case ColorMap:
            DEBUG("Color Map\n");
 
-           DoColorChange((uchar *) f.Peek(MemAmt),Vid);
+           {
+           uint   Wanted=MemAmt;
+           uchar *Data=(uchar *) f.Peek(MemAmt);
+           if (MemAmt<Wanted) return(False);   // Truncated file: the chunk is cut short, do not decode it
+           DoColorChange(Data,Vid);
+           }
            f.Skip(c.Size-sizeof(ChunkHeader));
            break;
       case LineCompress:
            DEBUG("Line Compress\n");
-           DoLineCompress((char *) f.Peek(MemAmt),Vid,Pos);
+           {
+           uint   Wanted=MemAmt;
+           char  *Data=(char *) f.Peek(MemAmt);
+           if (MemAmt<Wanted) return(False);
+           DoLineCompress(Data,Vid,Pos);
+           }
            f.Skip(c.Size-sizeof(ChunkHeader));
            break;
       case AllBlack:
@@ -260,23 +273,30 @@ boolean FrameHeader::View(FLIHeader &H,FileRead &f,VideoMode *Vid,Coord2d Pos)
            break;
       case RunLength:
            DEBUG("Run Length\n");
-           DoRunLength((char *) f.Peek(MemAmt),Vid,Pos);
+           {
+           uint   Wanted=MemAmt;
+           char  *Data=(char *) f.Peek(MemAmt);
+           if (MemAmt<Wanted) return(False);
+           DoRunLength(Data,Vid,Pos);
+           }
            f.Skip(c.Size-sizeof(ChunkHeader));
            break;
       case Copy:
            DEBUG("Copy\n");
            {
 //           f.Get(((void *)0xA0000000),64000);
-           uchar *Pixels = f.Peek(64000);
-           memcpy(((void *)0xA0000000),Pixels,64000);
+           uint CopyLen = 64000;
+           uchar *Pixels = f.Peek(CopyLen);
+           if (CopyLen<64000) return(False);                   // Truncated file
+           memcpy(MK_FP(0xA000,0),Pixels,64000);
            f.Skip(64000);
            }
            break;
       default:
            DEBUG("Invalid chunk type\n");
-           f.Skip(c.Size-sizeof(ChunkHeader));
-           exit(1);
-           return(False);
+           if (c.Size<sizeof(ChunkHeader)) return(False);       // Nonsense size: stop here
+           f.Skip(c.Size-sizeof(ChunkHeader));                  // Unknown chunk: skip it (was exit(1))
+           break;
       }
     }
   return(True);

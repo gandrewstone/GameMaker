@@ -23,7 +23,7 @@ class VideoMode
   uint         LineSep;
   uchar        ColDepth;
   void far    *Address;
-  long int     ViewPageOff;
+  long     ViewPageOff;
   uint         BIOSMode;
   void         (*SetMode)    (VideoMode *v);
   void         (*Clear)      (Pixel Col,VideoMode *v);
@@ -39,8 +39,8 @@ class VideoMode
   void         (*Box)        (Coord2d Start,Coord2d End,Pixel col,VideoMode *v);
   void         (*BoxFill)    (Coord2d Start,Coord2d End,Pixel col,VideoMode *v);
   void         (*DrawBlock)  (Coord2d Pos,Block b,VideoMode *v);
-  void         (*SetViewPos) (unsigned long int pos,VideoMode *v);
-  void         (*SetWritePage) (unsigned long int pos,VideoMode *v);
+  void         (*SetViewPos) (unsigned long pos,VideoMode *v);
+  void         (*SetWritePage) (unsigned long pos,VideoMode *v);
 
   void         (*SetAllPal)  (RGBdata *pal,VideoMode *v);
   void         (*GetAllPal)  (RGBdata *pal,VideoMode *v);
@@ -71,4 +71,4 @@ VideoDriver* LoadVideoDriver(char *FileName);
 
 #endif
 
-
+

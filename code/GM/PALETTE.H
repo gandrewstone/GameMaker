@@ -5,6 +5,7 @@
 #include "Pixel.hpp"
 
 #ifndef PALETTEHDR
+#define PALETTEHDR
 class RGBdata
   {
   public:

@@ -52,6 +52,32 @@ class ConfigData
 
 static ConfigData Cfg;
 
+#ifdef GM_PORT
+// The web build runs this program after the page has put the data folder in place, which is after the constructor below
+// (a static object) has looked for gm.cfg, and nothing runs ~ConfigData there: the platform calls these two.
+extern "C" void gm_reload_config(void)
+  {
+  FILE *fp;
+  if ((fp=fopen("gm.cfg","rb"))!=NULL)
+    {
+    Cfg.Read(fp);
+    fclose(fp);
+    strcpy(WorkDir,Cfg.WorkingDirectory);
+    }
+  }
+
+extern "C" void gm_save_config(void)
+  {
+  FILE *fp;
+  if ((fp=fopen("gm.cfg","wb"))!=NULL)
+    {
+    strcpy(Cfg.WorkingDirectory,WorkDir);
+    Cfg.Write(fp);
+    fclose(fp);
+    }
+  }
+#endif
+
 ConfigData::ConfigData()
   {
   FILE *fp;
@@ -134,7 +160,11 @@ int ParseFileName(const char *in,char *name,char *path)
     {
     path[pathctr]=in[l];
     name[namectr]=in[l];
+#ifdef GM_PORT
+    if ((in[l]=='\\')||(in[l]=='/'))     // either separator
+#else
     if (in[l]=='\\')
+#endif
       {
       LastSlash=pathctr;
       namectr=-1;
@@ -161,7 +191,11 @@ int ParseFile(const char *in,char *name,char *path)
     {
     path[pathctr]=in[l];
     name[namectr]=in[l];
+#ifdef GM_PORT
+    if ((in[l]=='\\')||(in[l]=='/'))     // either separator
+#else
     if (in[l]=='\\')
+#endif
       {
       LastSlash=pathctr;
       namectr=-1;
@@ -180,14 +214,14 @@ int ParseFile(const char *in,char *name,char *path)
 
 #pragma loop_opt(on)
 
-void GetScrn(char far *mem)
+void GetScrn(void far *mem)
   {
-  memcpy(mem,(void far *) 0x0A0000000, (unsigned) 64000);
+  memcpy(mem,MK_FP(0xA000,0), (unsigned) 64000);
   }
 
-void RestoreScrn(char far *mem)
+void RestoreScrn(void far *mem)
   {
-  memcpy((void far *) 0xA0000000,mem,(unsigned) 64000);
+  memcpy(MK_FP(0xA000,0),mem,(unsigned) 64000);
   }
   
 #pragma loop_opt(off)
@@ -195,7 +229,7 @@ void RestoreScrn(char far *mem)
 int DisplayHelpFile(char *filename)
   {
   FILE *fp;
-  uchar far *addr = (unsigned char far *) 0xB8000000;
+  uchar far *addr = (unsigned char far *) MK_FP(0xB800,0);
   uint l;
   char ch;
 
@@ -315,4 +349,4 @@ void swap(int *v1,int *v2)
   *v1=*v2;
   *v2=v3;
   }
-
+

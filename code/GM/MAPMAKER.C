@@ -30,7 +30,11 @@
 #include "facelift.h"
 #include "tranmous.hpp"
 
+#ifdef GM_PORT
+extern "C" int drawcbloc(int x,int y,char *bloc);
+#else
 extern "C" int drawcbloc(int x,int y,unsigned char *bloc);
+#endif
 
 #define TRANSCOL 255     /* The value that is transparent in _pic fns  */
 #define BACKBLK    0     /*  Background block number                 */
@@ -220,7 +224,7 @@ void main(int argc,char *argv[])
     writestr(0,0,79,GMTOPBAR);
     writestr(0,1,31,"  Palette  Block  Monster  Map  Character  Image  Sound  Integrator  Main  Help ");
     writestr(30,3,PGMTITLECOL,"        MAP  MAKER        ");
-    writestr(30,4,PGMTITLECOL,"       Version "GMVER"       ");
+    writestr(30,4,PGMTITLECOL,"       Version " GMVER "       ");
     writestr(30,5,PGMTITLECOL,"     By Gregory Stone     ");
     writestr(30,6,PGMTITLECOL,"    Copyright (C) 1994    ");
     writestr(31,8,attr+14, "Choose a Map");
@@ -537,7 +541,7 @@ static int edit(void)
           {
           static unsigned int Rate=0;
           static unsigned int ScrollCnt=0;
-          static unsigned long int OldClock=0;
+          static gm_ulong OldClock=0;
           int OldChange;
           changed=0;
 
@@ -1035,15 +1039,15 @@ static void drawmap(void)
 
 static void DrawFnBut(int butnum, int x, int y, unsigned char col[4])
   {
-  char array[][26]= {"   UPUAUT¥AZTUAUT5UÀÿð",
-                     "   UPUA¥T¥AU¤UAUT5UÀÿð",
-                     "   UP\x1AªA•dVA•dVAª¤5UÀÿð",
-                     "   UP\x1AªAª¤\x1AªAª¤\x1AªAª¤5UÀÿð",
-                     "   UPUAZTYAe”¥AUT5UÀÿð",
-                     "   UPUAZT©Aj”¥AUT5UÀÿð",
-                     "   ª *ª‚ª¨*ª‚ª¨*ª‚ª¨:ªÀÿð",
-                     "   UPfA™”fA™”fA™”5UÀÿð",
-                     "   UP\x1AªAV”¥AZT•Aª¤5UÀÿð"};
+  char array[][26]= {"\000\000\000UPUAUT¥AZTUAUT5UÀÿð",
+                     "\000\000\000UPUA¥T¥AU¤UAUT5UÀÿð",
+                     "\000\000\000UP\x1AªA•dVA•dVAª¤5UÀÿð",
+                     "\000\000\000UP\x1AªAª¤\x1AªAª¤\x1AªAª¤5UÀÿð",
+                     "\000\000\000UPUAZTYAe”¥AUT5UÀÿð",
+                     "\000\000\000UPUAZT©Aj”¥AUT5UÀÿð",
+                     "\000\000\000ª *ª‚ª¨*ª‚ª¨*ª‚ª¨:ªÀÿð",
+                     "\000\000\000UPfA™”fA™”fA™”5UÀÿð",
+                     "\000\000\000UP\x1AªAV”¥AZT•Aª¤5UÀÿð"};
 
   draw4dat(x,y,array[butnum],9,9,col);
   }
@@ -1265,50 +1269,50 @@ static void lightb(int x,int y,char onoff)
 
 static void monstb(int x,int y, unsigned char col[4])
   {
-  static char monstar[]="         UUUUUUU@UUUUUUUTW]u×ßßßTWßw}ÝW]]ÕWÿw×W__UWwwwÕ×]]Õ—W]ußW_ÝÖUUUUUUUT)UUUUUUUhªªªªªªª€";
+  static char monstar[]="\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUTW]u×ßßßTWßw}ÝW]]ÕWÿw×W__UWwwwÕ×]]Õ—W]ußW_ÝÖUUUUUUUT)UUUUUUUhªªªªªªª€";
   draw4dat(x,y,monstar,35,10,col);
   }
 
 static void blocb(int x,int y, unsigned char col[4])
   {
-  static char blocar[] = "         UUUUUUU@UUUUUUUT_×U}_]uTU]wU×uÝÕUU_×U×u_UUU]wU×uÝÕU•_×ý}_]uVUUUUUUUT)UUUUUUUhªªªªªªª€";
+  static char blocar[] = "\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUT_×U}_]uTU]wU×uÝÕUU_×U×u_UUU]wU×uÝÕU•_×ý}_]uVUUUUUUUT)UUUUUUUhªªªªªªª€";
   draw4dat(x,y,blocar,35,10,col);
   }
 
 static void eraseb(int x,int y, unsigned char col[4])
   {
-  static char erasear[] = "         UUUUUUU@UUUUUUUT_÷õ}__õTU]W]×u]UUU_×õÿ__ÕUU]W]×UÝUU•_÷]×_õVUUUUUUUT)UUUUUUUhªªªªªªª€";
+  static char erasear[] = "\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUT_÷õ}__õTU]W]×u]UUU_×õÿ__ÕUU]W]×UÝUU•_÷]×_õVUUUUUUUT)UUUUUUUhªªªªªªª€";
   draw4dat(x,y,erasear,35,10,col);
   }
   
 
 static void toolb(int x,int y, unsigned char col[4])
   {
-  static char toolar[] = "         UUUUUUU@UUUUUUUTõõ}u_UTUWW]×uuUUUWW]×u_UUUWW]×uUÕU•WUõ}UVUUUUUUUT)UUUUUUUhªªªªªªª€";
+  static char toolar[] = "\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUTõõ}u_UTUWW]×uuUUUWW]×u_UUUWW]×uUÕU•WUõ}UVUUUUUUUT)UUUUUUUhªªªªªªª€";
   draw4dat(x,y,toolar,35,10,col);
   }
 
 static void rightb(int x,int y, unsigned char col[4])
   {
-  char rightar[] = "  @ P T U U@U@UÀW \\ p À ";
+  char rightar[] = "\000\000@\000P\000T\000U\000U@U@UÀW\000\\\000p\000À\000";
   draw4dat(x,y,rightar,7,11,col);
   }
 
 static void downb(int x,int y, unsigned char col[4])
   {
-  char downar[] = "   UUPÕUp5UÀ\x0DW \\  ð ";
+  char downar[] = "\000\000\000UUPÕUp5UÀ\x0DW\000\\\000\000ð\000";
   draw4dat(x,y,downar,11,6,col);
   }
 
 static void leftb(int x,int y, unsigned char col[4])
   {
-  char leftar[] = "      UUUU Õ 5 \x0D ";
+  char leftar[] = "\000\000\000\000\000\000UUUU\000Õ\0005\000\x0D\000";
   draw4dat(x,y,leftar,7,11,col);
   }
 
 static void upb(int x,int y, unsigned char col[4])
   {
-  char upar[]= {"    P T U U@UUPÿÿð"};
+  char upar[]= {"\000\000\000\000P\000T\000U\000U@UUPÿÿð"};
   draw4dat(x,y,upar,11,6,col);
   }
 
@@ -1590,16 +1594,16 @@ static void HiCircle(int centx, int centy, int x1, int y1, void point(int x,int 
   {
   int RadSquared=0;
   register int x=0,y=0;
-  long int radius=1;
+  gm_long radius=1;
 
   x1-=centx;
   y1-=centy;
 
   RadSquared = ((x1*x1)+(y1*y1));
-  radius = (long int) RadSquared;
+  radius = (gm_long) RadSquared;
   radius *= (7071* 7071);
   radius /=(10000*10000);  
-  radius=(long int) sqrt( (int) radius );
+  radius=(gm_long) sqrt( (int) radius );
  // radius *= .707106781; // # is cos(PI/4) - makes radius only go halfway around the circle
 
   for (y=0; y<=radius; y++)
@@ -1674,7 +1678,7 @@ static void HiCircleFill(int centx, int centy, int x1, int y1, void point(int x,
 
 static void UnZoomBox(int x,int y, unsigned char col)
   {
-  unsigned char far *vptr = (unsigned char far *) 0xA0000000;
+  unsigned char far *vptr = (unsigned char far *) MK_FP(0xA000,0);
 
   vptr+=x+(SIZEX*y);
   *vptr=col;

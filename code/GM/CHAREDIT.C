@@ -103,7 +103,7 @@ RGBdata              colors[256];
 monstruct            m[LASTMON];
 int                  curblk,curfram;
 static char          saved=1;
-unsigned long int    oldtime=0;
+gm_ulong    oldtime=0;
 extern char          curfile[31];
 extern unsigned char FaceCols[MAXFACECOL];      //Screen colors
 extern char          *FontPtr;
@@ -176,7 +176,7 @@ QuitCodes main(int argc,char *argv[])
     writestr(0,1,31,"  Palette  Block  Monster  Map  Character  Image  Sound  Integrator  Main  Help ");
     attr = openmenu(30,3,24,14,w);
     writestr(30,3,PGMTITLECOL,"    CHARACTER  MAKER    ");
-    writestr(30,4,PGMTITLECOL,"      Version "GMVER"      ");
+    writestr(30,4,PGMTITLECOL,"      Version " GMVER "      ");
     writestr(30,5,PGMTITLECOL,"    By  Oliver Stone    ");
     writestr(30,6,PGMTITLECOL,"   Copyright (C) 1994   ");
     writestr(30,8,attr+14, " Choose a Character Set");
@@ -1548,9 +1548,9 @@ static void drawchar(int x,int y,frames now,char col2)
 
 static void DrawFnButs(int x,int y,char orient)
   {
-  char funar[3][26]= {"   UPeAV”" "\x1A" "ªA–”eA•T5UÀÿğ",
-                      "   UPeAª”eAYTªAYT5UÀÿğ",
-                      "   UPUAe”jA©”YAU”5UÀÿğ"};
+  char funar[3][26]= {"\000\000\000UPeAV”" "\x1A" "ªA–”eA•T5UÀÿğ",
+                      "\000\000\000UPeAª”eAYTªAYT5UÀÿğ",
+                      "\000\000\000UPUAe”jA©”YAU”5UÀÿğ"};
   unsigned char col[2][4] = { { FaceCols[GREY3],FaceCols[RED1],
                        FaceCols[BLACK],FaceCols[RED2] },
                      { FaceCols[GREY3],FaceCols[RED3],
@@ -1598,20 +1598,20 @@ static void drawscrn(void)
 
 void shootb(int x,int y, unsigned char col[4])
   {
-  char shootar[] = "         UUUUUUU@UUUUUUUTW÷]}_õTU]W]×u×UUUW×ı×u×UUUUw]×u×UU•_×]}_WUVUUUUUUUT)UUUUUUUhªªªªªªª€";
+  char shootar[] = "\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUTW÷]}_õTU]W]×u×UUUW×ı×u×UUUUw]×u×UU•_×]}_WUVUUUUUUUT)UUUUUUUhªªªªªªª€";
   draw4dat(x,y,shootar,35,10,col);
   }
 
 /*  // Now Defined in Facelift.c
 static void menub(int x,int y, unsigned char col[4])
   {
-  char array[]= {" UUUUUUU@Zªªªªªª•j««¿î»®ªPjªûî«îëª¤Zª¾ûúûºê©Vª®îê»îºªQª««º®û®ªZªêïû®¾ª”jªªªªªªT UUUUUUP "};
+  char array[]= {"\000UUUUUUU@Zªªªªªª•j««¿î»®ªPjªûî«îëª¤Zª¾ûúûºê©Vª®îê»îºªQª««º®û®ªZªêïû®¾ª”jªªªªªªT\000UUUUUUP\000"};
    draw4dat(x,y,array,36,9,col);
   }
 
 static void helpb(int x,int y, unsigned char col[4])
   {
-  char array[]= {" UUUUUUU@Zªªªªªª•j«®ÿº¯êªPjªëº®«®ª¤Zª¿ï«ªëª©Vª®»ªê¿ªªQª«®êº®ªªZªë¿ïûªª”jªªªªªªT UUUUUUP "};
+  char array[]= {"\000UUUUUUU@Zªªªªªª•j«®ÿº¯êªPjªëº®«®ª¤Zª¿ï«ªëª©Vª®»ªê¿ªªQª«®êº®ªªZªë¿ïûªª”jªªªªªªT\000UUUUUUP\000"};
    draw4dat(x,y,array,36,9,col);
   }
 */

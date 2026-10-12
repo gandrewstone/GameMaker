@@ -136,7 +136,7 @@ void main(int argc,char *argv[])
   FontPtr=GetROMFont();
 
   /*---------------------Set up Block structure */
-  blk= (blkstruct far *) farmalloc( (unsigned long int) ( ((unsigned long int)sizeof(blkstruct))*(MONBL+2)));
+  blk= (blkstruct far *) farmalloc( (gm_ulong) ( ((gm_ulong)sizeof(blkstruct))*(MONBL+2)));
   if (blk==NULL) { errorbox("NOT ENOUGH MEMORY!","  (Q)uit"); exit(menu);}
   for (lx=0; lx<sizeof(blkstruct)*(MONBL+2 );lx++)
     *( ((unsigned char far *) blk)+lx)=0;
@@ -161,7 +161,7 @@ void main(int argc,char *argv[])
     writestr(0,1,31,"  Palette  Block  Monster  Map  Character  Image  Sound  Integrator  Main  Help ");
     attr = openmenu(20,3,22,13,w);
     writestr(20,3,PGMTITLECOL,"    MONSTER  MAKER    ");
-    writestr(20,4,PGMTITLECOL,"     Version "GMVER"     ");
+    writestr(20,4,PGMTITLECOL,"     Version " GMVER "     ");
     writestr(20,5,PGMTITLECOL,"   By  Oliver Stone   ");
     writestr(20,6,PGMTITLECOL,"  Copyright (C) 1994  ");
     writestr(20,8,attr+14, " Choose a Monster Set");
@@ -1062,9 +1062,9 @@ static void makepath(coords move[10],char status)
 
 static void DrawFnButs(int x,int y,char orient)
   {
-  char funar[3][26]= {"   UPeAV”" "\x1A" "ªA–”eA•T5UÀÿð",
-                      "   UPeAª”eAYTªAYT5UÀÿð",
-                      "   UPUAe”jA©”YAU”5UÀÿð"};
+  char funar[3][26]= {"\000\000\000UPeAV”" "\x1A" "ªA–”eA•T5UÀÿð",
+                      "\000\000\000UPeAª”eAYTªAYT5UÀÿð",
+                      "\000\000\000UPUAe”jA©”YAU”5UÀÿð"};
   unsigned char col[2][4] = { { FaceCols[GREY3],FaceCols[RED1],
                        FaceCols[BLACK],FaceCols[RED2] },
                      { FaceCols[GREY3],FaceCols[RED3],
@@ -1237,7 +1237,7 @@ static void lightb(int x,int y, unsigned char col[4])
 
 static void infob(int x,int y, unsigned char col[4])
   {
-  static char infoar[] = "         UUUUUUU@UUUUUUUTU]××ÕUTUU]÷u]uUUUU]ÿ]uUUUU]ßu]uUU•U]×uWÕUVUUUUUUUT)UUUUUUUhªªªªªªª€";
+  static char infoar[] = "\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUTU]××ÕUTUU]÷u]uUUUU]ÿ]uUUUU]ßu]uUU•U]×uWÕUVUUUUUUUT)UUUUUUUhªªªªªªª€";
   draw4dat(x,y,infoar,35,10,col);
   }
 

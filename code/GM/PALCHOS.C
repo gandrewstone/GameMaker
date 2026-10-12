@@ -116,7 +116,7 @@ QuitCodes main(int argc,char *argv[])
     writestr(0,1,31,"  Palette  Block  Monster  Map  Character  Image  Sound  Integrator  Main  Help ");
     attr=openmenu(1,3,21,11,w);
     writestr(1,3,PGMTITLECOL,"  PALETTE DESIGNER   ");
-    writestr(1,4,PGMTITLECOL,"    Version "GMVER"     ");
+    writestr(1,4,PGMTITLECOL,"    Version " GMVER "     ");
     writestr(1,5,PGMTITLECOL,"  By Gregory Stone   ");
     writestr(1,6,PGMTITLECOL," Copyright (C) 1994  ");
     writestr(2,8,attr+14, "Choose a Palette");
@@ -187,7 +187,7 @@ static void edit(void)
   int change,ink,ascii,scan,oldcol;
   int x=0,y=0,butnum=0,oldbut=-1;
   int grabbed=-1;
-  unsigned long int oldclk=1;
+  gm_ulong oldclk=1;
   int ButHit=0;
   int adder=-1;
   char morc=MOVE;
@@ -569,13 +569,13 @@ static void dohelp(void)
   
 void plushalf(int x,int y, unsigned char col[4])
   {
-  char plusar[]= {"    UUU@UUUTUWUTUWUUUõUUWUUUWUVUUUTUUUhªªª€"};
+  char plusar[]= {"\000\000\000\000UUU@UUUTUWUTUWUUUõUUWUUUWUVUUUTUUUhªªª€"};
    draw4dat(x,y,plusar,15,10,col);
   }
 
 void minushalf(int x,int y, unsigned char col[4])
   {
-  char minusar[]= {"    UUUUUUUUUUUUUU_ýUUUUU•UUUUUU)UUUªªª"};
+  char minusar[]= {"\000\000\000\000UUUUUUUUUUUUUU_ýUUUUU•UUUUUU)UUUªªª"};
    draw4dat(x,y,minusar,15,10,col);
   }
 

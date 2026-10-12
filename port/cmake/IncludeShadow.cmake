@@ -1,0 +1,85 @@
+# The 1994 sources include headers with whatever case the author typed ("Palette.h" for PALETTE.H, "gen.h" for GEN.H);
+# DOS and Windows do not care, Linux does. gm_include_shadow() makes a directory that holds, for every include
+# directive spelled in the given directories, a link with exactly that spelling to the real header, so the compiler
+# finds it. It is regenerated at configure time.
+#
+#   gm_include_shadow(<output dir> <dir>...)     -- directories in include-path order (the first one wins on a clash)
+
+function(gm_include_shadow outdir)
+  file(REMOVE_RECURSE "${outdir}")
+  file(MAKE_DIRECTORY "${outdir}")
+
+  # lower-case file name -> real path, first directory wins
+  set(known_names "")
+  foreach(dir ${ARGN})
+    file(GLOB entries LIST_DIRECTORIES false "${dir}/*")
+    foreach(path ${entries})
+      get_filename_component(name "${path}" NAME)
+      string(TOLOWER "${name}" lower)
+      if(NOT DEFINED GM_SHADOW_${lower})
+        set(GM_SHADOW_${lower} "${path}")
+        list(APPEND known_names "${lower}")
+      endif()
+    endforeach()
+  endforeach()
+
+  # every spelling used in an #include directive
+  set(created "")
+  foreach(dir ${ARGN})
+    file(GLOB files LIST_DIRECTORIES false "${dir}/*")
+    foreach(f ${files})
+      get_filename_component(ext "${f}" EXT)
+      string(TOLOWER "${ext}" ext)
+      if(NOT ext MATCHES "^[.](c|cpp|h|hpp)$")
+        continue()
+      endif()
+      file(STRINGS "${f}" lines REGEX "^[ \t]*#[ \t]*include[ \t]*[<\"]")
+      foreach(line ${lines})
+        if(line MATCHES "[<\"]([^>\"]+)[>\"]")
+          set(spelled "${CMAKE_MATCH_1}")
+          string(TOLOWER "${spelled}" lower)
+          if(DEFINED GM_SHADOW_${lower} AND NOT "${spelled}" IN_LIST created)
+            list(APPEND created "${spelled}")
+            set(real "${GM_SHADOW_${lower}}")
+            get_filename_component(real_name "${real}" NAME)
+            if(NOT "${real_name}" STREQUAL "${spelled}")
+              file(CREATE_LINK "${real}" "${outdir}/${spelled}" SYMBOLIC RESULT rc)
+              if(NOT rc EQUAL 0)
+                file(COPY_FILE "${real}" "${outdir}/${spelled}")
+              endif()
+            endif()
+          endif()
+        endif()
+      endforeach()
+    endforeach()
+  endforeach()
+  list(LENGTH created n)
+  message(STATUS "include shadow: ${n} header spellings under ${outdir}")
+endfunction()
+
+# DOS text files end with a Ctrl-Z (0x1A) marker; MSVC stops reading there, GCC and Clang reject it. On other
+# platforms the sources are compiled from copies without those bytes, regenerated when CMake runs again (which it
+# does whenever an original changes, see CMAKE_CONFIGURE_DEPENDS).
+#
+#   gm_mirror_dir(<source dir> <destination dir>)
+function(gm_mirror_dir src dst)
+  file(REMOVE_RECURSE "${dst}")                 # no leftovers from files that were renamed or re-cased
+  file(MAKE_DIRECTORY "${dst}")
+  string(ASCII 26 ctrlz)
+  file(GLOB entries LIST_DIRECTORIES false "${src}/*")
+  foreach(path ${entries})
+    get_filename_component(name "${path}" NAME)
+    get_filename_component(ext "${path}" EXT)
+    string(TOLOWER "${ext}" ext)
+    if(ext MATCHES "^[.](c|cpp|h|hpp)$")
+      file(READ "${path}" text)
+      # DOS ends the text at the first Ctrl-Z (string(REPLACE) does not match this character in every CMake version)
+      string(FIND "${text}" "${ctrlz}" eof)
+      if(NOT eof EQUAL -1)
+        string(SUBSTRING "${text}" 0 ${eof} text)
+      endif()
+      file(WRITE "${dst}/${name}" "${text}")
+      set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${path}")
+    endif()
+  endforeach()
+endfunction()

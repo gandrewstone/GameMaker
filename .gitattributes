@@ -1,0 +1,13 @@
+# These 1994 sources keep their bytes (CRLF, CP437 characters, a final Ctrl-Z) exactly: git must not convert line endings.
+# They used to hold raw NUL bytes inside string literals, which made git treat them as binary; the NULs are now written
+# as \000 (modern compilers drop a raw NUL from a literal), so the files look like text to git and would otherwise be
+# converted on commit, turning a few changed lines into a whole-file diff.
+code/GM/BLOCEDIT.C -text
+code/GM/CHAREDIT.C -text
+code/GM/FACELIFT.C -text
+code/GM/GRAMAP.C -text
+code/GM/GRATOR.C -text
+code/GM/MAPMAKER.C -text
+code/GM/MONEDIT.C -text
+code/GM/PALCHOS.C -text
+code/GM/SNDEDIT.C -text

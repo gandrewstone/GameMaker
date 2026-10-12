@@ -1,0 +1,90 @@
+# Builds the raylib port on Windows, Linux and macOS and runs the checks that need no display or audio device.
+# On Linux it also replays the demo recordings under a virtual display and compares the result with the DOS runs
+# checked into port/baseline (the frame tables in <game>/states.txt).
+name: port
+
+on:
+  push:
+    paths: ['port/**', 'code/**', '.github/workflows/port.yml']
+  pull_request:
+    paths: ['port/**', 'code/**', '.github/workflows/port.yml']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Linux packages (raylib window and GL headers, virtual display)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            libasound2-dev
+
+      - name: Configure
+        run: cmake -S port -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Platform self-test (settings, scaling, DOS-style file names)
+        shell: bash
+        run: |
+          mkdir -p scratch && cd scratch
+          exe=$(find ../build -name platformtest -o -name platformtest.exe | head -1)
+          "$exe"
+
+      - name: Audio self-test (FM chip, speaker, samples; no device needed)
+        shell: bash
+        run: |
+          exe=$(find build -name audiotest -o -name audiotest.exe | head -1)
+          "$exe"
+
+      - name: Replay demos and compare with the DOS frame tables (Linux; headless, no display needed)
+        if: runner.os == 'Linux'
+        run: |
+          export GM_BUILD_DIR=$PWD/build
+          sh port/baseline/check_states.sh bcuda houses volume zark donut-gen glub-gen
+
+  # The same engine compiled to WebAssembly with Emscripten, run under Node: replays the recordings and compares the
+  # frame tables with the DOS ones, so the web build is checked the way the native ones are. (No browser page yet.)
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: mymindstorm/setup-emsdk@v15
+      - name: Packages (the native fdump tool needs raylib's desktop headers)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgl-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libasound2-dev
+      - name: Native fdump (reads the frame dumps)
+        run: |
+          cmake -S port -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target fdump --parallel
+      - name: WebAssembly build
+        run: |
+          emcmake cmake -S port -B build-node -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-node --target gmplay
+      - name: Replay and compare with the DOS tables
+        run: |
+          export GM_BUILD_DIR=$PWD/build-node GMPLAY=$PWD/build-node/gmplay-node FDUMP_BIN=$PWD/build/fdump
+          sh port/baseline/check_states.sh bcuda houses volume zark donut-gen glub-gen
+
+  # The browser distributable: a static folder (and a .zip of it) to put on any web server.
+  web-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: mymindstorm/setup-emsdk@v15
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Build and pack (one step)
+        run: bash port/build_web.sh --games sample --out "$PWD/web-dist"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: gmplay-web
+          path: web-dist

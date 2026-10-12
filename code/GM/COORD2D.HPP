@@ -45,14 +45,14 @@ class Coord2d
   boolean In(Box2d &b);
   
 
-  friend Coord2d Min (Coord2d &a, Coord2d &b)
+  friend Coord2d Min (const Coord2d &a, const Coord2d &b)
     {
     Coord2d r;
     r.x= Min(a.x,b.x);
     r.y= Min(a.y,b.y);
     return(r);
     }
-  friend Coord2d Max (Coord2d &a, Coord2d &b)
+  friend Coord2d Max (const Coord2d &a, const Coord2d &b)
     {
     Coord2d r;
     r.x= Max(a.x,b.x);
@@ -64,7 +64,7 @@ Coord2d operator += (int v)          { x += v; y += v; return *this; }
 Coord2d operator -= (int v)          { x -= v; y -= v; return *this; }
 Coord2d operator *= (int v)          { x *= v; y *= v; return *this; }
 Coord2d operator /= (int v)          { x /= v; y /= v; return *this; }
-Coord2d operator += (Coord2d &p) { x += p.x; y += p.y; return *this;}
+Coord2d operator += (const Coord2d &p) { x += p.x; y += p.y; return *this;}
 Coord2d operator -= (const Coord2d &p) { x -= p.x; y -= p.y; return *this;}
 Coord2d operator *= (const Coord2d &p) { x *= p.x; y *= p.y; return *this;}
 Coord2d operator /= (const Coord2d &p) { x /= p.x; y /= p.y; return *this;}
@@ -73,16 +73,16 @@ Coord2d operator -- () { x--; y--; return *this;}
 Coord2d operator ++ () { x++; y++; return *this;}
 
 
-friend Coord2d operator * (int v,Coord2d &r) { Coord2d p(v*r.x,v*r.y); return p; }
-friend Coord2d operator / (int v,Coord2d &r) { Coord2d p(v/r.x,v/r.y); return p; }
-friend Coord2d operator - (Coord2d &r,int v) { Coord2d p(r.x-v,r.y-v); return p; }
-friend Coord2d operator + (Coord2d &r,int v) { Coord2d p(r.x+v,r.y+v); return p; }
+friend Coord2d operator * (int v,const Coord2d &r) { Coord2d p(v*r.x,v*r.y); return p; }
+friend Coord2d operator / (int v,const Coord2d &r) { Coord2d p(v/r.x,v/r.y); return p; }
+friend Coord2d operator - (const Coord2d &r,int v) { Coord2d p(r.x-v,r.y-v); return p; }
+friend Coord2d operator + (const Coord2d &r,int v) { Coord2d p(r.x+v,r.y+v); return p; }
 
-friend Coord2d operator / (Coord2d &r,int v) { Coord2d p(r.x/v,r.y/v); return p; }
-friend Coord2d operator - (Coord2d &q,Coord2d &r) { Coord2d p(q.x-r.x,q.y-r.y); return p;}
-friend Coord2d operator + (Coord2d &q,Coord2d &r) { Coord2d p(q.x+r.x,q.y+r.y); return p;}
-friend Coord2d operator / (Coord2d &q,Coord2d &r) { Coord2d p(q.x/r.x,q.y/r.y); return p;}
-friend Coord2d operator * (Coord2d &q,Coord2d &r) { Coord2d p(q.x*r.x,q.y*r.y); return p;}
+friend Coord2d operator / (const Coord2d &r,int v) { Coord2d p(r.x/v,r.y/v); return p; }
+friend Coord2d operator - (const Coord2d &q,const Coord2d &r) { Coord2d p(q.x-r.x,q.y-r.y); return p;}
+friend Coord2d operator + (const Coord2d &q,const Coord2d &r) { Coord2d p(q.x+r.x,q.y+r.y); return p;}
+friend Coord2d operator / (const Coord2d &q,const Coord2d &r) { Coord2d p(q.x/r.x,q.y/r.y); return p;}
+friend Coord2d operator * (const Coord2d &q,const Coord2d &r) { Coord2d p(q.x*r.x,q.y*r.y); return p;}
   };
 
 class Box2d
@@ -92,9 +92,9 @@ class Box2d
   Box2d(int x,int y,int x1,int y1) { Set(x,y,x1,y1); }
   Box2d(Coord2d ull,Coord2d lrr)   { Set(ull,lrr); }
   Box2d() {}
-  void Box2d::Set(Coord2d ull,Coord2d lrr)
+  void Set(Coord2d ull,Coord2d lrr)
     { ul=ull; lr=lrr; }
-  void Box2d::Set(int x,int y,int x1,int y1)
+  void Set(int x,int y,int x1,int y1)
     { ul.x=x,ul.y=y; lr.x=x1; lr.y=y1; }
   boolean In(Box2d b)  // is one box inside another?
     { return ( (boolean) (ul.In(b)&&lr.In(b)) ); }
@@ -104,8 +104,8 @@ class Box2d
 inline boolean Coord2d::In(Box2d &b)
   { return ((boolean)((*this >=b.ul)&&(*this <= b.lr))); }
 
-inline Coord2d AbsC(Coord2d &a) { Coord2d p( Abs(a.x),Abs(a.y) ); return p;}
-inline Coord2d MakeCoord(int &x,int &y)              { Coord2d r(x,y);     return r; }
+inline Coord2d AbsC(const Coord2d &a) { Coord2d p( Abs(a.x),Abs(a.y) ); return p;}
+inline Coord2d MakeCoord(const int &x,const int &y)              { Coord2d r(x,y);     return r; }
 inline Coord2d MakeCoord2d (int xin, int yin)        { Coord2d r(xin,yin); return(r); }
 inline Box2d   MakeBox2d (int x,int y,int x1,int y1) { Box2d r(x,y,x1,y1); return r; }
 inline Box2d   MakeBox2d (Coord2d ul,Coord2d lr)     { Box2d r(ul,lr);     return r; }

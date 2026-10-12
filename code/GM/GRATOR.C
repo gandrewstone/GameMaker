@@ -122,7 +122,7 @@ extern char          *FontPtr;
 extern unsigned char HiCols[4];
 RGBdata              colors[256];
 
-extern int           xor;
+extern unsigned int  xor;
 
 char DummyStr  [MAXFILENAMELEN]  = "";
 char GratorFile[MAXFILENAMELEN]  = "";
@@ -182,7 +182,7 @@ QuitCodes main(int argc,char *argv[])
       if (w==NULL) w = new char [1000];
       attr = openmenu(50,3,27,12,w);
       writestr(50,3,PGMTITLECOL,"         INTEGRATOR        ");
-      writestr(50,4,PGMTITLECOL,"        Version "GMVER"       ");
+      writestr(50,4,PGMTITLECOL,"        Version " GMVER "       ");
       writestr(50,5,PGMTITLECOL,"      By Gregory Stone     ");
       writestr(50,6,PGMTITLECOL,"     Copyright (C) 1994    ");
       writestr(51,8,attr+14, "Choose a game");
@@ -1133,7 +1133,7 @@ static uint retlink(int x, int y)
   // Cleanup is executed when the program ends in any way other then an abort
 static void cleanup(void) 
   {
-  if (Game.scns!=NULL) delete Game.scns;
+  if (Game.scns!=NULL) { delete [] Game.scns; Game.scns=NULL; }   // ~GameClass deletes it again
   Time.TurnOff();
   }
 
@@ -1145,13 +1145,13 @@ static void initalldata(void)
 
 static void deleb(int x,int y, unsigned char col[4])
   {
-  static char delar[] = "         UUUUUUU@UUUUUUUTõÿu_÷ÿÔW]Õu]UuuUW]ýu_ÕuUW]Õu]UuuU—õÿßõuÖUUUUUUUT)UUUUUUUhªªªªªªª€";
+  static char delar[] = "\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUTõÿu_÷ÿÔW]Õu]UuuUW]ýu_ÕuUW]Õu]UuuU—õÿßõuÖUUUUUUUT)UUUUUUUhªªªªªªª€";
   draw4dat(x,y,delar,35,10,col);
   }
 
 static void seleb(int x,int y, unsigned char col[4])
   {
-  static char selar[] = "         UUUUUUU@UUUUUUUTõÿu_õõÿÔWUÕu]W]]UUõýu_×U]UU]Õu]W]]U—õÿßõõ]VUUUUUUUT)UUUUUUUhªªªªªªª€";
+  static char selar[] = "\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUTõÿu_õõÿÔWUÕu]W]]UUõýu_×U]UU]Õu]W]]U—õÿßõõ]VUUUUUUUT)UUUUUUUhªªªªªªª€";
   draw4dat(x,y,selar,35,10,col);
   }
 
@@ -1371,7 +1371,7 @@ boolean GameClass::Load(FILE *fp)
     FileConverter(1,3,1,1,".cmf",old);  // set the end .cmf
    scns[1]=old[1];
 
-    for (int i=2;i<NumScenes;i++)
+    int i; for (i=2;i<NumScenes;i++)
       {
       scns[i]=old[i];
       for (int j=0;j<OLDLASTFNAME-1;j++) FileConverter(i,j,i,j,exts[j],old);
@@ -1384,7 +1384,7 @@ boolean GameClass::Load(FILE *fp)
   fread((void *) &Head,sizeof(GratorHeader),1,fp);
   NumScenes = Head.NumScenes;
   MaxScenes = NumScenes+EXTRASCENEBUFFER;
-  if (scns!=NULL) delete scns;
+  if (scns!=NULL) delete [] scns;
   if ((scns = new Scene [MaxScenes])==NULL) return(FALSE);
   if (fread(scns,sizeof(Scene),NumScenes,fp) != NumScenes) return(FALSE);
   if (!Files.Load(fp)) return(FALSE);

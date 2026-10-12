@@ -93,8 +93,12 @@ void swap(int &a, int &b)
 
 void Low256GraphMode() //DrawingBoard *d)
   {
+#ifdef GM_PORT
+  { union REGS r; r.x.ax=0x13; int86(0x10,&r,&r); }
+#else
   asm   mov ax,13h
   asm   int 10h
+#endif
 //  CurMode=GMODE
   }
 

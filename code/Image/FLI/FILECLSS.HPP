@@ -16,13 +16,13 @@ class FileRead
   char          Name[NAMELEN];
   FILE          *fp;
   uchar         *buf;
-  long int      idx;
-  long int      blen;
-  long int      End;
+  long      idx;
+  long      blen;
+  long      End;
   public:
   boolean       EOFflag;
-  long int      Length;
-  long int      CurPos;
+  long      Length;
+  long      CurPos;
 
   boolean       Open(char *fname)
     {
@@ -67,11 +67,11 @@ class FileRead
   uchar *Peek(uint Bytes);
   boolean LoadMore(void);
 
-  boolean Get(void *buffer,unsigned long int Numbytes)
+  boolean Get(void *buffer,unsigned long Numbytes)
     {
 //    DEBUG("Get\n");
 
-    unsigned long int Amt;
+    unsigned long Amt;
 
     if (idx+Numbytes>=End) Amt = End-idx;
     else Amt=Numbytes;
@@ -124,8 +124,8 @@ class FileWrite
   FILE          *fp;
   boolean       EOFflag;
   public:
-  long int      Length;
-  long int      CurPos;
+  long      Length;
+  long      CurPos;
 
   boolean       Open(char *fname)
     {
@@ -145,7 +145,7 @@ class FileWrite
     EOFflag=False;
     }
 
-  long int Write(void *Data,long int count)
+  long Write(void *Data,long count)
     {
     return(fwrite(Data,count,1,fp));
     }
@@ -163,4 +163,4 @@ class FileWrite
 #endif
 
 
-
+

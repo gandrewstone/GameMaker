@@ -31,7 +31,7 @@ class GPFClass    // Graphic Picture Format
   {
   unsigned char *PicInfo;
   public:
-  GPFClass::GPFClass()
+  GPFClass()
     {
 #ifdef DEBUG
     NewAbortMSG("GM:GPFClass Init.\n");
@@ -48,6 +48,7 @@ class GPFClass    // Graphic Picture Format
   unsigned int  Length(void);
   };
 
+void CursorClassDraw(void *d1);
 class CursorClass
   {
   public:

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameMaker Design Tools</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0c0e14; --panel: #151a26; --line: #2a3350; --text: #e8ecf6; --muted: #98a2bd;
+    --accent: #6aa8ff; --accent-ink: #06121f; --danger: #ff8f8f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #stage { position: fixed; inset: 0; background: #000; }
+  #stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; outline: none; }
+  .hidden { display: none !important; }
+
+  #cover { position: fixed; inset: 0; overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 32px; background: var(--bg); }
+  .card { width: min(640px, 100%); }
+  h1 { margin: 0 0 4px; font-size: 1.9rem; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 24px; color: var(--muted); }
+  button { font: inherit; color: var(--text); background: #1d2540; border: 1px solid var(--line); border-radius: 9px; padding: 8px 14px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; font-size: 1.15rem; padding: 12px 36px; }
+  #message { min-height: 1.6em; margin: 18px 0 0; color: var(--muted); }
+  #message.error { color: var(--danger); }
+  .note { color: var(--muted); font-size: .9rem; margin-top: 28px; }
+  pre#log { margin: 12px 0 0; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; max-height: 40vh; overflow: auto; font-size: .8rem; white-space: pre-wrap; }
+
+  #bar { position: fixed; top: 0; left: 0; right: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px;
+         background: rgba(12,14,20,.92); border-bottom: 1px solid var(--line); transition: opacity .2s; }
+  #bar.faded { opacity: 0; pointer-events: none; }
+  #bar .name { color: var(--muted); font-size: .9rem; }
+  #bar-status { margin-right: auto; font-size: .85rem; color: var(--muted); }
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; width: min(460px, calc(100% - 32px)); }
+  dialog::backdrop { background: #000a; }
+  dialog h2 { margin: 0 0 6px; font-size: 1.2rem; }
+  dialog p { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
+  #export-list label { display: block; padding: 4px 0; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="cover">
+  <div class="card">
+    <h1>GameMaker Design Tools</h1>
+    <p class="sub">The 1994 palette, block, monster, map, character, image, sound and integrator editors, running in your browser.</p>
+    <p><button id="start" class="primary" disabled>Start</button></p>
+    <p id="message">Loading...</p>
+    <p class="note">Everything stays in your browser. Your work is kept in this browser's storage (IndexedDB) between visits.
+      Use the mouse and the keyboard as in the original: arrow keys and Enter in the menus, Esc to go back.</p>
+    <p class="note"><button id="log-toggle" type="button">Messages</button></p>
+    <pre id="log" class="hidden"></pre>
+  </div>
+</div>
+
+<div id="bar" class="hidden">
+  <span class="name" id="program-name"></span>
+  <span id="bar-status" role="status"></span>
+  <button id="btn-export" type="button" title="Save your projects as a .zip file on your computer">Export projects</button>
+  <button id="btn-import" type="button" title="Add the projects of a .zip file (or drop the file on this page)">Import projects</button>
+  <input id="import-file" type="file" accept=".zip,application/zip" class="hidden">
+  <button id="btn-capture" type="button" title="Hide the computer's mouse cursor and use only the program's own. Esc or Alt+G gives it back.">Capture mouse</button>
+  <button id="btn-full" type="button">Full screen</button>
+</div>
+
+<dialog id="export-dialog">
+  <h2>Export projects</h2>
+  <p>Choose what goes into the .zip file. The sample game and the help files are not included unless you changed them. A game folder in the zip can be played again with Play in the main menu.</p>
+  <div id="export-list"></div>
+  <p id="export-empty" class="hidden">Nothing to export yet: save a project in one of the editors first.</p>
+  <div class="actions"><button id="export-cancel" type="button">Cancel</button><button id="export-go" type="button" class="primary" style="font-size:1rem;padding:8px 18px">Download .zip</button></div>
+</dialog>
+
+<script type="module" src="gmedit-web.js"></script>
+</body>
+</html>

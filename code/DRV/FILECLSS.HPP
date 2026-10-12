@@ -77,7 +77,7 @@ class FileRead
     return(False);
     }
 
-  boolean Skip(long int Bytes)
+  boolean Skip(long Bytes)
     {
     DEBUG("Skip\n");
     idx    += Bytes;
@@ -122,8 +122,8 @@ class FileWrite
   FILE          *fp;
   public:
   char          Name[NAMELEN];
-  long int      Length;
-  long int      CurPos;
+  long      Length;
+  long      CurPos;
 
   boolean       Open(char *fname);
   uint          Write(uchar *Data,uint count);
@@ -142,4 +142,4 @@ class FileWrite
 #endif
 
 
-
+

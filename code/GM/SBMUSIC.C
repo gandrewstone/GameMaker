@@ -14,7 +14,7 @@
 static void InitCard(void);                        //Initialize FM chip
 static void SetInstTable(char far *inst);          //put defined insts. in chip
 static int  load_file(int *Instru,char *filename); //read CMF file
-static long int getpaws(void);                     //Interpret CMF lengths
+static gm_long getpaws(void);                     //Interpret CMF lengths
 
 int  InitMusic(int *Instru,char *cmffile);         //Load song to memory, etc.
 int  SoundCard(void);                              //Find Sound Card present
@@ -23,8 +23,8 @@ void StopIt(void);                                 //quit playing song
 void PlayIt(void);                                 //play song
 void ResetFM(void);                                //Reset the FM chip
 
-static long int offset = 0;        // Variables for use in PlayIt()
-static unsigned long int wait = 0;
+static gm_long offset = 0;        // Variables for use in PlayIt()
+static gm_ulong music_wait = 0;
 static unsigned char far *sbmusic=NULL;
 static char far *inst=NULL;
 
@@ -137,9 +137,9 @@ void PlayIt(void)                  // This function should:
   static char channel = 0;         //   location specified by *sbmusic and
   static char funct = 8;           //   all resulting commands.
                                    //  Be called on every clock tick!
-  if (offset==0) {wait =1; getpaws();} // Skip beginning silence.
-  wait--;
-  while (wait==0)
+  if (offset==0) {music_wait =1; getpaws();} // Skip beginning silence.
+  music_wait--;
+  while (music_wait==0)
     {
     switch ((*(APOS))&0xF0)
       {
@@ -200,16 +200,16 @@ void PlayIt(void)                  // This function should:
                                            // maybe I should reset and reload.
       default: sbfd_reset(); offset=0;     //This should never occur!
       }
-    wait = getpaws();
+    music_wait = getpaws();
     }
   }
 
-static long int getpaws(void)
+static gm_long getpaws(void)
   {
-  unsigned long int value=0;
+  gm_ulong value=0;
   char c;
   
-  if ((value = (long int) *(APOS)) & 0x80)
+  if ((value = (long) *(APOS)) & 0x80)
     {
     value &= 0x7F;
     do
@@ -221,4 +221,4 @@ static long int getpaws(void)
   offset++;
   return(value);
   }
-
+

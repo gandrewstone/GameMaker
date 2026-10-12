@@ -23,7 +23,7 @@ class Debug
     {
     if (logfile != stdout) fclose(logfile);
     }
-  void Debug::Msg(char *x)
+  void Msg(char *x)
     {
     fputs(x,logfile);
     fflush(logfile);

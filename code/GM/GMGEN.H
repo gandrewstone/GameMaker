@@ -23,7 +23,7 @@ extern char NewAbortMSG(char *str);
 #define VERSION 300
 #define OKMSG "cOoL"
 #define REGOK   0x45
-#define GMTOPBAR "                            G A M E  -  M A K E R  V"GMVER"                        "
+#define GMTOPBAR "                            G A M E  -  M A K E R  V" GMVER"                        "
 #define VGATYPEFILE "VGATYPE.DAT"
 
 #define MAXFILENAMELEN 51
@@ -34,14 +34,16 @@ extern char NewAbortMSG(char *str);
 #define RIGHTKEY  77
 #define LEFTKEY   75
 
+#ifndef GM_PORT                    // the port is the full version: the demo restrictions (save only maps, ...) stay out
 #define CRIPPLEWARE
+#endif
 
 extern void GraphMode(void);
 extern void TextMode(void);
 extern void SetTextColors(void);
 extern void Screen(int OnOff);
-extern void RestoreScrn(char far *mem);
-extern void GetScrn(char far *mem);
+extern void RestoreScrn(void far *mem);
+extern void GetScrn(void far *mem);
 
 extern void swap(int *a, int *b);
 extern int  ParseFileName(const char *string,char *gamename,char *gamepath);
@@ -54,13 +56,13 @@ int loadspecany(const char *file,const char *fspec,const char *path,unsigned int
 int PauseTimeKey(uint seconds=0xFFFF);
 extern void NewBombOut(void);
 
-typedef enum
+typedef enum GM_ENUM16
   {
   quit=0, utility,palchos,blocedit,monedit,mapmaker,
   charedit,image,sndedit,grator, playgame, menu, chkreg
   } QuitCodes;
 
-typedef enum
+typedef enum GM_ENUM16
   {
   NoDesignation=0,PalFile,BackBlkFile,MonBlkFile,ChrBlkFile,
   MonFile,MapFile,ChrFile,GamFile,MenuSystem
@@ -117,4 +119,4 @@ void Personalize(void);
 void SavePersonal(void);
 
 #endif
-
+

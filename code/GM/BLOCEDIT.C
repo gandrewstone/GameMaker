@@ -185,7 +185,7 @@ extern unsigned char FaceCols[MAXFACECOL];      // Screen colors
 extern char          *FontPtr;
 extern unsigned char HiCols[4];
 static unsigned char grid[GLEN][GLEN];
-unsigned long int    nxtchg[BACKBL]; // Next time array for each block change.
+gm_ulong    nxtchg[BACKBL]; // Next time array for each block change.
 unsigned char        blkmap[BACKBL]; // Current block displayed on map Array.
 char                 Animate=FALSE;
 
@@ -229,7 +229,7 @@ QuitCodes main(int argc,char *argv[])
 #endif
   atexit(cleanup);
   FontPtr=GetROMFont();
-  blk=(blkstruct far *) farmalloc( (unsigned long int) ( ((unsigned long int)sizeof(blkstruct))*(BACKBL+1)));
+  blk=(blkstruct far *) farmalloc( (gm_ulong) ( ((gm_ulong)sizeof(blkstruct))*(BACKBL+1)));
   if (blk==NULL) { errorbox("NOT ENOUGH MEMORY!","  (Q)uit"); exit(menu);}
 
 #ifdef DEBUG
@@ -255,7 +255,7 @@ QuitCodes main(int argc,char *argv[])
     writestr(0,1,31,"  Palette  Block  Monster  Map  Character  Image  Sound  Integrator  Main  Help ");
     attr = openmenu(7,3,23,14,w);
     writestr(7,3,PGMTITLECOL, "    BLOCK DESIGNER     ");
-    writestr(7,4,PGMTITLECOL, "     Version "GMVER"      ");
+    writestr(7,4,PGMTITLECOL, "     Version " GMVER "      ");
     writestr(7,5,PGMTITLECOL, "   By Gregory Stone    ");
     writestr(7,6,PGMTITLECOL, "  Copyright (C) 1991   ");
     writestr(7,8,attr+14, " Choose a Block Set ");
@@ -347,7 +347,7 @@ static int edit(void)
   int mx,my,mbuts;
   int bnum=0,grabbed=-1;
   int changed=FALSE;
-  unsigned long int OldClock;
+  gm_ulong OldClock;
 
   moucur(TRUE);
   mouclearbut();
@@ -1797,13 +1797,13 @@ int blocnum(int mun)
 //GAS
 static void DrawFnBut(int drawfn,int x,int y, unsigned char col[4])
   {
-  char array[][26]= {"   UPUAUT¥AZTUAUT5UÀÿð", 
-                     "   UPUA¥T¥AU¤UAUT5UÀÿð",
-                     "   UP" "\x1A" "ªA•dVA•dVAª¤5UÀÿð",
-                     "   UP" "\x1A" "ªAª¤" "\x1A" "ªAª¤" "\x1A" "ªAª¤5UÀÿð",
-                     "   UPUAZTYAe”¥AUT5UÀÿð",
-                     "   UPUAZT©Aj”¥AUT5UÀÿð",
-                     "   ª *ª‚ª¨*ª‚ª¨*ª‚ª¨:ªÀÿð"};
+  char array[][26]= {"\000\000\000UPUAUT¥AZTUAUT5UÀÿð", 
+                     "\000\000\000UPUA¥T¥AU¤UAUT5UÀÿð",
+                     "\000\000\000UP" "\x1A" "ªA•dVA•dVAª¤5UÀÿð",
+                     "\000\000\000UP" "\x1A" "ªAª¤" "\x1A" "ªAª¤" "\x1A" "ªAª¤5UÀÿð",
+                     "\000\000\000UPUAZTYAe”¥AUT5UÀÿð",
+                     "\000\000\000UPUAZT©Aj”¥AUT5UÀÿð",
+                     "\000\000\000ª *ª‚ª¨*ª‚ª¨*ª‚ª¨:ªÀÿð"};
 
   draw4dat(x,y,array[drawfn],9,9,col);
   }
@@ -1812,15 +1812,15 @@ static void DrawFnBut(int drawfn,int x,int y, unsigned char col[4])
 
 void DrawKeyBut(int butnum,int x,int y, unsigned char col[4])
   {
-  char array[][26]= {"   UP¥Aj”" "\x1A" "ªAZT¥AZT5UÀÿð",
-                     "   UP¥AZT¥Aª¤©AZT5UÀÿð",
-                     "   UPeAV”" "\x1A" "ªAª¤iAVT5UÀÿð",
-                     "   UP•AiT" "\x1A" "ªAª¤•AYT5UÀÿð",
-                     "   UP•AiT" "\x1A" "ªAid–AUd5UÀÿð",
-                     "   UPeAª”eAYTªAYT5UÀÿð",
-                     "   UPUAe”jA©”YAU”5UÀÿð",
-                     "   UP¥AZT" "\x1A" "ªAª¤¥AZT5UÀÿð",
-                     "   UPUAUT" "\x1A" "ªAª¤UAUT5UÀÿð"};
+  char array[][26]= {"\000\000\000UP¥Aj”" "\x1A" "ªAZT¥AZT5UÀÿð",
+                     "\000\000\000UP¥AZT¥Aª¤©AZT5UÀÿð",
+                     "\000\000\000UPeAV”" "\x1A" "ªAª¤iAVT5UÀÿð",
+                     "\000\000\000UP•AiT" "\x1A" "ªAª¤•AYT5UÀÿð",
+                     "\000\000\000UP•AiT" "\x1A" "ªAid–AUd5UÀÿð",
+                     "\000\000\000UPeAª”eAYTªAYT5UÀÿð",
+                     "\000\000\000UPUAe”jA©”YAU”5UÀÿð",
+                     "\000\000\000UP¥AZT" "\x1A" "ªAª¤¥AZT5UÀÿð",
+                     "\000\000\000UPUAUT" "\x1A" "ªAª¤UAUT5UÀÿð"};
 
   draw4dat(x,y,array[butnum],9,9,col);
   }
@@ -1895,7 +1895,7 @@ static void HiCircle(int centx, int centy, int x1, int y1, unsigned char bloc, i
   {
   int RadSquared=0;
   register int x=0,y=0;
-  long int radius=1;
+  gm_long radius=1;
 
   if (drawfn==1)
     {
@@ -1903,10 +1903,10 @@ static void HiCircle(int centx, int centy, int x1, int y1, unsigned char bloc, i
     x1-=centx;
     y1-=centy;
     RadSquared = ((x1*x1)+(y1*y1));
-    radius = (long int) RadSquared;
+    radius = (gm_long) RadSquared;
     radius *= 8;
     radius /=10;  
-    radius=(long int) sqrt( (int) radius );
+    radius=(gm_long) sqrt( (int) radius );
    // radius *= .707106781; // # is cos(PI/4) - makes radius only go halfway around the circle
   
     for (y=0; y<=radius; y++)
@@ -2072,7 +2072,7 @@ static int animons(void)
 static void infob(int x,int y, unsigned char col[4])
   {
   static char infoar[] =
-  {"         UUUUUUU@UUUUUUUTU]××ÕUTUU]÷u]uUUUU]ÿ]uUUUU]ßu]uUU•U]×uWÕUVUUUUUUUT)UUUUUUUhªªªªªªª€"};
+  {"\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUTU]××ÕUTUU]÷u]uUUUU]ÿ]uUUUU]ßu]uUU•U]×uWÕUVUUUUUUUT)UUUUUUUhªªªªªªª€"};
 
   draw4dat(x,y,infoar,35,10,col);
   }
@@ -2080,7 +2080,7 @@ static void infob(int x,int y, unsigned char col[4])
 static void AniBut(int x,int y, unsigned char col[4])
   {
   static char animar[] =
-  {"         UUUUUUU@UUUUUUUTõ×wW__ßÔW]÷wßu×]UWýÿwÿ×_UW]ßwwu×]U—]×wWu×_ÖUUUUUUUT)UUUUUUUhªªªªªªª€"};
+  {"\000\000\000\000\000\000\000\000\000UUUUUUU@UUUUUUUTõ×wW__ßÔW]÷wßu×]UWýÿwÿ×_UW]ßwwu×]U—]×wWu×_ÖUUUUUUUT)UUUUUUUhªªªªªªª€"};
   draw4dat(x,y,animar,35,10,col);
   }
 
@@ -2999,7 +2999,6 @@ void DrawTrashCan(int x,int y, unsigned char col[4])
 
 void DrawCanTop(int x,int y, unsigned char col[4])
   {
-  //char array[]= {"                        <      k      ¯      <           :Z¿  ÿÕj«ÿ ?¥ªj¿ÿðjUjªÿÿëUªªª¯ê¿%UjªªªüUUVªªÀ  %U«  "};
   char array[]= {   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 60,  0,  0,  0,  0,  0,  0,107,  0,  0,  0,  0,  0,  0,175,  0,  0,  0,  0,  0,  0, 60,  0,  0,  0,  0,  0,  0, 28,  0,  0,  0,  0,  0, 58, 90,191,  0,  0,  3,255,213,106,171,255,  0, 63,165,170,106,191,255,240,106, 85,106,170,255,255,235, 85,170,170,170,175,234,191, 37, 85,106,170,170,170,252,  2, 85, 85, 86,170,170,192,  0,  0, 37, 85,171,  0,  0,};
   draw4dat(x,y,array,27,15,col,8);
   }

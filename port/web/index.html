@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameMaker Player</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0c0e14; --panel: #151a26; --line: #2a3350; --text: #e8ecf6; --muted: #98a2bd;
+    --accent: #6aa8ff; --accent-ink: #06121f; --danger: #ff8f8f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; background: #000; outline: none; }
+  .hidden { display: none !important; }
+
+  #start, #end { position: fixed; inset: 0; overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 32px; background: var(--bg); }
+  .card { width: min(720px, 100%); }
+  h1 { margin: 0 0 4px; font-size: 1.9rem; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 24px; color: var(--muted); }
+  h2 { margin: 28px 0 10px; font-size: 1.05rem; color: var(--muted); font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
+
+  #drop { border: 2px dashed var(--line); border-radius: 14px; padding: 28px 20px; text-align: center; background: var(--panel); transition: border-color .15s, background .15s; }
+  #drop.over { border-color: var(--accent); background: #18233a; }
+  #drop p { margin: 0 0 14px; }
+  .btn, button { font: inherit; color: var(--text); background: #1d2540; border: 1px solid var(--line); border-radius: 9px; padding: 8px 14px; cursor: pointer; }
+  .btn:hover, button:hover { border-color: var(--accent); }
+  .btn:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .big { font-size: 1.25rem; padding: 12px 40px; }
+  .note-inline { color: var(--muted); font-size: .9rem; }
+  .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+  #bundled { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  button.game { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; text-align: left; background: var(--panel); }
+  button.game span { color: var(--muted); font-size: .85rem; }
+  button.game.wanted { border-color: var(--accent); }
+
+  #message { min-height: 1.5em; margin: 18px 0 0; color: var(--muted); }
+  #message.error { color: var(--danger); }
+  .note { color: var(--muted); font-size: .9rem; margin-top: 28px; }
+  .note p { margin: 6px 0; }
+
+  #bar { position: fixed; top: 0; left: 0; right: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 8px 12px; background: linear-gradient(#000c, #0000); transition: opacity .2s; }
+  #bar button { background: #0b0f1acc; padding: 6px 12px; }
+  #bar label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .9rem; }
+  #vol { width: 110px; accent-color: var(--accent); }
+
+  dialog { max-width: min(560px, 92vw); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; }
+  dialog::backdrop { background: #000a; }
+  dialog h3 { margin: 0 0 10px; }
+  dialog table { border-collapse: collapse; width: 100%; margin: 8px 0 14px; }
+  dialog td { padding: 4px 8px 4px 0; vertical-align: top; }
+  dialog td:first-child { white-space: nowrap; color: var(--accent); }
+
+  #log { margin: 10px 0 0; max-height: 40vh; overflow: auto; padding: 10px; background: #080a10; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); font: 12px/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; }
+  .link { background: none; border: none; padding: 0; color: var(--muted); text-decoration: underline; }
+  #end .card { text-align: center; padding-top: 12vh; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+
+<section id="start">
+  <div class="card">
+    <h1 id="title-h1">GameMaker Player</h1>
+    <p class="sub" id="subtitle">Play games made with GameMaker (1994) in your browser.</p>
+
+    <div id="standalone" class="hidden">
+      <p><button class="primary big" id="sa-play">Play</button></p>
+      <p class="note-inline">Click Play to start. Keyboard and gamepad; Esc backs out of a menu. Scores and settings are kept in this browser.</p>
+    </div>
+
+    <div id="bundled-box" class="hidden">
+      <h2>Games on this page</h2>
+      <div id="bundled"></div>
+    </div>
+
+    <div id="picker">
+      <h2>Your own game files</h2>
+      <div id="drop">
+        <p><strong>Drop a game folder or a .zip file here</strong><br>A GameMaker game is a folder with a <code>.gam</code> file, its pictures, maps and sounds.</p>
+        <div class="row">
+          <label class="btn" for="pick-folder">Choose a folder…</label>
+          <label class="btn" for="pick-zip">Choose a .zip…</label>
+        </div>
+        <input id="pick-folder" type="file" webkitdirectory multiple>
+        <input id="pick-zip" type="file" accept=".zip,application/zip">
+      </div>
+    </div>
+
+    <p id="message" role="status" aria-live="polite"></p>
+
+    <div class="note">
+      <p>Everything runs in your browser. Files you drop are read on your computer and are not uploaded. Scores, saved games and settings are kept in this browser.</p>
+      <p>Games made with GameMaker 3.0 work. The older shareware games that came with their own player program do not.</p>
+      <p>It works with a keyboard and, in most browsers, a gamepad. Phones and touch screens are not supported yet.</p>
+      <p><button class="link" id="log-toggle">Messages</button></p>
+    </div>
+    <pre id="log" class="hidden"></pre>
+  </div>
+</section>
+
+<div id="bar" class="hidden">
+  <button id="btn-full">Full screen</button>
+  <button id="btn-scale" title="Cycle through the four picture modes">Picture</button>
+  <label><span>Volume</span><input id="vol" type="range" min="0" max="100" value="100" aria-label="Volume"></label>
+  <button id="btn-mute">Sound on</button>
+  <button id="btn-help">Keys</button>
+  <button id="btn-quit" title="Leave this game and choose another">Leave game</button>
+</div>
+
+<dialog id="help">
+  <h3>Keys</h3>
+  <table>
+    <tr><td>Arrow keys, letters, Space, Enter</td><td>As in the game: the game tells you which keys it uses.</td></tr>
+    <tr><td>Esc</td><td>Back out of a menu or leave the game. In full screen it stays with the game (Chrome and Edge).</td></tr>
+    <tr><td>Alt+Enter</td><td>Full screen (or use the button above)</td></tr>
+    <tr><td>Alt+Up, Alt+Down</td><td>Volume</td></tr>
+    <tr><td>Alt+M</td><td>Mute</td></tr>
+    <tr><td>Gamepad</td><td>D-pad or left stick moves; A is Enter, B is Esc in menus; in a game they are the joystick buttons. Press a button once so the browser notices the pad.</td></tr>
+  </table>
+  <form method="dialog"><button class="primary">Close</button></form>
+</dialog>
+
+<section id="end" class="hidden">
+  <div class="card">
+    <h1>Thanks for playing</h1>
+    <p class="sub" id="end-text">The game ended.</p>
+    <button class="primary" id="again">Choose a game</button>
+  </div>
+</section>
+
+<script src="gmplay-web.js"></script>
+</body>
+</html>

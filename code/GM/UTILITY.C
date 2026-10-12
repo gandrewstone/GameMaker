@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "d:\drv\gen.h"
+#include "gen.h"
 #include "gmgen.h"
 #include "mousefn.h"
 #include "jstick.h"
@@ -411,7 +411,7 @@ static void JoySetup(void)
     writestr(wx+1,wy+4,attr+11,"      installed a game port and joystick.");
     while (bioskey(1)) bioskey(0);
     mouclearbut();
-    while ((!bioskey(1))&&(!butn)) moustats(& (int)x,& (int)y,&(int)butn);
+    while ((!bioskey(1))&&(!butn)) moustats((int *)&x,(int *)&y,(int *)&butn);
     if (bioskey(1)) bioskey(0);
     else mouclearbut(); 
     closemenu(wx,wy,51,6,w);
@@ -519,7 +519,7 @@ static void JoyDiags(void)
     
     ReadJoyStick(&x,&y,&button);
     delay(SLEEPTIME);
-    GetJoyPos(&(char) pos, &(int)button, &cs);
+    GetJoyPos((char *)&pos, (int *)&button, &cs);
 
     if ((x!=oldx)|(y!=oldy)|(pos!=oldpos)|(button!=oldbut)) 
       {

@@ -55,14 +55,14 @@ class Coord2d
     return ( (*this >=LowBnd)&&(*this <= UpBnd) );
     }
 
-  friend Coord2d Min (Coord2d &a, Coord2d &b)
+  friend Coord2d Min (const Coord2d &a, const Coord2d &b)
     {
     Coord2d r;
     r.x= Min(a.x,b.x);
     r.y= Min(a.y,b.y);
     return(r);
     }
-  friend Coord2d Max (Coord2d &a, Coord2d &b)
+  friend Coord2d Max (const Coord2d &a, const Coord2d &b)
     {
     Coord2d r;
     r.x= Max(a.x,b.x);
@@ -70,28 +70,28 @@ class Coord2d
     return(r);
     }
 
-Coord2d& operator += (int &v)          { x += v; y += v; return *this; }
-Coord2d& operator -= (int &v)          { x -= v; y -= v; return *this; }
-Coord2d& operator *= (int &v)          { x *= v; y *= v; return *this; }
-Coord2d& operator /= (int &v)          { x /= v; y /= v; return *this; }
-Coord2d& operator += (Coord2d &p) { x += p.x; y += p.y; return *this;}
+Coord2d& operator += (const int &v)          { x += v; y += v; return *this; }
+Coord2d& operator -= (const int &v)          { x -= v; y -= v; return *this; }
+Coord2d& operator *= (const int &v)          { x *= v; y *= v; return *this; }
+Coord2d& operator /= (const int &v)          { x /= v; y /= v; return *this; }
+Coord2d& operator += (const Coord2d &p) { x += p.x; y += p.y; return *this;}
 Coord2d& operator -= (const Coord2d &p) { x -= p.x; y -= p.y; return *this;}
 Coord2d& operator *= (const Coord2d &p) { x *= p.x; y *= p.y; return *this;}
 Coord2d& operator /= (const Coord2d &p) { x /= p.x; y /= p.y; return *this;}
 
-friend Coord2d operator * (int &v,Coord2d &r) { Coord2d p(v*r.x,v*r.y); return p; }
-friend Coord2d operator / (int &v,Coord2d &r) { Coord2d p(v/r.x,v/r.y); return p; }
-friend Coord2d operator - (Coord2d &r,int &v) { Coord2d p(r.x-v,r.y-v); return p; }
-friend Coord2d operator + (Coord2d &r,int &v) { Coord2d p(r.x+v,r.y+v); return p; }
+friend Coord2d operator * (const int &v,const Coord2d &r) { Coord2d p(v*r.x,v*r.y); return p; }
+friend Coord2d operator / (const int &v,const Coord2d &r) { Coord2d p(v/r.x,v/r.y); return p; }
+friend Coord2d operator - (const Coord2d &r,const int &v) { Coord2d p(r.x-v,r.y-v); return p; }
+friend Coord2d operator + (const Coord2d &r,const int &v) { Coord2d p(r.x+v,r.y+v); return p; }
 
-friend Coord2d operator / (Coord2d &r,int &v) { Coord2d p(r.x/v,r.y/v); return p; }
-friend Coord2d operator - (Coord2d &q,Coord2d &r) { Coord2d p(q.x-r.x,q.y-r.y); return p;}
-friend Coord2d operator + (Coord2d &q,Coord2d &r) { Coord2d p(q.x+r.x,q.y+r.y); return p;}
-friend Coord2d operator / (Coord2d &q,Coord2d &r) { Coord2d p(q.x/r.x,q.y/r.y); return p;}
-friend Coord2d operator * (Coord2d &q,Coord2d &r) { Coord2d p(q.x*r.x,q.y*r.y); return p;}
+friend Coord2d operator / (const Coord2d &r,const int &v) { Coord2d p(r.x/v,r.y/v); return p; }
+friend Coord2d operator - (const Coord2d &q,const Coord2d &r) { Coord2d p(q.x-r.x,q.y-r.y); return p;}
+friend Coord2d operator + (const Coord2d &q,const Coord2d &r) { Coord2d p(q.x+r.x,q.y+r.y); return p;}
+friend Coord2d operator / (const Coord2d &q,const Coord2d &r) { Coord2d p(q.x/r.x,q.y/r.y); return p;}
+friend Coord2d operator * (const Coord2d &q,const Coord2d &r) { Coord2d p(q.x*r.x,q.y*r.y); return p;}
   };
 
-inline Coord2d AbsC(Coord2d &a) { Coord2d p( Abs(a.x),Abs(a.y) ); return p;}
+inline Coord2d AbsC(const Coord2d &a) { Coord2d p( Abs(a.x),Abs(a.y) ); return p;}
 */
 
 #define Coord2d_Wrap(r,MACROx,MACROy) { if (r.y<0) r.y += MACROy; else if (r.y>=MACROy) r.y -= MACROy; if (r.x<0) r.x += MACROx; else if (r.x>=MACROx) r.x -= MACROx; }

@@ -182,7 +182,7 @@ int  getfname(int x,int y,const char *q,const char *fspec,char *ans)
   if (dirq+10>maxa) xf=(x+lenq+maxa-10);
   else              xf=(x+lenq+dirq);
   attrf=openmenu(xf-1,y+2,15,widf,wf);
-  writestr(xf-2,y+1,attrf+14,"» ÄÄÄÄÄÄÄÄÄÄÄÄÄ É");
+  writestr(xf-2,y+1,attrf+14,"\xBB \xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4 \xC9"   /* CP437 box characters; the source had lost them */);
   for (l=0;l<widf;l++)                 // put file names in box
     if (l<maxf)                        // don't need to consider topf yet
       {                                // because it must be zero when fn starts
@@ -287,7 +287,10 @@ int  getfname(int x,int y,const char *q,const char *fspec,char *ans)
             }                               // No break statement so will act
           else inkey='\\';                  // as if backslash was just typed
         default:
-          if (numq<maxa) 
+#ifdef GM_PORT
+          if ((inkey&255)=='/') inkey='\\';   // other platforms write paths with "/"; the engine's names use "\"
+#endif
+          if (numq<maxa)
             {
             ans[numq]=(inkey&255);
             writech(x+lenq+numq,y,attrq+15,ans[numq]);
@@ -376,7 +379,7 @@ int  getfname(int x,int y,const char *q,const char *fspec,char *ans)
         else              xf=(x+lenq+dirq);
         numf=0; topf=0;
         attrf=openmenu(xf-1,y+2,15,widf,wf);
-        writestr(xf-2,y+1,attrf+14,"» ÄÄÄÄÄÄÄÄÄÄÄÄÄ É");
+        writestr(xf-2,y+1,attrf+14,"\xBB \xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4\xC4 \xC9"   /* CP437 box characters; the source had lost them */);
         drawcursor(xf-1,y+2,xf+FNAMELEN-1,CURSORCOL);
         fchange=1;
         oy=(y+2+(numf-topf));
@@ -673,8 +676,15 @@ int horizmenu(int itemnum,int curitem,int y,...)  // Dots are start of each item
   int joypos=0,joybut=0;
   #endif  
 
+#ifdef GM_PORT
+  // The x coordinates are variable arguments (32-bit here), not 16-bit words on the stack after y.
+  int lensbuf[24];
+  { va_list ap; va_start(ap,y); for (int k=0;k<=itemnum && k<24;k++) lensbuf[k]=(int)va_arg(ap,int32_t); va_end(ap); }
+  lens=lensbuf;
+#else
   lens=&y;
   lens++;                // Lens now points to the x coord of the first item.
+#endif
 
   if (curitem==0) curitem++;
   curitem--;
@@ -857,7 +867,7 @@ FILE *GetSaveFile(char *prompt,char *ext,char *path,char *curfile)
       do
         {
         result=toupper(errorbox("Unable to Save!","(A)bort Save    (R)etry")&255);
-        if (result=='A') return(False);
+        if (result=='A') return(NULL);
         } while (result!='R');
       }
     } while (fp == NULL);
@@ -878,6 +888,7 @@ int saveany(char *prompt,char *ext,char *path, unsigned int bytes, char *buffer)
 
 #ifdef CRIPPLEWARE
   StdCrippleMsg();
+  return(False);
 #else
   if ( (fp=GetSaveFile(prompt,ext,path,curfile))==NULL) return(False);
   fwrite(buffer,bytes,1,fp);
@@ -912,4 +923,4 @@ static int del(char *file,char *path)
   if (remove(p)==0) return(TRUE);
   else              return(FALSE);
   }
-
+

@@ -31,6 +31,7 @@ static char ParseBlasterEnv(unsigned int *portaddress, unsigned int *intaddress)
 static char curfile[MAXFILENAMELEN];
 static char SetupAndTestCard(unsigned int portaddress, unsigned int intaddress);
 
+#ifndef GM_PORT   /* the Sound Blaster voice driver is the platform layer here (port/src/sound_port.cpp) */
 int DetectCard(SoundCards *s,unsigned int *Port, unsigned int *Interrupt, char *drvr)
   {
   static char DefaultDrvr[]="sndblast.drv"; // Declare voice file driver name
@@ -343,6 +344,8 @@ static void WaitSbVocComplete(void)
 
   return;                               /* Return from subroutine */
   }
+
+#endif /* GM_PORT */
 
 int LoadSnd(char *prompt,char *ext,char *path, unsigned char *addr,char *fbuffer, int remember)
   {

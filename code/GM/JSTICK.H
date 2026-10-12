@@ -3,16 +3,19 @@
 
 #ifndef JOYSTICK
 #define JOYSTICK
+#ifndef GM_ENUM16
+#define GM_ENUM16          // Borland enums are 16 bits; the port shim defines this as ": short"
+#endif
 
 #define JOYCLKINT 10   /* Clock timer ticks required prior to joy stick read */
 
 #define CONFIGFILE "config.dat"
 
-typedef enum
+typedef enum GM_ENUM16
   { None, SndBlaster, End } SoundCards;
 
 #ifndef SVGA
-typedef enum 
+typedef enum GM_ENUM16
    { Unknown, ATI, ChipTech, Genoa, Paradise, Trident8800,Trident8900, Tseng3000, Tseng4000, Video7, VESA, ATIWonder,SoftwareSim,NoType} VideoCards;
 #endif
 
@@ -38,4 +41,4 @@ extern "C" void ReadJoyStick(unsigned int far *x,unsigned int far *y,unsigned in
 
 #endif
 /* ---------------------------------END--------------------------------------*/
-
+

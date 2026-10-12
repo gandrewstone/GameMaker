@@ -5,7 +5,7 @@
 
 #undef MOUSE
 void KeyUpdate(int KeyInfo);
-extern int CurMode;
+extern unsigned int CurMode;
 
 #ifdef DEBUG
 extern int AbortMSGLength;
@@ -28,7 +28,9 @@ char NewAbortMSG(char *str)
 #endif
 
 typedef void (*pvf)();
+#ifndef GM_PORT
 extern pvf _new_handler;
+#endif
 
 void NewBombOut(void)
   {
@@ -76,7 +78,11 @@ void KeyUpdate(int KeyInfo)
 int initmouse(void)
   {
   //set_new_handler(NewBombOut);
+#ifdef GM_PORT
+  set_new_handler(NewBombOut);
+#else
   _new_handler = NewBombOut;
+#endif
   Time.TurnOn();
   InitGraphics(&Scrn);
   Cur.NewGPF(&GPFArrow);
@@ -119,6 +125,9 @@ int setmoupos(int x,int y)  // sets the mouse position on the screen
 
 int moustats(int far *x,int far *y,int far *but)  // get mouse position and the buttons hit
   {
+#ifdef GM_PORT
+  gm_pump();                  // no mouse interrupt here: let the platform poll the mouse and the timer
+#endif
   if (Time.OldClock<Clock)
     {
     Time.OldClock=Clock;
@@ -144,7 +153,11 @@ int moucurbox(int x,int y,int x1,int y1)   /* set box for mouse to move in */
 
 void InitGraphics(DrawingBoard *d)
   {
+#ifdef GM_PORT
+  d->WindAddr= MK_FP(0xA000,0);
+#else
   d->WindAddr= (void *) 0xA0000000;
+#endif
   d->MaxX=320;
   d->MaxY=200;
   d->XSkip=320;

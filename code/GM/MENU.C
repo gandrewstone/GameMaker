@@ -46,7 +46,7 @@ QuitCodes main(int argc,char *argv[])
     SetTextColors();
     mouclearbut();
 
-    QuitCodes Prog=argv[2][0]-'A';
+    QuitCodes Prog=(QuitCodes)(argv[2][0]-'A');
 
     if ((Prog>=palchos)&&(Prog<=grator)) { dodesign(Prog-palchos+1); ch=2; }
     else if (Prog==utility)  ch=3;

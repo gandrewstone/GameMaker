@@ -20,6 +20,14 @@
 #define  SLEEPTIME 5
 
 static void InitConfigData(ConfigStruct *cs);
+#ifdef GM_PORT
+// The port's gamepad reports 0..200 with the centre at 100; these thresholds match, so no calibration is needed.
+static void PortJoyDefaults(ConfigStruct *cs)
+  {
+  int i;
+  for (i=0;i<5;i++) { cs->joyx[i]=i*50; cs->joyy[i]=i*50; }
+  }
+#endif
 
 char joyinstall=FALSE;
 
@@ -89,9 +97,20 @@ int LoadConfigData(ConfigStruct *cs)
   FILE *fp;
 
   fp=fopen(CONFIGFILE,"rb");
-  if (fp==NULL) { InitConfigData(cs); return(FALSE); }
+  if (fp==NULL)
+    {
+    InitConfigData(cs);
+#ifdef GM_PORT
+    return(TRUE);                      // the port needs no set-up: its sound card and video are built in
+#else
+    return(FALSE);
+#endif
+    }
   fread((unsigned char far *)cs, sizeof(ConfigStruct), 1, fp);
   fclose(fp);
+#ifdef GM_PORT
+  if ((cs->joyx[4]==0)&&(cs->joyy[4]==0)) PortJoyDefaults(cs);   // never calibrated
+#endif
   return(TRUE);
   }
 
@@ -118,7 +137,13 @@ static void InitConfigData(ConfigStruct *cs)
   cs->ForceSnd = None;
   cs->SndInt   = 7;
   cs->SndPort  = 0x220;
+#ifdef GM_PORT
+  cs->ForceSnd = SndBlaster;           // the port always has its own Sound Blaster
+  strcpy(cs->SndDrvr,".\\sndblast.drv");
+  PortJoyDefaults(cs);
+#else
   strcpy(cs->SndDrvr,"NotInit");
+#endif
   }
 
 char InitJStick(void)

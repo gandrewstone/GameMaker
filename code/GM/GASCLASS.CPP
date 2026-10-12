@@ -5,7 +5,7 @@
 #include "windclss.hpp"
 #include "gasclass.hpp"
 extern TimerClass Time;
-extern int CurMode;
+extern unsigned int CurMode;
 
 unsigned int GPFClass::Length(void)
   {
@@ -38,7 +38,7 @@ unsigned int GPFClass::Length(void)
         return(0);
       }
     }
-  return( (unsigned int) ( ((unsigned long int) cur)-((unsigned long int) PicInfo)) );
+  return( (unsigned int) ( cur-PicInfo) );
   }
 
 
@@ -221,7 +221,7 @@ CursorClass::CursorClass(DrawingBoard *s)
   Limits.lr   = Limits.ul = MakeCoord2d(0,0);
   Behind      = new GPFClass;
   CurGPF      = NULL;
-  Time.AddFn(CursorClassDraw ,((void (far*)(void*)) this));        // Link the polling to the timer
+  Time.AddFn(CursorClassDraw ,((void *) this));        // Link the polling to the timer
   }
 
 void CursorClass::NewGPF(GPFClass *NewOne)

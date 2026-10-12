@@ -3,7 +3,7 @@
 /* last edited 6/25            */
 
 extern void decode(FILE *gif,int skip);      /* main program.  draws gif */
-extern int intro  (FILE *gif,RGBdata colors[256] );
+extern int intro  (FILE *gif,RGBdata *colors );
 extern int drawbkd(char *bkdname,RGBdata *colors); /* draws gifs from bkd files */
 extern int DrawGif(char *gif, RGBdata *colors);
 

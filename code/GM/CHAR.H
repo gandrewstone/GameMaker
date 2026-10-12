@@ -18,10 +18,10 @@
 typedef struct           /* Declare a typed data structure */
  {
   int x,y;               /* Pixel offset from previous frame */
-  unsigned orient;       /* Orient bits how far to rotate object */
-  unsigned pic1;         /* Block number for top block of character */
-  unsigned pic2;         /* Block number for lower block of character */
-  unsigned pause;        /* Clock ticks to wait prior moving to next frame */
+  unsigned int orient;       /* Orient bits how far to rotate object */
+  unsigned int pic1;         /* Block number for top block of character */
+  unsigned int pic2;         /* Block number for lower block of character */
+  unsigned int pause;        /* Clock ticks to wait prior moving to next frame */
   char extra[5];         /* Filler */
  } frames;               /* Name the data structure */
 
@@ -49,4 +49,4 @@ typedef struct           /* Declare a typed data structure */
   unsigned char inv[MAXINV]; /* Array of inventory items gathered */
   int meter[MAXSEQ+10];  /* Repetition counters */
   } chrstruct;           /* Name the data structure */
-
+

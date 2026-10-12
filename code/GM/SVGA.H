@@ -6,21 +6,21 @@
 
 #include "gen.h"
 
-typedef enum 
+typedef enum GM_ENUM16
    { Unknown, ATI, ChipTech, Genoa, Paradise, Trident8800,Trident8900, Tseng3000, Tseng4000, Video7, VESA, ATIWonder, SoftwareSim, NoType} VideoCards;
 
 extern int Identify_VGA(void);
 extern int Force_VGA(char *vgaid);
 extern int Force_VGA(VideoCards v);
 extern int MoveWindow(unsigned char offset64k);
-extern int ViewWindow(unsigned long int offset4);
+extern int ViewWindow(unsigned long offset4);
 
 extern int WaitVertRetrace(void);
 
 
 extern "C"
   {
-  extern int MoveViewScreen(unsigned long int offset4,unsigned int LittleShiftx);  // move w/o updating draw varibles
+  extern int MoveViewScreen(unsigned long offset4,unsigned int LittleShiftx);  // move w/o updating draw varibles
 
   void BufToScrn(unsigned int len,unsigned int offset);
   void SvgaBufToScrn(unsigned int len,unsigned int offset);
@@ -37,4 +37,4 @@ extern "C"
   }
 #endif
 /* ---------------------------------END-------------------------------------*/
-
+

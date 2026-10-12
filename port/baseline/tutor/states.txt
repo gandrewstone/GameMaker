@@ -1,0 +1,237 @@
+  0 tick=20    timer=20     score=0      scene=2 char=(9,7) pan=0/0
+  1 tick=40    timer=40     score=0      scene=2 char=(10,7) pan=0/0
+  2 tick=60    timer=60     score=0      scene=2 char=(10,4) pan=0/0
+  3 tick=80    timer=80     score=0      scene=2 char=(12,3) pan=0/0
+  4 tick=100   timer=100    score=0      scene=2 char=(12,6) pan=0/0
+  5 tick=120   timer=120    score=0      scene=2 char=(12,9) pan=0/0
+  6 tick=140   timer=140    score=0      scene=2 char=(14,10) pan=28/0
+  7 tick=160   timer=160    score=0      scene=2 char=(15,7) pan=124/0
+  8 tick=180   timer=180    score=0      scene=2 char=(15,5) pan=172/0
+  9 tick=200   timer=200    score=0      scene=2 char=(17,5) pan=212/0
+ 10 tick=220   timer=220    score=0      scene=2 char=(17,8) pan=224/0
+ 11 tick=240   timer=240    score=0      scene=2 char=(19,9) pan=252/0
+ 12 tick=260   timer=260    score=0      scene=2 char=(20,7) pan=284/0
+ 13 tick=280   timer=280    score=0      scene=2 char=(20,4) pan=284/0
+ 14 tick=300   timer=300    score=0      scene=2 char=(23,4) pan=320/0
+ 15 tick=320   timer=320    score=0      scene=2 char=(25,4) pan=368/0
+ 16 tick=340   timer=340    score=0      scene=2 char=(25,4) pan=384/0
+ 17 tick=360   timer=360    score=0      scene=2 char=(25,4) pan=384/0
+ 18 tick=380   timer=380    score=0      scene=2 char=(26,4) pan=404/0
+ 19 tick=400   timer=400    score=0      scene=2 char=(27,3) pan=412/0
+ 20 tick=420   timer=420    score=0      scene=2 char=(27,5) pan=440/0
+ 21 tick=440   timer=440    score=0      scene=2 char=(26,6) pan=440/0
+ 22 tick=460   timer=460    score=0      scene=2 char=(26,6) pan=440/0
+ 23 tick=480   timer=480    score=0      scene=2 char=(26,5) pan=440/0
+ 24 tick=500   timer=500    score=0      scene=2 char=(26,3) pan=440/0
+ 25 tick=520   timer=520    score=0      scene=2 char=(29,3) pan=440/0
+ 26 tick=540   timer=540    score=0      scene=2 char=(30,4) pan=440/0
+ 27 tick=560   timer=560    score=0      scene=2 char=(30,4) pan=440/0
+ 28 tick=580   timer=580    score=0      scene=2 char=(27,4) pan=440/0
+ 29 tick=600   timer=600    score=0      scene=2 char=(29,5) pan=440/0
+ 30 tick=620   timer=620    score=0      scene=2 char=(31,5) pan=440/0
+ 31 tick=640   timer=640    score=0      scene=2 char=(31,7) pan=440/0
+ 32 tick=660   timer=660    score=0      scene=2 char=(32,8) pan=440/0
+ 33 tick=680   timer=680    score=0      scene=2 char=(33,7) pan=440/0
+ 34 tick=700   timer=700    score=0      scene=2 char=(33,6) pan=440/0
+ 35 tick=720   timer=720    score=0      scene=2 char=(35,5) pan=440/0
+ 36 tick=740   timer=740    score=0      scene=2 char=(35,4) pan=440/0
+ 37 tick=760   timer=760    score=0      scene=2 char=(37,4) pan=488/0
+ 38 tick=780   timer=780    score=0      scene=2 char=(39,4) pan=588/0
+ 39 tick=800   timer=800    score=0      scene=2 char=(40,4) pan=660/0
+ 40 tick=820   timer=820    score=0      scene=2 char=(41,6) pan=700/0
+ 41 tick=840   timer=840    score=0      scene=2 char=(40,9) pan=704/0
+ 42 tick=860   timer=860    score=0      scene=2 char=(40,7) pan=704/0
+ 43 tick=880   timer=880    score=0      scene=2 char=(40,6) pan=704/0
+ 44 tick=900   timer=900    score=0      scene=2 char=(40,5) pan=704/0
+ 45 tick=920   timer=920    score=0      scene=2 char=(40,4) pan=704/0
+ 46 tick=940   timer=940    score=0      scene=2 char=(40,4) pan=704/0
+ 47 tick=960   timer=960    score=0      scene=2 char=(40,3) pan=704/0
+ 48 tick=980   timer=980    score=0      scene=2 char=(41,3) pan=704/0
+ 49 tick=1000  timer=1000   score=0      scene=2 char=(42,3) pan=736/0
+ 50 tick=1020  timer=1020   score=0      scene=2 char=(45,4) pan=772/0
+ 51 tick=1040  timer=1040   score=0      scene=2 char=(45,4) pan=792/0
+ 52 tick=1060  timer=1060   score=0      scene=2 char=(46,4) pan=800/0
+ 53 tick=1080  timer=1080   score=0      scene=2 char=(45,4) pan=808/0
+ 54 tick=1100  timer=1100   score=0      scene=2 char=(45,6) pan=808/0
+ 55 tick=1120  timer=1120   score=0      scene=2 char=(46,7) pan=808/0
+ 56 tick=1140  timer=1140   score=0      scene=2 char=(45,7) pan=808/0
+ 57 tick=1160  timer=1160   score=0      scene=2 char=(46,7) pan=808/0
+ 58 tick=1180  timer=1180   score=0      scene=2 char=(46,4) pan=808/0
+ 59 tick=1200  timer=1200   score=0      scene=2 char=(47,4) pan=820/0
+ 60 tick=1220  timer=1220   score=0      scene=2 char=(49,4) pan=860/0
+ 61 tick=1240  timer=1240   score=0      scene=2 char=(49,6) pan=864/0
+ 62 tick=1260  timer=1260   score=0      scene=2 char=(50,7) pan=872/0
+ 63 tick=1280  timer=1280   score=0      scene=2 char=(50,7) pan=896/0
+ 64 tick=1300  timer=1300   score=0      scene=2 char=(51,7) pan=904/0
+ 65 tick=1320  timer=1320   score=0      scene=2 char=(53,7) pan=940/0
+ 66 tick=1340  timer=1340   score=0      scene=2 char=(53,8) pan=944/0
+ 67 tick=1360  timer=1360   score=0      scene=2 char=(53,8) pan=944/0
+ 68 tick=1380  timer=1380   score=0      scene=2 char=(54,9) pan=968/0
+ 69 tick=1400  timer=1400   score=0      scene=2 char=(54,9) pan=972/0
+ 70 tick=1420  timer=1420   score=0      scene=2 char=(54,9) pan=980/0
+ 71 tick=1440  timer=1440   score=0      scene=2 char=(54,7) pan=984/0
+ 72 tick=1460  timer=1460   score=0      scene=2 char=(56,6) pan=1004/0
+ 73 tick=1480  timer=1480   score=0      scene=2 char=(56,5) pan=1004/0
+ 74 tick=1500  timer=1500   score=0      scene=2 char=(53,5) pan=1004/0
+ 75 tick=1520  timer=1520   score=0      scene=2 char=(53,5) pan=924/0
+ 76 tick=1540  timer=1540   score=0      scene=2 char=(53,3) pan=860/0
+ 77 tick=1560  timer=1560   score=0      scene=2 char=(56,3) pan=852/0
+ 78 tick=1580  timer=1580   score=0      scene=2 char=(56,3) pan=860/0
+ 79 tick=1600  timer=1600   score=0      scene=2 char=(58,3) pan=960/0
+ 80 tick=1620  timer=1620   score=0      scene=2 char=(60,3) pan=1040/0
+ 81 tick=1640  timer=1640   score=0      scene=2 char=(63,3) pan=1100/0
+ 82 tick=1660  timer=1660   score=0      scene=2 char=(66,3) pan=1160/0
+ 83 tick=1680  timer=1680   score=0      scene=2 char=(66,5) pan=1200/0
+ 84 tick=1700  timer=1700   score=0      scene=2 char=(68,6) pan=1236/0
+ 85 tick=1720  timer=1720   score=0      scene=2 char=(71,6) pan=1280/0
+ 86 tick=1740  timer=1740   score=0      scene=2 char=(72,6) pan=1328/0
+ 87 tick=1760  timer=1760   score=0      scene=2 char=(72,7) pan=1336/0
+ 88 tick=1780  timer=1780   score=0      scene=2 char=(74,8) pan=1356/0
+ 89 tick=1800  timer=1800   score=0      scene=2 char=(73,8) pan=1364/0
+ 90 tick=1820  timer=1820   score=0      scene=2 char=(76,9) pan=1388/0
+ 91 tick=1840  timer=1840   score=0      scene=2 char=(77,9) pan=1424/0
+ 92 tick=1860  timer=1860   score=0      scene=2 char=(80,9) pan=1464/0
+ 93 tick=1880  timer=1880   score=0      scene=2 char=(80,7) pan=1484/0
+ 94 tick=1900  timer=1900   score=0      scene=2 char=(80,5) pan=1484/0
+ 95 tick=1920  timer=1920   score=0      scene=2 char=(80,3) pan=1484/0
+ 96 tick=1940  timer=1940   score=0      scene=2 char=(82,3) pan=1516/0
+ 97 tick=1960  timer=1960   score=0      scene=2 char=(82,6) pan=1524/0
+ 98 tick=1980  timer=1980   score=0      scene=2 char=(85,6) pan=1560/0
+ 99 tick=2000  timer=2000   score=0      scene=2 char=(85,8) pan=1584/0
+100 tick=2020  timer=2020   score=0      scene=2 char=(86,8) pan=1596/0
+101 tick=2040  timer=2040   score=0      scene=2 char=(87,8) pan=1628/0
+102 tick=2060  timer=2060   score=0      scene=2 char=(89,7) pan=1668/0
+103 tick=2080  timer=2080   score=0      scene=2 char=(91,6) pan=1692/0
+104 tick=2100  timer=2100   score=0      scene=2 char=(92,5) pan=1724/0
+105 tick=2120  timer=2120   score=0      scene=2 char=(94,5) pan=1752/0
+106 tick=2140  timer=2140   score=0      scene=2 char=(94,8) pan=1764/0
+107 tick=2160  timer=2160   score=0      scene=2 char=(96,9) pan=1800/0
+108 tick=2180  timer=2180   score=0      scene=3 char=(90,18) pan=0/0
+109 tick=2200  timer=2200   score=0      scene=3 char=(86,18) pan=0/0
+110 tick=2220  timer=2220   score=0      scene=3 char=(81,18) pan=65488/15
+111 tick=2240  timer=2240   score=0      scene=3 char=(80,19) pan=65396/15
+112 tick=2260  timer=2260   score=0      scene=3 char=(77,20) pan=65312/15
+113 tick=2280  timer=2280   score=0      scene=3 char=(72,20) pan=65228/15
+114 tick=2300  timer=2300   score=0      scene=3 char=(68,20) pan=65132/15
+115 tick=2320  timer=2320   score=0      scene=3 char=(68,18) pan=65080/15
+116 tick=2340  timer=2340   score=0      scene=3 char=(65,17) pan=65044/15
+117 tick=2360  timer=2360   score=0      scene=3 char=(68,17) pan=65012/15
+118 tick=2380  timer=2380   score=0      scene=3 char=(63,17) pan=65012/15
+119 tick=2400  timer=2400   score=0      scene=3 char=(62,17) pan=65012/15
+120 tick=2420  timer=2420   score=0      scene=3 char=(60,17) pan=65012/15
+121 tick=2440  timer=2440   score=0      scene=3 char=(60,17) pan=65012/15
+122 tick=2460  timer=2460   score=0      scene=3 char=(56,17) pan=64988/15
+123 tick=2480  timer=2480   score=0      scene=3 char=(51,17) pan=64888/15
+124 tick=2500  timer=2500   score=0      scene=3 char=(50,17) pan=64788/15
+125 tick=2520  timer=2520   score=0      scene=3 char=(48,17) pan=64720/15
+126 tick=2540  timer=2540   score=0      scene=3 char=(43,17) pan=64640/15
+127 tick=2560  timer=2560   score=0      scene=3 char=(38,17) pan=64544/15
+128 tick=2580  timer=2580   score=0      scene=3 char=(36,18) pan=64476/15
+129 tick=2600  timer=2600   score=0      scene=3 char=(36,21) pan=64428/15
+130 tick=2620  timer=2620   score=0      scene=3 char=(31,21) pan=64380/15
+131 tick=2640  timer=2640   score=0      scene=3 char=(27,21) pan=64308/15
+132 tick=2660  timer=2660   score=0      scene=3 char=(26,20) pan=64248/15
+133 tick=2680  timer=2680   score=0      scene=3 char=(26,19) pan=64220/15
+134 tick=2700  timer=2700   score=0      scene=3 char=(21,19) pan=64180/15
+135 tick=2720  timer=2720   score=0      scene=3 char=(16,19) pan=64104/15
+136 tick=2740  timer=2740   score=0      scene=3 char=(16,16) pan=64048/15
+137 tick=2760  timer=2760   score=0      scene=3 char=(12,16) pan=63988/15
+138 tick=2780  timer=2780   score=0      scene=3 char=(12,16) pan=63940/15
+139 tick=2800  timer=2800   score=0      scene=3 char=(10,16) pan=63904/15
+140 tick=2820  timer=2820   score=0      scene=3 char=(10,16) pan=63900/15
+141 tick=2840  timer=2840   score=0      scene=3 char=(8,16) pan=63892/15
+142 tick=2860  timer=2860   score=0      scene=3 char=(3,16) pan=63836/15
+143 tick=2880  timer=2880   score=0      scene=3 char=(3,16) pan=63784/15
+144 tick=2900  timer=2900   score=0      scene=3 char=(1,16) pan=63740/15
+145 tick=2920  timer=2920   score=0      scene=3 char=(1,19) pan=63712/15
+146 tick=2940  timer=2939   score=0      scene=4 char=(8,29) pan=0/0
+147 tick=2960  timer=2959   score=0      scene=4 char=(8,29) pan=0/0
+148 tick=2980  timer=2979   score=0      scene=4 char=(10,29) pan=0/0
+149 tick=3000  timer=2999   score=0      scene=4 char=(12,29) pan=52/0
+150 tick=3020  timer=3019   score=0      scene=4 char=(14,29) pan=132/0
+151 tick=3040  timer=3039   score=0      scene=4 char=(14,29) pan=180/0
+152 tick=3060  timer=3059   score=0      scene=4 char=(15,29) pan=200/0
+153 tick=3080  timer=3079   score=0      scene=4 char=(15,29) pan=212/0
+154 tick=3100  timer=3099   score=0      scene=4 char=(15,29) pan=212/0
+155 tick=3120  timer=3119   score=0      scene=4 char=(14,29) pan=212/0
+156 tick=3140  timer=3139   score=0      scene=4 char=(16,29) pan=212/0
+157 tick=3160  timer=3159   score=0      scene=4 char=(16,29) pan=212/0
+158 tick=3180  timer=3179   score=0      scene=4 char=(16,29) pan=212/0
+159 tick=3200  timer=3199   score=0      scene=4 char=(15,29) pan=212/0
+160 tick=3220  timer=3219   score=0      scene=4 char=(15,29) pan=212/0
+161 tick=3240  timer=3239   score=0      scene=4 char=(15,29) pan=212/0
+162 tick=3260  timer=3259   score=0      scene=4 char=(15,29) pan=212/0
+163 tick=3280  timer=3279   score=0      scene=4 char=(15,29) pan=212/0
+164 tick=3300  timer=3299   score=0      scene=4 char=(15,29) pan=212/0
+165 tick=3320  timer=3319   score=0      scene=4 char=(16,29) pan=212/0
+166 tick=3340  timer=3339   score=0      scene=4 char=(16,29) pan=212/0
+167 tick=3360  timer=3359   score=0      scene=4 char=(16,29) pan=212/0
+168 tick=3380  timer=3379   score=0      scene=4 char=(16,29) pan=212/0
+169 tick=3400  timer=3399   score=0      scene=4 char=(16,29) pan=212/0
+170 tick=3420  timer=3419   score=0      scene=4 char=(16,29) pan=212/0
+171 tick=3440  timer=3439   score=0      scene=4 char=(19,28) pan=212/0
+172 tick=3460  timer=3459   score=0      scene=4 char=(22,29) pan=212/0
+173 tick=3480  timer=3479   score=0      scene=4 char=(26,29) pan=264/0
+174 tick=3500  timer=3499   score=0      scene=4 char=(31,29) pan=364/0
+175 tick=3520  timer=3519   score=0      scene=4 char=(37,29) pan=464/0
+176 tick=3540  timer=3539   score=0      scene=4 char=(38,30) pan=564/0
+177 tick=3560  timer=3559   score=0      scene=4 char=(40,31) pan=644/0
+178 tick=3580  timer=3579   score=0      scene=4 char=(42,25) pan=712/0
+179 tick=3600  timer=3599   score=0      scene=4 char=(44,26) pan=772/0
+180 tick=3620  timer=3619   score=0      scene=4 char=(44,31) pan=804/0
+181 tick=3640  timer=3639   score=0      scene=4 char=(44,25) pan=804/0
+182 tick=3660  timer=3659   score=0      scene=4 char=(45,31) pan=804/0
+183 tick=3680  timer=3679   score=0      scene=4 char=(54,29) pan=816/0
+184 tick=3700  timer=3699   score=0      scene=4 char=(54,30) pan=916/0
+185 tick=3720  timer=3719   score=0      scene=4 char=(57,32) pan=996/0
+186 tick=3740  timer=3739   score=0      scene=4 char=(60,32) pan=1060/0
+187 tick=3760  timer=3759   score=0      scene=4 char=(57,32) pan=1084/0
+188 tick=3780  timer=3779   score=0      scene=4 char=(60,32) pan=1084/0
+189 tick=3800  timer=3799   score=0      scene=4 char=(63,32) pan=1084/0
+190 tick=3820  timer=3819   score=0      scene=4 char=(65,32) pan=1084/0
+191 tick=3840  timer=3839   score=0      scene=4 char=(70,26) pan=1124/0
+192 tick=3860  timer=3859   score=0      scene=4 char=(66,29) pan=1212/0
+193 tick=3880  timer=3879   score=0      scene=4 char=(70,27) pan=1252/0
+194 tick=3900  timer=3899   score=0      scene=4 char=(67,27) pan=1292/0
+195 tick=3920  timer=3919   score=0      scene=4 char=(67,25) pan=1292/0
+196 tick=3940  timer=3939   score=0      scene=4 char=(67,25) pan=1292/0
+197 tick=3960  timer=3959   score=0      scene=4 char=(71,25) pan=1292/0
+198 tick=3980  timer=3979   score=0      scene=4 char=(75,25) pan=1292/0
+199 tick=4000  timer=3999   score=0      scene=4 char=(81,25) pan=1360/0
+200 tick=4020  timer=4019   score=0      scene=4 char=(87,25) pan=1460/0
+201 tick=4040  timer=4039   score=0      scene=4 char=(88,25) pan=1560/0
+202 tick=4060  timer=4059   score=0      scene=4 char=(88,29) pan=1640/0
+203 tick=4080  timer=4079   score=0      scene=4 char=(89,32) pan=1680/0
+204 tick=4100  timer=4099   score=0      scene=4 char=(95,32) pan=1744/0
+205 tick=4120  timer=4119   score=0      scene=5 char=(97,40) pan=0/0
+206 tick=4140  timer=4139   score=0      scene=5 char=(93,40) pan=0/0
+207 tick=4160  timer=4159   score=0      scene=5 char=(90,39) pan=65468/15
+208 tick=4180  timer=4179   score=0      scene=5 char=(90,39) pan=65392/15
+209 tick=4200  timer=4199   score=0      scene=5 char=(91,39) pan=65364/15
+210 tick=4220  timer=4219   score=0      scene=5 char=(86,39) pan=65320/15
+211 tick=4240  timer=4239   score=0      scene=5 char=(86,39) pan=65276/15
+212 tick=4260  timer=4259   score=0      scene=5 char=(86,40) pan=65272/15
+213 tick=4280  timer=4279   score=0      scene=5 char=(84,43) pan=65268/15
+214 tick=4300  timer=4299   score=0      scene=5 char=(85,43) pan=65236/15
+215 tick=4320  timer=4319   score=0      scene=5 char=(86,40) pan=65236/15
+216 tick=4340  timer=4339   score=0      scene=5 char=(82,40) pan=65236/15
+217 tick=4360  timer=4359   score=0      scene=5 char=(79,40) pan=65236/15
+218 tick=4380  timer=4379   score=0      scene=5 char=(77,41) pan=65236/15
+219 tick=4400  timer=4399   score=0      scene=5 char=(78,41) pan=65236/15
+220 tick=4420  timer=4419   score=0      scene=5 char=(79,38) pan=65236/15
+221 tick=4440  timer=4439   score=0      scene=5 char=(79,37) pan=65236/15
+222 tick=4460  timer=4459   score=0      scene=5 char=(78,39) pan=65236/15
+223 tick=4480  timer=4479   score=0      scene=5 char=(76,39) pan=65196/15
+224 tick=4500  timer=4499   score=0      scene=5 char=(76,40) pan=65116/15
+225 tick=4520  timer=4519   score=0      scene=5 char=(74,39) pan=65072/15
+226 tick=4540  timer=4539   score=0      scene=5 char=(71,39) pan=65028/15
+227 tick=4560  timer=4559   score=0      scene=5 char=(71,43) pan=64988/15
+228 tick=4580  timer=4579   score=0      scene=5 char=(71,42) pan=64972/15
+229 tick=4600  timer=4599   score=0      scene=5 char=(69,40) pan=64964/15
+230 tick=4620  timer=4619   score=0      scene=5 char=(72,40) pan=64940/15
+231 tick=4640  timer=4639   score=0      scene=5 char=(71,43) pan=65040/15
+232 tick=4660  timer=4659   score=0      scene=5 char=(71,42) pan=65080/15
+233 tick=4680  timer=4679   score=0      scene=5 char=(72,39) pan=65096/15
+234 tick=4700  timer=4699   score=0      scene=5 char=(76,38) pan=65148/15
+235 tick=4720  timer=4719   score=0      scene=5 char=(72,39) pan=65168/15
+236 tick=4740  timer=4739   score=0      scene=5 char=(71,42) pan=65068/15

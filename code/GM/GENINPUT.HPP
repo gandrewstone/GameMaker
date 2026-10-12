@@ -34,6 +34,7 @@ char MoveCursors(NodeClass *CursorNode);
 // Traditional mouse stuff, like moucur, and stats, should be handled
 // through the cursor.
 
+void CheckJoyStick(void *t);   // declared before the friend declaration (Clang does not find friend-only declarations)
 class JoyStickClass
   {
   unsigned int CenterX,CenterY;

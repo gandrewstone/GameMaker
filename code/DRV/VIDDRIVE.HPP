@@ -19,7 +19,7 @@ class VideoMode
   uint         LineSep;
   uchar        ColDepth;
   Pixel       *Address;
-  long int     ViewPageOff;
+  long     ViewPageOff;
   uint         BIOSMode;
   void         (*SetMode)    (VideoMode *v);
   void         (*Clear)      (Pixel Col,VideoMode *v);
@@ -40,8 +40,8 @@ class VideoMode
   void         (*BCurve)  (Coord2d p1,Coord2d p2,Coord2d VMid,unsigned char col,VideoMode *v);
 
   void         (*Spline)  (Coord2d p1,Coord2d p2,Coord2d VMid,unsigned char col,VideoMode *v);
-  void         (*SetViewPos) (unsigned long int pos,VideoMode *v);
-  void         (*SetWritePage) (unsigned long int pos,VideoMode *v);
+  void         (*SetViewPos) (unsigned long pos,VideoMode *v);
+  void         (*SetWritePage) (unsigned long pos,VideoMode *v);
   void         (*SetAllPal)  (RGBdata *pal,VideoMode *v);
   void         (*GetAllPal)  (RGBdata *pal,VideoMode *v);
 
@@ -65,7 +65,7 @@ class VideoDriver
   VideoMode FirstDriver;       // First Video Driver data structure is here.
   VideoMode*GetMode(int num)
     {
-    if (num>NumModes) return(False);
+    if (num>NumModes) return(NULL);
     return( (&FirstDriver+num));
     }
   boolean Validate(int MinVersion);

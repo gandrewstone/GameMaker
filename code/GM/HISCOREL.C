@@ -13,7 +13,7 @@ extern char    WorkDir[];
 
 typedef struct
   {
-  long int sc;
+  gm_long sc;
   char yourname[30];
   } scorelist;
 
@@ -24,7 +24,7 @@ RGBdata Blue (10,10,63);
 RGBdata Green(10,63,10);
 
 
-void ShowHighScores(char *gamename,long int score=-1)
+void ShowHighScores(char *gamename,gm_long score=-1)
   {
   register int j;
   scorelist top[10];
@@ -76,7 +76,7 @@ void ShowHighScores(char *gamename,long int score=-1)
   }
 
 
-int CheckHighScores(char *gamename,long int score)
+int CheckHighScores(char *gamename,gm_long score)
   {
   int RetVal=0;
   register int j,k;
@@ -127,4 +127,4 @@ int CheckHighScores(char *gamename,long int score)
   }
 
 #pragma loop_opt(on)
-
+

@@ -4,10 +4,10 @@
 // --------------------------------
 
 #include "gen.h"
-#include "fileclss.hpp"
+#include <fileclss.hpp>   // <> so the DRV version is found first, as with the Borland include rules
 #include "viddrive.hpp"
 
-enum ChunkTypes
+enum ChunkTypes GM_ENUM16
   {
   ColorMap=11,LineCompress=12,AllBlack=13,RunLength=15,Copy=16
   };
@@ -15,7 +15,7 @@ enum ChunkTypes
 class FLIHeader
   {
   public:
-  long int FileSize;
+  long FileSize;
   uint     FileID;
   uint     NumFrames;
   uint     Width;
@@ -23,8 +23,8 @@ class FLIHeader
   uint     PixDepth;
   int      Flags;   // = 0
   uint     FrameSpd;
-  long int Next;    // = 0
-  long int Frit;   // = 0
+  long Next;    // = 0
+  long Frit;   // = 0
   uchar    Xtra[102];
   boolean  Validate(void)
     {
@@ -43,7 +43,7 @@ class FLIHeader
 class FrameHeader
   {
   public:
-  long int Size;  // In bytes.
+  long Size;  // In bytes.
   uint     ID;
   uint     NumChunks;
   char     Xtra[8];
@@ -67,4 +67,4 @@ class FLI
   };
 
 
-
+

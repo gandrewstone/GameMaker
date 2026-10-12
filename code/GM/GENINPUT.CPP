@@ -135,8 +135,10 @@ MouseClass::~MouseClass(void)  //Destructor
   {
   if (Has)
     {
+#ifndef GM_PORT
     asm mov ax,0                // If he has a mouse, I've put in my handler.
     asm int 33h                 // this fn disables my handler.
+#endif
     }
   }
 
@@ -148,9 +150,13 @@ char MouseClass::Init(void)
 #endif
   Has=ERROR;
 
+#ifdef GM_PORT
+  temp=0xFFFF;                // the mouse "driver" is the platform layer (newmouse_port.cpp)
+#else
   asm               mov        ax,0
   asm               int        33h
   asm               mov        [temp],ax
+#endif
   if (temp==0) Has=FALSE;
   else if (temp==0xFFFF)
     {
